@@ -233,10 +233,16 @@ async def compare(names: list[str] | None, mode: str, judge_model: str | None, w
         spec = PartSpec.load(ROOT / ref["spec"])
         ref_stl = REFS / f"{name}_ref.stl"
         summary_p = RUNS / mode / f"{name}.json"
-        if not ref_stl.exists() or not summary_p.exists():
+        sess = RUNS / mode / name
+        if not ref_stl.exists() or not sess.exists():
             print(f"skip {name}: missing reference or run")
             continue
-        summary = json.loads(summary_p.read_text())
+        if summary_p.exists():
+            summary = json.loads(summary_p.read_text())
+        else:  # run still in progress or interrupted: summarize from the session files
+            meta = json.loads((sess / "session.json").read_text()) if (sess / "session.json").exists() else {}
+            summary = {"status": meta.get("status", "in_progress"), "iterations": meta.get("iteration"), "cost_usd": meta.get("cost_usd"),
+                       "duration_s": None, "session": str(sess), "critic": [], "narration": meta.get("narration", "")}
         sess = Path(summary["session"])
         hist = json.loads((sess / "history.json").read_text()) if (sess / "history.json").exists() else []
         oks = [h["iteration"] for h in hist if h.get("ok")]
