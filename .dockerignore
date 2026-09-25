@@ -1,0 +1,7 @@
+.git
+sessions
+eval/runs
+eval/references/src
+web/node_modules
+web/dist
+**/__pycache__
