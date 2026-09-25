@@ -306,7 +306,7 @@ async def _drain(client, state: RunState, emit) -> None:
         except asyncio.TimeoutError:
             emit("error", message=f"no message from the model for {STALL_TIMEOUT_S:.0f}s; run aborted as stalled")
             raise StalledError("designer stalled")
-        if not isinstance(msg, (AssistantMessage, ResultMessage)):
+        if type(msg).__name__ in ("SystemMessage", "RateLimitEvent"):
             emit("sdk", type=type(msg).__name__, subtype=str(getattr(msg, "subtype", ""))[:60])
         if isinstance(msg, AssistantMessage):
             for b in msg.content:
