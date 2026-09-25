@@ -233,6 +233,9 @@ async def run_designer(session: Session, *, spec: PartSpec | None = None, model:
         disallowed_tools=["WebSearch", "WebFetch", "Task", "TodoWrite", "NotebookEdit", "ToolSearch"],
         mcp_servers={"kin": server}, max_turns=max_turns, setting_sources=[], env=env, add_dirs=[str(TEMPLATES_DIR)],
         max_buffer_size=64 * 1024 * 1024,
+        # bounded thinking: the loop supplies depth through iteration; unbounded thinking on hard parts produced
+        # 10-30 minute turns and API errors in testing
+        max_thinking_tokens=int(os.environ.get("KIN_THINKING_TOKENS", "12000")),
         hooks={"PreToolUse": [HookMatcher(matcher="Write|Edit|MultiEdit|NotebookEdit|Bash|Read", hooks=[make_sandbox_hook(session.dir)])]},
     )
     session.update_meta(status="running", model=model)
@@ -303,6 +306,8 @@ async def _drain(client, state: RunState, emit) -> None:
         except asyncio.TimeoutError:
             emit("error", message=f"no message from the model for {STALL_TIMEOUT_S:.0f}s; run aborted as stalled")
             raise StalledError("designer stalled")
+        if not isinstance(msg, (AssistantMessage, ResultMessage)):
+            emit("sdk", type=type(msg).__name__, subtype=str(getattr(msg, "subtype", ""))[:60])
         if isinstance(msg, AssistantMessage):
             for b in msg.content:
                 if isinstance(b, TextBlock) and b.text.strip():
