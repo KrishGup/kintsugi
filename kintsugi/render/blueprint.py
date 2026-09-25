@@ -61,7 +61,6 @@ def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | 
     scale = pick_scale(mesh, target_px)
     ghost = context_ghost(spec)
 
-    items_by_id = {it.id: it for it in (report.items if report else [])}
 
     # ---- orthographic + iso views
     view_imgs: dict[str, raster.ViewImage] = {}
