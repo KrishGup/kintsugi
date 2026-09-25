@@ -223,3 +223,26 @@ def test_session_pipeline_and_export(tmp):
     card = Path(files["print_card"]).read_text()
     assert "Print card" in card and "coupon" in card.lower()
     assert len(s.history()) >= 4
+
+
+CLIP = """// a snap clip: ring seat d=5.15 with a 4.0 mm mouth, 6 mm tall, mouth toward +y
+$fn = 96;
+difference() {
+  translate([-6, -6, 0]) cube([12, 12, 6]);
+  translate([0, 0, -1]) cylinder(d = 5.15, h = 8);
+  translate([-2.0, 0, -1]) cube([4.0, 10, 8]);
+}
+"""
+
+
+def test_notch_recipes_and_clipped_extent(tmp):
+    stl = _compile(tmp, "clip", CLIP)
+    m = G.load_mesh(stl)
+    nm = G.notch_measure(m, 3.0, "z", near=[0, 0])
+    assert nm is not None and nm["circle"] is not None
+    assert abs(nm["circle"].d - 5.15) < 0.05, nm["circle"]
+    assert abs(nm["mouth_width"] - 4.0) < 0.05, nm["mouth_width"]
+    assert nm["depth"] > 5.0
+    # region extents clip geometry instead of filtering vertices: a box from z=2 to z=10 sees 4 mm of a 6 mm part
+    assert abs(G.extent(m, "z", [[-20, -20, 2.0], [20, 20, 10.0]]) - 4.0) < 1e-6
+    assert abs(G.extent(m, "x", [[-20, -20, 2.0], [20, 20, 10.0]]) - 12.0) < 1e-6
