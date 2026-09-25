@@ -125,7 +125,9 @@ def run_iteration(session: Session, *, scad_text: str | None = None, spec: PartS
         signals.append("ITERATION BUDGET EXHAUSTED. Stop iterating: summarize what remains unresolved and call ask_user with the "
                        "specific decision you need, or finish with the best passing iteration if one exists.")
 
-    session.update_meta(iteration=n, status="iterating", last_ok=entry["ok"])
+    status = meta.get("status", "new")
+    new_status = "iterating" if status in ("new", "intake_done", "iterating", "running") else status
+    session.update_meta(iteration=n, status=new_status, last_ok=entry["ok"])
     res = IterationResult(n, comp, checks, bp, it_dir, time.time() - t0, signals, budget_left)
     (it_dir / "iteration.json").write_text(json.dumps(res.to_dict(), indent=2, default=str))
     (it_dir / "summary.txt").write_text(res.summary_for_model())
