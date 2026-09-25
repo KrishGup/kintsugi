@@ -47,6 +47,7 @@ kintsugi = ["agent/prompts/*.md", "templates/*.scad"]
 testpaths = ["tests"]
 timeout = 600
 addopts = "-q"
+filterwarnings = ["ignore::RuntimeWarning", "ignore::DeprecationWarning", "ignore::UserWarning"]
 markers = [
   "llm: needs a live model (skipped in CI)",
   "slow: long-running",

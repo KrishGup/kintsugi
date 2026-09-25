@@ -1,0 +1,89 @@
+part:
+  name: l_bracket
+  role: corner bracket that ties a shelf board to a wall panel; two M4 screws into each
+  object: 18 mm plywood shelf on a plasterboard wall with wall plugs
+  design_intent: base leg flat on the bed with vertical screw holes; vertical leg with teardrop horizontal holes; inside-corner fillet and a centre gusset
+
+interfaces:
+  - id: base_holes
+    type: hole_pattern
+    mates_with: two M4 screws into the shelf board
+    fit: loose
+    clearance: 0.5
+    dims:
+      hole_diameter:
+        target: 4.0
+        tol: 0.15
+        status: confirmed
+        estimates:
+          - {value: 4.0, source: user_stated, conf: 0.95}
+        measure: {recipe: circle_fit_inner, at_z: 2.5, near: [38, 8], feature: base hole}
+      positions:
+        tol: 0.6
+        status: confirmed
+        note: expect lists [x, y, modeled hole d = screw + clearance]
+        measure: {recipe: hole_positions, at_z: 2.5, expect: [[38, -8, 4.5], [38, 8, 4.5]], feature: base hole pattern}
+  - id: wall_holes
+    type: hole_pattern
+    mates_with: two M4 screws into wall plugs
+    fit: loose
+    clearance: 0.5
+    dims:
+      hole_diameter:
+        target: 4.0
+        tol: 0.15
+        status: confirmed
+        estimates:
+          - {value: 4.0, source: user_stated, conf: 0.95}
+        measure: {recipe: hole_extent, at_z: 2.5, plane_axis: x, axis: y, near: [8, 38], feature: wall hole width (teardrop, measured across)}
+      positions:
+        tol: 0.6
+        status: confirmed
+        note: section normal to X through the vertical leg; expect lists [y, z, modeled hole d]
+        measure: {recipe: hole_positions, at_z: 2.5, plane_axis: x, expect: [[-8, 38, 4.5], [8, 38, 4.5]], feature: wall hole pattern}
+
+requirements:
+  - id: size
+    text: 50 x 50 mm legs, 30 mm wide, 5 mm thick so the screws sit flush and the bracket clears the shelf lip
+    derived:
+      leg_a:
+        target: 50
+        tol: 0.3
+        measure: {recipe: extent, axis: x, feature: base leg length}
+      leg_b:
+        target: 50
+        tol: 0.3
+        measure: {recipe: extent, axis: z, feature: vertical leg height}
+      width:
+        target: 30
+        tol: 0.3
+        measure: {recipe: extent, axis: y, feature: width}
+      thickness:
+        target: 5
+        tol: 0.2
+        measure: {recipe: extent, axis: z, region: [[31, -20, -1], [52, 20, 60]], feature: base leg thickness (beyond the gusset)}
+  - id: load
+    text: carry a 10 kg shelf load per bracket with the gusset in compression; the inside corner must be filleted and the gusset at least two perimeters thick
+    derived:
+      gusset_wall:
+        min: 3.5
+        measure: {recipe: wall_min, region: [[5, -3, 5], [26, 3, 26]], feature: gusset thickness}
+
+context:
+  - {id: wall, shape: box, size: [6, 60, 70], at: [-6, -30, -6], allow_contact: true}
+  - {id: shelf, shape: box, size: [80, 60, 6], at: [-6, -30, -6], allow_contact: true}
+  - {id: base_screw_1, shape: cylinder, d: 4.0, h: 20, at: [38, -8, -8]}
+  - {id: base_screw_2, shape: cylinder, d: 4.0, h: 20, at: [38, 8, -8]}
+  - {id: wall_screw_1, shape: cylinder, d: 4.0, h: 20, axis: x, at: [-12, -8, 38]}
+  - {id: wall_screw_2, shape: cylinder, d: 4.0, h: 20, axis: x, at: [-12, 8, 38]}
+
+print:
+  material: PETG
+  nozzle: 0.4
+  layer_height: 0.2
+  min_wall: 1.6
+  orientation_hint: base leg flat on the bed, vertical leg standing; horizontal holes are teardrops so nothing needs support
+  supports_ok: false
+
+open_questions:
+  - countersunk or pan-head screws? (countersink option is off by default)

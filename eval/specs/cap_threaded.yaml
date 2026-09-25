@@ -1,0 +1,79 @@
+part:
+  name: cap_threaded
+  role: protective screw cap for the exposed M28x2.5 threaded end of a lifting-jack spindle; keeps grit out, hand-tight
+  object: M28 x 2.5 external thread, 10 mm engagement wanted, shoulder above the thread
+  design_intent: closed top on the bed, mouth up; plain lead-in counterbore at the mouth (measured), ISO internal thread, ribbed grip, plain rim
+
+interfaces:
+  - id: neck_thread
+    type: thread
+    mates_with: M28 x 2.5 external thread (spindle end)
+    fit: sliding
+    clearance: 0.25
+    side: female
+    note: >
+      the cap is the female side: its mouth counterbore is cut at the thread major diameter + clearance (the checker adds the
+      clearance because side is female); the section is taken in the plain mouth counterbore because a helical thread section is
+      not a circle (the thread itself is bounded separately under `engagement`)
+    dims:
+      outer_diameter:
+        target: 28.0
+        tol: 0.3
+        status: confirmed
+        estimates:
+          - {value: 27.95, source: user_caliper, conf: 0.95}
+        measure: {recipe: circle_fit_inner, at_z: 16.0, near: [0, 0], feature: mouth counterbore (thread major + clearance)}
+      pitch:
+        target: 2.5
+        tol: 0.05
+        status: confirmed
+        estimates:
+          - {value: 2.5, source: user_stated, conf: 0.95, note: thread gauge}
+      thread_length:
+        target: 10
+        tol: 0.5
+        status: confirmed
+        estimates:
+          - {value: 10, source: user_stated, conf: 0.9}
+        measure: {recipe: extent, axis: z, region: [[-14.3, -14.3, 4.9], [14.3, 14.3, 15.1]], feature: threaded length (cone start to counterbore)}
+
+requirements:
+  - id: engagement
+    text: the thread must actually be there — the hole across the threaded zone must be smaller than the major diameter and larger than the spindle's root diameter (24.9)
+    derived:
+      thread_zone_width:
+        min: 25.8
+        max: 27.8
+        measure: {recipe: hole_extent, at_z: 10.0, axis: x, near: [0, 0], feature: hole width across the thread (between crest and root)}
+  - id: closed_top
+    text: the top must be closed and at least 2.5 mm thick so a dropped cap does not crack
+    derived:
+      top_wall:
+        min: 2.5
+        measure: {recipe: wall_min, region: [[-10, -10, -0.5], [10, 10, 3.2]], feature: top plate thickness}
+  - id: grip
+    text: ribbed outside, about 36 mm across, with a plain band at the mouth; overall height 17 mm
+    derived:
+      rim_diameter:
+        min: 33
+        max: 40
+        measure: {recipe: circle_fit_outer, at_z: 16.0, near: [0, 0], feature: rim outer diameter}
+      height:
+        target: 17
+        tol: 0.3
+        measure: {recipe: extent, axis: z, feature: cap height}
+
+context:
+  - {id: spindle_core, shape: cylinder, d: 24.6, h: 30, at: [0, 0, 3.5]}
+  - {id: shoulder, shape: cylinder, d: 44, h: 5, at: [0, 0, 17.5]}
+
+print:
+  material: PETG
+  nozzle: 0.4
+  layer_height: 0.2
+  min_wall: 1.6
+  orientation_hint: closed top on the bed, mouth up (as modeled); the only overhangs are the 30° ISO thread flanks, which are short and print without support (the soft overhang check reports them)
+  supports_ok: false
+
+open_questions:
+  - is the spindle thread really ISO 60°, or a trapezoidal jack thread? (a Tr28x5 would need a different profile and pitch)

@@ -1,0 +1,60 @@
+part:
+  name: spacer_gasket
+  role: flat spacer ring under a bolt head; keeps a bracket 3 mm off the panel and takes the clamping load
+  object: M8 bolt through a bracket foot
+  design_intent: plain ring with a keying notch on the outer edge; printed flat; light chamfer on the bed edge
+
+interfaces:
+  - id: bolt_bore
+    type: cylindrical_bore
+    mates_with: M8 bolt shank
+    fit: sliding
+    clearance: 0.3
+    dims:
+      inner_diameter:
+        target: 8.0
+        tol: 0.15
+        status: confirmed
+        estimates:
+          - {value: 7.95, source: user_caliper, conf: 0.95}
+        measure: {recipe: circle_fit_inner, at_z: 1.5, near: [0, 0], feature: bore}
+      thickness:
+        target: 3.0
+        tol: 0.1
+        status: confirmed
+        estimates:
+          - {value: 3.0, source: user_stated, conf: 0.9}
+        measure: {recipe: extent, axis: z, feature: thickness}
+      outer_diameter:
+        min: 18
+        max: 24
+        status: confirmed
+        estimates:
+          - {value: 20, source: user_stated, conf: 0.9}
+        measure: {recipe: circle_fit_outer, at_z: 1.5, near: [0, 0], feature: outer diameter}
+
+requirements:
+  - id: bearing_face
+    text: the ring must carry the bolt-head bearing face (13 mm washer face) with a full wall all round
+    derived:
+      wall_thickness:
+        min: 1.6
+        measure: {recipe: wall_min, feature: ring wall}
+  - id: keying
+    text: a 2 mm notch on the outer edge indexes the spacer against a rib; it must not cut the wall below two perimeters (covered by wall_thickness)
+
+context:
+  - {id: bolt, shape: cylinder, d: 8.0, h: 20, at: [0, 0, -8]}
+  - {id: panel, shape: cylinder, d: 30, h: 3, at: [0, 0, -3.0], allow_contact: true}
+  - {id: bolt_head, shape: cylinder, d: 13, h: 5, at: [0, 0, 3.05]}
+
+print:
+  material: PETG
+  nozzle: 0.4
+  layer_height: 0.2
+  min_wall: 1.6
+  orientation_hint: flat on the bed; the bore axis is vertical
+  supports_ok: false
+
+open_questions:
+  - is the notch needed, or can the spacer be a plain ring?

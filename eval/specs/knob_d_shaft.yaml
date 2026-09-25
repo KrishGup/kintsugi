@@ -1,0 +1,87 @@
+part:
+  name: knob_d_shaft
+  role: replacement volume knob on a 6 mm D-shaft potentiometer; fluted grip, pointer towards the flat
+  object: guitar amplifier front panel, 6 mm D-shaft (5.5 mm across the flat)
+  design_intent: D bore opening downward with a 50° closing cone; plain skirt band; 12 flutes; set screw onto the flat
+
+interfaces:
+  - id: shaft_bore
+    type: cylindrical_bore
+    mates_with: 6 mm D-shaft, flat 0.5 mm deep
+    fit: sliding
+    clearance: 0.2
+    dims:
+      inner_diameter:
+        target: 6.0
+        tol: 0.15
+        status: confirmed
+        estimates:
+          - {value: 6.0, source: user_caliper, conf: 0.95}
+        measure: {recipe: circle_fit_inner, at_z: 2.5, near: [0, 0], feature: D bore (round part)}
+      width:
+        target: 5.5
+        tol: 0.15
+        status: confirmed
+        note: dimension across the flat of the D; the bore spans this + clearance along Y
+        estimates:
+          - {value: 5.5, source: user_caliper, conf: 0.95}
+        measure: {recipe: hole_extent, at_z: 2.5, axis: y, near: [0, 0], feature: D bore across the flat}
+      flat_depth:
+        target: 0.5
+        tol: 0.1
+        status: confirmed
+        note: derived = inner_diameter - width; not measured directly (the checker reads the across-flat width)
+      bore_depth:
+        target: 11
+        tol: 0.3
+        status: confirmed
+        estimates:
+          - {value: 11, source: user_stated, conf: 0.9, note: shaft protrudes 10 mm from the panel}
+        measure: {recipe: extent, axis: z, region: [[-3.8, -3.8, -0.5], [3.8, 2.5, 12]], feature: bore depth (to the cone base)}
+  - id: set_screw
+    type: thread
+    mates_with: M3 grub screw, thread-forming into the pilot hole
+    fit: press
+    clearance: 0.5
+    dims:
+      outer_diameter:
+        target: 3.0
+        tol: 0.15
+        status: confirmed
+        note: pilot hole = screw OD - 0.5 (the screw cuts its own thread in PETG)
+        measure: {recipe: hole_extent, at_z: 8.0, plane_axis: y, axis: x, near: [0, 7], feature: set screw pilot hole (teardrop, measured across)}
+
+requirements:
+  - id: grip
+    text: comfortable to turn with two fingers; about 30 mm across with flutes, and a plain band at the skirt
+    derived:
+      knob_diameter:
+        min: 26
+        max: 34
+        measure: {recipe: circle_fit_outer, at_z: 1.5, near: [0, 0], feature: skirt diameter}
+      height:
+        target: 18
+        tol: 0.3
+        measure: {recipe: extent, axis: z, feature: knob height}
+  - id: top_wall
+    text: the closed top over the bore must be at least two perimeters thick so it does not crack when pressed on
+    derived:
+      top_wall:
+        min: 2.5
+        measure: {recipe: wall_min, region: [[-4, -4, 11], [4, 4, 18.5]], feature: top wall over the bore}
+
+context:
+  - {id: shaft_core, shape: cylinder, d: 5.4, h: 16, at: [0, -0.3, -6]}
+  - {id: shaft_flat_zone, shape: box, size: [3.2, 5.0, 16], at: [-1.6, -2.5, -6]}
+  - {id: panel, shape: cylinder, d: 40, h: 3, at: [0, 0, -4]}
+
+print:
+  material: PETG
+  nozzle: 0.4
+  layer_height: 0.2
+  min_wall: 1.6
+  orientation_hint: bore mouth down on the bed (as modeled); the blind bore closes with a 50° cone so nothing bridges
+  supports_ok: false
+
+open_questions:
+  - does the pointer need to align with a printed scale on the panel?

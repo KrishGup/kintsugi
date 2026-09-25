@@ -1,0 +1,84 @@
+part:
+  name: snap_clip
+  role: cable-tray edge clip; snaps over the 3 mm lip of a sheet-metal tray and is screwed to the wall through its ear
+  object: 3.0 mm folded lip on a cable tray, M3 screw into a wall plug
+  design_intent: U channel with a rigid jaw and a flexing barbed arm; lead-in chamfers; mounting ear beside the jaw; printed standing so the arm flexes along the layers
+
+interfaces:
+  - id: rail_slot
+    type: slot
+    mates_with: the tray lip, 3.0 mm thick, seating 12 mm deep (within 0.25 mm of the floor)
+    fit: sliding
+    clearance: 0.3
+    dims:
+      width:
+        target: 3.0
+        tol: 0.15
+        status: confirmed
+        estimates:
+          - {value: 3.0, source: user_caliper, conf: 0.95}
+        measure: {recipe: extent, axis: y, region: [[0.5, -3.0, -1], [15.8, 3.0, 13]], feature: slot width between the jaw faces}
+      length:
+        target: 12
+        tol: 0.3
+        status: confirmed
+        note: clip length along the rail (extrusion height)
+        estimates:
+          - {value: 12, source: user_stated, conf: 0.9}
+        measure: {recipe: extent, axis: z, feature: clip length along the rail}
+  - id: mount_hole
+    type: hole_pattern
+    mates_with: M3 screw through the ear into a wall plug
+    fit: loose
+    clearance: 0.4
+    dims:
+      hole_diameter:
+        target: 3.0
+        tol: 0.15
+        status: confirmed
+        estimates:
+          - {value: 3.0, source: user_stated, conf: 0.95}
+        measure: {recipe: hole_extent, at_z: -1.5, plane_axis: x, axis: y, near: [-9.15, 6], feature: screw hole width (teardrop, measured across)}
+      positions:
+        tol: 0.6
+        status: confirmed
+        note: section normal to X through the ear; expect lists [y, z, modeled hole d = screw + clearance]
+        measure: {recipe: hole_positions, at_z: -1.5, plane_axis: x, expect: [[-9.15, 6, 3.4]], feature: screw hole position}
+
+requirements:
+  - id: snap
+    text: the arm must deflect by the barb height without exceeding 3 % strain (PETG); barb 1.0 mm, arm 1.8 mm, cantilever >= 9.5 mm
+    derived:
+      arm_thickness:
+        target: 1.8
+        tol: 0.1
+        measure: {recipe: section_extent, at_z: 8.0, plane_axis: x, axis: y, near: [2.5, 6], feature: arm thickness}
+      arm_plus_barb:
+        target: 2.8
+        tol: 0.1
+        measure: {recipe: section_extent, at_z: 12.6, plane_axis: x, axis: y, near: [2.0, 6], feature: arm + barb height at the catch}
+  - id: footprint
+    text: must fit between neighbouring clips on a 25 mm pitch and stand off the wall by no more than 20 mm
+    derived:
+      overall_width:
+        max: 20
+        measure: {recipe: extent, axis: y, feature: overall width (ear to arm)}
+      standoff:
+        max: 20
+        measure: {recipe: extent, axis: x, feature: wall face to jaw tips}
+
+context:
+  - {id: rail_lip, shape: box, size: [12, 3.0, 22], at: [0.25, -1.5, -5]}   # seated: corners ride up the root fillets
+  - {id: wall, shape: box, size: [4, 40, 30], at: [-7, -25, -8], allow_contact: true}
+  - {id: screw, shape: cylinder, d: 3.0, h: 12, axis: x, at: [-9, -9.15, 6]}
+
+print:
+  material: PETG
+  nozzle: 0.4
+  layer_height: 0.2
+  min_wall: 1.6
+  orientation_hint: standing on the channel end (as modeled) so the arm bends within the layer plane; screw hole is a teardrop
+  supports_ok: false
+
+open_questions:
+  - should the barb be releasable (45° retaining face) or a permanent hook?

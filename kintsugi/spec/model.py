@@ -132,6 +132,7 @@ class Interface(BaseModel):
     mates_with: str = ""
     fit: Fit = "sliding"
     clearance: float | None = None  # on diameter; None means use material default
+    side: Literal["male", "female"] | None = None  # which side of the mate the PART is: female receives (bore, nut, cap), male enters (boss, pin, bolt)
     dims: dict[str, Dim] = Field(default_factory=dict)
     note: str | None = None
 

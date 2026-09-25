@@ -179,16 +179,29 @@ def clearance_offsets(spec: PartSpec) -> dict[str, float]:
     a boss that enters a hole is made smaller. Anything else is checked as-is.
     """
     out: dict[str, float] = {}
+    female_names = ("inner_diameter", "bore", "id", "hole_diameter", "width", "slot_width")
+    male_names = ("outer_diameter", "od", "boss_diameter", "pin_diameter")
     for itf in spec.interfaces:
         if itf.fit == "none":
             continue
         c = spec.clearance_for(itf)
+        side = itf.side
+        if side is None:
+            side = "female" if itf.type in ("cylindrical_bore", "slot", "hole_pattern") else ("male" if itf.type in ("cylindrical_boss", "snap") else None)
         for key in itf.dims:
             k = key.lower()
-            if itf.type in ("cylindrical_bore", "slot", "hole_pattern") and (k in ("inner_diameter", "bore", "id", "hole_diameter", "width", "slot_width") or k.endswith("_bore") or k.endswith("_id")):
+            receives = k in female_names or k.endswith("_bore") or k.endswith("_id")
+            enters = k in male_names or k.endswith("_od")
+            if side == "female" and (receives or (itf.type == "thread" and enters)):
+                # the part is the receiving side: its opening is the mate's size plus clearance
                 out[f"{itf.id}.{key}"] = +c
-            elif itf.type in ("cylindrical_boss", "snap", "thread") and (k in ("outer_diameter", "od", "boss_diameter", "pin_diameter") or k.endswith("_od")):
+            elif side == "male" and (enters or (itf.type == "thread" and receives)):
                 out[f"{itf.id}.{key}"] = -c
+            elif side is None:
+                if receives:
+                    out[f"{itf.id}.{key}"] = +c
+                elif enters:
+                    out[f"{itf.id}.{key}"] = -c
     return out
 
 

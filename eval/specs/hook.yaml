@@ -1,0 +1,75 @@
+part:
+  name: hook
+  role: wall hook for a coiled 12 mm garden hose; screwed to a fence post with two M4 screws
+  object: timber fence post, hose coil hangs in the throat
+  design_intent: plate with two teardrop screw holes, J hook with a 16 mm throat, filleted root; printed on its side so the load runs along the layers
+
+interfaces:
+  - id: mount_holes
+    type: hole_pattern
+    mates_with: two M4 wood screws into the post
+    fit: loose
+    clearance: 0.5
+    dims:
+      hole_diameter:
+        target: 4.0
+        tol: 0.15
+        status: confirmed
+        estimates:
+          - {value: 4.0, source: user_stated, conf: 0.95}
+        measure: {recipe: hole_extent, at_z: 2.0, plane_axis: x, axis: y, near: [15, 10], feature: screw hole width (teardrop, measured across)}
+      positions:
+        tol: 0.6
+        status: confirmed
+        note: section normal to X through the plate; expect lists [y, z, modeled hole d = screw + clearance]
+        measure: {recipe: hole_positions, at_z: 2.0, plane_axis: x, expect: [[-15, 10, 4.5], [15, 10, 4.5]], feature: screw hole pattern}
+
+requirements:
+  - id: load
+    text: hold 5 kg (a full hose coil) with a safety factor of 3 on printed PETG; the shank is a cantilever sized by the bending rule
+    derived:
+      arm_thickness:
+        target: 6.0
+        tol: 0.2
+        measure: {recipe: section_extent, at_z: 10.0, plane_axis: x, axis: y, near: [-22, 10], feature: shank thickness}
+  - id: throat
+    text: the hose coil (12 mm hose) must drop into the throat and not slip over the tip
+    derived:
+      throat_depth:
+        min: 15
+        measure: {recipe: extent, axis: x, region: [[3.99, -11.01, -1], [24.01, 25.1, 21]], feature: throat depth (wall face to tip inner face)}
+      tip_rise:
+        min: 8
+        measure: {recipe: extent, axis: y, region: [[24.5, -11.01, -1], [30.1, 25.1, 21]], feature: tip rise above the curl centre}
+  - id: footprint
+    text: 30 mm reach, 50 mm plate, 20 mm wide so it prints on its side within a small bed
+    derived:
+      reach:
+        target: 30
+        tol: 0.3
+        measure: {recipe: extent, axis: x, feature: reach}
+      plate_length:
+        target: 50
+        tol: 0.3
+        measure: {recipe: extent, axis: y, feature: plate length}
+      width:
+        target: 20
+        tol: 0.3
+        measure: {recipe: extent, axis: z, feature: hook width}
+
+context:
+  - {id: wall, shape: box, size: [6, 70, 40], at: [-6, -35, -10], allow_contact: true}
+  - {id: screw_1, shape: cylinder, d: 4.0, h: 20, axis: x, at: [-12, -15, 10]}
+  - {id: screw_2, shape: cylinder, d: 4.0, h: 20, axis: x, at: [-12, 15, 10]}
+  - {id: hose, shape: cylinder, d: 12, h: 30, at: [16, -12.7, -5]}
+
+print:
+  material: PETG
+  nozzle: 0.4
+  layer_height: 0.2
+  min_wall: 1.6
+  orientation_hint: on its side, the J profile flat on the bed; the screw holes are teardrops so the ceilings need no support
+  supports_ok: false
+
+open_questions:
+  - is a 16 mm throat enough for the hose plus its fitting?
