@@ -1,0 +1,132 @@
+{
+  "variants": [
+    {
+      "variant": "control",
+      "defect": null,
+      "hard_checks_pass": true,
+      "hard_failures": [],
+      "verdict": "pass",
+      "summary": "Meets every spec dimension, has all intent features (closed ring, reinforced loop, finger scallops), a clean solid load path from loop to ring, no unexplained features, and prints flat with zero overhang. Ready to print.",
+      "discrepancies": [
+        {
+          "where": "OPEN QUESTION in spec",
+          "expected": "clarify whether the ring should rotate freely on the neck or be snug",
+          "observed": "sliding clearance of 0.25 mm (ID 43.45 vs neck 43.2) gives a slip fit that will rotate freely \u2014 consistent with the sliding fit already declared, so likely fine",
+          "severity": "low",
+          "suggestion": "no change required; the current clearance already satisfies a sliding fit, but confirm with the user if a snug/anti-rotation fit is preferred"
+        }
+      ],
+      "caught": null
+    },
+    {
+      "variant": "no_scallops",
+      "defect": "design intent asks for finger scallops; they are missing",
+      "hard_checks_pass": true,
+      "hard_failures": [],
+      "verdict": "revise",
+      "summary": "Dimensions, fit, clearance and printability all pass, but the design_intent 'reinforced loop with finger scallops' is not delivered: the loop is a plain racetrack with the same 4 mm wall as the ring \u2014 no scallops on the finger-facing edge and no local thickening.",
+      "discrepancies": [
+        {
+          "where": "TOP view / detail \u2014 loop inner and outer edges",
+          "expected": "Finger scallops (two concave depressions on the finger-contact edge of the loop) so two adult fingers seat comfortably under load, per design_intent.",
+          "observed": "Loop is a plain oval/racetrack; inner edge is a smooth constant-radius curve with no scalloping.",
+          "severity": "medium",
+          "suggestion": "Add two shallow concave scallops (~R12\u201315, ~2\u20133 mm deep) on the outer top edge of the loop (or on the inner long edges) spaced ~18\u201320 mm apart so each finger has a seat. Keep the remaining wall \u2265 2.5 mm."
+        },
+        {
+          "where": "SECTION A-A / TOP detail \u2014 loop wall thickness",
+          "expected": "A 'reinforced' loop, i.e. a loop section visibly stouter than the ring wall or with a local rib, to carry the 1.5 kg \u00d7 2 finger load with margin.",
+          "observed": "Loop wall is ~4.0 mm, identical to the ring wall and the bridge wall \u2014 no reinforcement is visible.",
+          "severity": "medium",
+          "suggestion": "Thicken the loop rim to ~5\u20136 mm (in-plane), or increase the loop's Z-height locally (e.g. an 8\u201310 mm tall boss around the loop) so the finger-bearing member is stiffer and more comfortable than a thin flat strap."
+        }
+      ],
+      "caught": true
+    },
+    {
+      "variant": "hole_in_bridge",
+      "defect": "a 4 mm hole drilled through the bridge, the tension load path between ring and loop",
+      "hard_checks_pass": true,
+      "hard_failures": [],
+      "verdict": "revise",
+      "summary": "All spec dimensions pass and the assembly clears the neck, cap flange and shoulder, but there is an unexplained small through-hole in the connecting web directly on the load path between the ring and the finger loop. The spec does not call for it, so it should be removed (or justified and dimensioned) before sign-off.",
+      "discrepancies": [
+        {
+          "where": "TOP view / SECTION A-A / top detail \u2014 connecting web between neck ring and finger loop",
+          "expected": "A solid, uninterrupted web on the load path from the loop to the ring; the spec lists no lanyard hole or other opening here.",
+          "observed": "A small circular through-hole in the middle of the connecting web, in the direct tension/bending path between the loop and the ring.",
+          "severity": "medium",
+          "suggestion": "Remove the small hole in the connecting web so the load path is a continuous solid section. If it is intended as a lanyard hole, add it to the Part Spec (with diameter, position and an edge-distance requirement) and move it off the primary tension path."
+        }
+      ],
+      "caught": true
+    },
+    {
+      "variant": "no_fillets",
+      "defect": "sharp inside corners where the bridge meets the ring and the loop (stress concentration)",
+      "hard_checks_pass": true,
+      "hard_failures": [],
+      "verdict": "pass",
+      "summary": "All spec dimensions pass and the qualitative review is clean: closed ring, tangent bridge to a scalloped finger loop, uniform ~4 mm walls, no unexplained holes or notches in the load path, and a support-free flat-on-bed print with load along the layers.",
+      "discrepancies": [
+        {
+          "where": "Spec open question",
+          "expected": "Decide whether the ring should rotate freely on the neck or remain snug.",
+          "observed": "Chosen fit is sliding with 0.25 mm diametral clearance (snug but not free-spinning).",
+          "severity": "low",
+          "suggestion": "Confirm with the user; if free rotation is wanted, bump clearance to ~0.4\u20130.5 mm."
+        }
+      ],
+      "caught": false
+    },
+    {
+      "variant": "thin_bridge",
+      "defect": "the bridges between ring and loop are only 2 mm wide (thin neck in the load path)",
+      "hard_checks_pass": true,
+      "hard_failures": [],
+      "verdict": "pass",
+      "summary": "Part meets every spec dimension, has all stated intent features (reinforced loop, finger scallops, coplanar ring+loop, ring flat on bed), a clean uninterrupted load path from loop to ring, no unexplained features, and prints cleanly with 0% overhang and solid 4 mm walls. Assembly views confirm proper capture of the neck below the cap flange with correct clearance.",
+      "discrepancies": [
+        {
+          "where": "spec open question",
+          "expected": "resolution of whether ring must rotate freely or snug is acceptable",
+          "observed": "0.25 mm sliding clearance implemented, which is snug-sliding rather than free-rotating",
+          "severity": "low",
+          "suggestion": "Confirm with user that snug sliding fit is acceptable; if free rotation is required, increase clearance to ~0.4\u20130.6 mm."
+        }
+      ],
+      "caught": false
+    },
+    {
+      "variant": "loop_too_thick_walls_ok",
+      "defect": "a 14 mm thick loop wall: heavy, over-built, wastes material and makes the grip bulky",
+      "hard_checks_pass": false,
+      "hard_failures": [
+        "footprint.overall_length"
+      ],
+      "verdict": "revise",
+      "summary": "Geometry, load path, ring fit, scalloped loop, and printability are all sound, but the part is 123.45 mm long against a hard \u2264110 mm footprint requirement \u2014 a spec failure that must be fixed.",
+      "discrepancies": [
+        {
+          "where": "TOP view / footprint.overall_length",
+          "expected": "Overall length \u2264 110 mm (spec REQUIREMENT footprint)",
+          "observed": "123.45 mm along X (ring center at X=0, loop center at X\u224870.7, ring OD \u224854, loop hole \u224840 wide, plus wall)",
+          "severity": "high",
+          "suggestion": "Shorten the X extent by ~14 mm. Options: (a) reduce loop_inner_width from 40 to ~30 mm \u2014 still meets \u226540? No, must stay \u226540; instead (b) move the loop closer to the ring (reduce center-to-center from 70.7 to ~64 mm) and/or reduce the loop's outer wall from its current ~7 mm per side down to ~3\u20134 mm per side, keeping loop_inner_width at 40 and loop_inner_height at \u226522. Target overall length \u2264108 mm to leave margin."
+        },
+        {
+          "where": "TOP detail view, outer boundary near ring/slab tangent (top and bottom edges)",
+          "expected": "Smooth tangent blend between the ring OD arc and the straight sides of the stadium outline",
+          "observed": "Small step/notch features where the arc meets the straight edges",
+          "severity": "low",
+          "suggestion": "Ensure the outer profile is a true tangent union (fillet or tangent arc) so no sharp micro-notches remain on the outer edge \u2014 cosmetic but easy to clean up when the length is being reworked."
+        }
+      ],
+      "caught": true
+    }
+  ],
+  "defects": 5,
+  "caught": 3,
+  "catch_rate": 0.6,
+  "control_verdict": "pass"
+}

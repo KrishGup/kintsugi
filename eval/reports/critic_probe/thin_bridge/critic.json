@@ -1,0 +1,18 @@
+{
+  "variant": "thin_bridge",
+  "defect": "the bridges between ring and loop are only 2 mm wide (thin neck in the load path)",
+  "hard_checks_pass": true,
+  "hard_failures": [],
+  "verdict": "pass",
+  "summary": "Part meets every spec dimension, has all stated intent features (reinforced loop, finger scallops, coplanar ring+loop, ring flat on bed), a clean uninterrupted load path from loop to ring, no unexplained features, and prints cleanly with 0% overhang and solid 4 mm walls. Assembly views confirm proper capture of the neck below the cap flange with correct clearance.",
+  "discrepancies": [
+    {
+      "where": "spec open question",
+      "expected": "resolution of whether ring must rotate freely or snug is acceptable",
+      "observed": "0.25 mm sliding clearance implemented, which is snug-sliding rather than free-rotating",
+      "severity": "low",
+      "suggestion": "Confirm with user that snug sliding fit is acceptable; if free rotation is required, increase clearance to ~0.4\u20130.6 mm."
+    }
+  ],
+  "caught": false
+}

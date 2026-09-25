@@ -1,0 +1,18 @@
+{
+  "variant": "no_fillets",
+  "defect": "sharp inside corners where the bridge meets the ring and the loop (stress concentration)",
+  "hard_checks_pass": true,
+  "hard_failures": [],
+  "verdict": "pass",
+  "summary": "All spec dimensions pass and the qualitative review is clean: closed ring, tangent bridge to a scalloped finger loop, uniform ~4 mm walls, no unexplained holes or notches in the load path, and a support-free flat-on-bed print with load along the layers.",
+  "discrepancies": [
+    {
+      "where": "Spec open question",
+      "expected": "Decide whether the ring should rotate freely on the neck or remain snug.",
+      "observed": "Chosen fit is sliding with 0.25 mm diametral clearance (snug but not free-spinning).",
+      "severity": "low",
+      "suggestion": "Confirm with the user; if free rotation is wanted, bump clearance to ~0.4\u20130.5 mm."
+    }
+  ],
+  "caught": false
+}

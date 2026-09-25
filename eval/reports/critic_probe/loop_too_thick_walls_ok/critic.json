@@ -1,0 +1,27 @@
+{
+  "variant": "loop_too_thick_walls_ok",
+  "defect": "a 14 mm thick loop wall: heavy, over-built, wastes material and makes the grip bulky",
+  "hard_checks_pass": false,
+  "hard_failures": [
+    "footprint.overall_length"
+  ],
+  "verdict": "revise",
+  "summary": "Geometry, load path, ring fit, scalloped loop, and printability are all sound, but the part is 123.45 mm long against a hard \u2264110 mm footprint requirement \u2014 a spec failure that must be fixed.",
+  "discrepancies": [
+    {
+      "where": "TOP view / footprint.overall_length",
+      "expected": "Overall length \u2264 110 mm (spec REQUIREMENT footprint)",
+      "observed": "123.45 mm along X (ring center at X=0, loop center at X\u224870.7, ring OD \u224854, loop hole \u224840 wide, plus wall)",
+      "severity": "high",
+      "suggestion": "Shorten the X extent by ~14 mm. Options: (a) reduce loop_inner_width from 40 to ~30 mm \u2014 still meets \u226540? No, must stay \u226540; instead (b) move the loop closer to the ring (reduce center-to-center from 70.7 to ~64 mm) and/or reduce the loop's outer wall from its current ~7 mm per side down to ~3\u20134 mm per side, keeping loop_inner_width at 40 and loop_inner_height at \u226522. Target overall length \u2264108 mm to leave margin."
+    },
+    {
+      "where": "TOP detail view, outer boundary near ring/slab tangent (top and bottom edges)",
+      "expected": "Smooth tangent blend between the ring OD arc and the straight sides of the stadium outline",
+      "observed": "Small step/notch features where the arc meets the straight edges",
+      "severity": "low",
+      "suggestion": "Ensure the outer profile is a true tangent union (fillet or tangent arc) so no sharp micro-notches remain on the outer edge \u2014 cosmetic but easy to clean up when the length is being reworked."
+    }
+  ],
+  "caught": true
+}

@@ -29,6 +29,7 @@ class CriticVerdict:
     raw: str = ""
     model: str | None = None
     duration_s: float = 0.0
+    inspection: dict[str, Any] = field(default_factory=dict)
 
     @property
     def passed(self) -> bool:
@@ -36,7 +37,8 @@ class CriticVerdict:
 
     def to_dict(self) -> dict[str, Any]:
         return {"verdict": self.verdict, "summary": self.summary, "discrepancies": self.discrepancies,
-                "question_for_user": self.question_for_user, "model": self.model, "duration_s": round(self.duration_s, 1)}
+                "question_for_user": self.question_for_user, "model": self.model, "duration_s": round(self.duration_s, 1),
+                "inspection": self.inspection}
 
     def summary_for_model(self) -> str:
         lines = [f"CRITIC VERDICT: {self.verdict.upper()} — {self.summary}"]
@@ -63,12 +65,28 @@ def _image_block(path: Path, max_side: int = 1600) -> dict[str, Any] | None:
     return {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64.b64encode(buf.getvalue()).decode()}}
 
 
+def detail_views(sheets: list[Path]) -> list[Path]:
+    """Higher-resolution single views that accompany the composed sheets: the top view and the first section."""
+    out: list[Path] = []
+    for p in sheets:
+        vd = p.parent / "views"
+        if not vd.exists():
+            continue
+        stem = p.stem.rsplit("_", 1)[0]  # iter_04
+        for name in (f"{stem}_top_detail.png", f"{stem}_section_A.png", f"{stem}_front_detail.png"):
+            q = vd / name
+            if q.exists() and q not in out:
+                out.append(q)
+        break
+    return out
+
+
 def build_critic_content(spec: PartSpec, report: CheckReport | None, sheets: list[Path], prev_sheets: list[Path] | None = None,
                          photos: list[Path] | None = None, extra_context: str = "") -> list[dict[str, Any]]:
     content: list[dict[str, Any]] = []
     text = ["PART SPEC:", spec.summary_for_model(), ""]
     if report:
-        text += ["CHECK TABLE (measured on the exported mesh):", report.summary_for_model(), ""]
+        text += ["CHECK TABLE (measured on the exported mesh; covers only the dimensions listed in the spec):", report.summary_for_model(), ""]
     if extra_context:
         text += [extra_context, ""]
     content.append({"type": "text", "text": "\n".join(text)})
@@ -76,6 +94,11 @@ def build_critic_content(spec: PartSpec, report: CheckReport | None, sheets: lis
         blk = _image_block(p)
         if blk:
             content.append({"type": "text", "text": f"CURRENT ITERATION — sheet {i+1}: {p.name}"})
+            content.append(blk)
+    for p in detail_views(sheets):
+        blk = _image_block(p, max_side=1600)
+        if blk:
+            content.append({"type": "text", "text": f"CURRENT ITERATION — detail view at full resolution: {p.name}"})
             content.append(blk)
     for i, p in enumerate(prev_sheets or []):
         blk = _image_block(p, max_side=1000)
@@ -107,8 +130,14 @@ def parse_verdict(text: str) -> CriticVerdict:
     v = str(d.get("verdict", "error")).lower()
     if v not in ("pass", "revise", "ask_user"):
         v = "error"
-    return CriticVerdict(v, summary=str(d.get("summary", "")), discrepancies=list(d.get("discrepancies") or []),
-                         question_for_user=d.get("question_for_user"), raw=raw)
+    disc = list(d.get("discrepancies") or [])
+    # a medium/high discrepancy means revise, whatever the verdict field says
+    if v == "pass" and any(str(x.get("severity", "")).lower() in ("high", "medium") for x in disc):
+        v = "revise"
+    verdict = CriticVerdict(v, summary=str(d.get("summary", "")), discrepancies=disc,
+                            question_for_user=d.get("question_for_user"), raw=raw)
+    verdict.inspection = d.get("inspection") or {}
+    return verdict
 
 
 async def critique(spec: PartSpec, report: CheckReport | None, sheets: list[Path], *, prev_sheets: list[Path] | None = None,

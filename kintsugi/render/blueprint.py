@@ -76,6 +76,17 @@ def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | 
         p = views_dir / f"iter_{iteration:02d}_{v}.png"
         cv2.imwrite(str(p), vi.img)
         view_paths[v] = p
+    # high-resolution detail views for the critic (small features such as scallops, fillets, holes)
+    detail_scale = min(14.0, max(scale * 2.5, 1400.0 / max(float(mesh.extents.max()), 1e-6)))
+    for v in ("top", "front"):
+        try:
+            vi = render_view(mesh, v, detail_scale, margin_px=40)
+            draw_axes_and_label(vi, f"{VIEW_LABELS[v]} — DETAIL ({detail_scale:.1f} px/mm)")
+            p = views_dir / f"iter_{iteration:02d}_{v}_detail.png"
+            cv2.imwrite(str(p), vi.img)
+            view_paths[f"{v}_detail"] = p
+        except Exception:
+            pass
 
     # ---- sections
     section_panels: list[Panel] = []

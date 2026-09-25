@@ -1,0 +1,24 @@
+{
+  "sheet": "eval/reports/critic_probe/control/sheets/iter_01_sheet.png",
+  "sections": "eval/reports/critic_probe/control/sheets/iter_01_sections.png",
+  "views": {
+    "top": "eval/reports/critic_probe/control/sheets/views/iter_01_top.png",
+    "iso": "eval/reports/critic_probe/control/sheets/views/iter_01_iso.png",
+    "front": "eval/reports/critic_probe/control/sheets/views/iter_01_front.png",
+    "right": "eval/reports/critic_probe/control/sheets/views/iter_01_right.png",
+    "bottom": "eval/reports/critic_probe/control/sheets/views/iter_01_bottom.png",
+    "left": "eval/reports/critic_probe/control/sheets/views/iter_01_left.png",
+    "back": "eval/reports/critic_probe/control/sheets/views/iter_01_back.png",
+    "top_detail": "eval/reports/critic_probe/control/sheets/views/iter_01_top_detail.png",
+    "front_detail": "eval/reports/critic_probe/control/sheets/views/iter_01_front_detail.png"
+  },
+  "section_views": {
+    "A": "eval/reports/critic_probe/control/sheets/views/iter_01_section_A.png"
+  },
+  "assembly": {
+    "top": "eval/reports/critic_probe/control/sheets/views/iter_01_assembly_top.png",
+    "front": "eval/reports/critic_probe/control/sheets/views/iter_01_assembly_front.png",
+    "iso": "eval/reports/critic_probe/control/sheets/views/iter_01_assembly_iso.png"
+  },
+  "scale_px_per_mm": 5.116687894830135
+}

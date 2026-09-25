@@ -39,8 +39,8 @@ module outline2d() {
     offset(r = -fillet_r) offset(r = fillet_r) union() {
         circle(d = ring_od);
         translate([loop_cx, 0]) stadium2d(loop_ow, loop_oh);
-        // bridges: two bars tangent-ish to the ring, leaving the bore closed
-        for (s = [-1, 1]) translate([ring_od / 2 - 1, s * (loop_oh / 2 - loop_thick / 2) - loop_thick / 2]) square([bridge_len + 2, loop_thick]);
+        // solid bridge from the ring to the loop, as tall as the loop, so the load path has no waist or notch
+        translate([0, -loop_oh / 2]) square([loop_cx, loop_oh]);
     }
 }
 

@@ -1,0 +1,18 @@
+{
+  "variant": "hole_in_bridge",
+  "defect": "a 4 mm hole drilled through the bridge, the tension load path between ring and loop",
+  "hard_checks_pass": true,
+  "hard_failures": [],
+  "verdict": "revise",
+  "summary": "All spec dimensions pass and the assembly clears the neck, cap flange and shoulder, but there is an unexplained small through-hole in the connecting web directly on the load path between the ring and the finger loop. The spec does not call for it, so it should be removed (or justified and dimensioned) before sign-off.",
+  "discrepancies": [
+    {
+      "where": "TOP view / SECTION A-A / top detail \u2014 connecting web between neck ring and finger loop",
+      "expected": "A solid, uninterrupted web on the load path from the loop to the ring; the spec lists no lanyard hole or other opening here.",
+      "observed": "A small circular through-hole in the middle of the connecting web, in the direct tension/bending path between the loop and the ring.",
+      "severity": "medium",
+      "suggestion": "Remove the small hole in the connecting web so the load path is a continuous solid section. If it is intended as a lanyard hole, add it to the Part Spec (with diameter, position and an edge-distance requirement) and move it off the primary tension path."
+    }
+  ],
+  "caught": true
+}
