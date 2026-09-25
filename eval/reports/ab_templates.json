@@ -95,7 +95,47 @@
         "duration_s": 3.6
       }
     ],
-    "narration": "rack_spacer \u2014 a solid rounded-rectangle spacer, 15.0 \u00d7 11.0 mm footprint \u00d7 11.0 mm tall, with a \u00d85.2 mm central bore for the 4.7 mm screw shank (0.5 mm loose-fit clearance). Every hard check passes: bore diameter 5.20 mm (target 5.2 \u00b10.2), stack height 11.00 mm (target 11 \u00b10.15), footprint 15 \u00d7 11 mm (within 14\u201316.5 \u00d7 10\u201312.5), all walls \u2265 2.90 mm (well above the 1.6 mm two-perimeter minimum). Corners are rounded at r = 2 mm so several spacers pack cleanly on the rail. Prints flat on the bed with the screw axis vertical \u2014 0% overhang beyond 45\u00b0, no supports needed, and the compressive clamp load runs along the print layers between the two plates (the strongest direction for FDM). Volume \u2248 1.54 cm\u00b3, print time is short. No open issues."
+    "narration": "rack_spacer \u2014 a solid rounded-rectangle spacer, 15.0 \u00d7 11.0 mm footprint \u00d7 11.0 mm tall, with a \u00d85.2 mm central bore for the 4.7 mm screw shank (0.5 mm loose-fit clearance). Every hard check passes: bore diameter 5.20 mm (target 5.2 \u00b10.2), stack height 11.00 mm (target 11 \u00b10.15), footprint 15 \u00d7 11 mm (within 14\u201316.5 \u00d7 10\u201312.5), all walls \u2265 2.90 mm (well above the 1.6 mm two-perimeter minimum). Corners are rounded at r = 2 mm so several spacers pack cleanly on the rail. Prints flat on the bed with the screw axis vertical \u2014 0% overhang beyond 45\u00b0, no supports needed, and the compressive clamp load runs along the print layers between the two plates (the strongest direction for FDM). Volume \u2248 1.54 cm\u00b3, print time is short. No open issues.",
+    "judge": {
+      "raw": {
+        "preferred": "B",
+        "scores": {
+          "A": {
+            "fit": 8,
+            "printability": 9,
+            "strength": 7,
+            "intent": 7,
+            "overall": 7
+          },
+          "B": {
+            "fit": 9,
+            "printability": 9,
+            "strength": 9,
+            "intent": 9,
+            "overall": 9
+          }
+        },
+        "reasoning": "Both parts pass all spec checks: 5.2 mm bore, 11 mm stack height, watertight single body, flat-on-bed with 0% overhang. However, Candidate A's footprint is 15\u00d711 mm \u2014 width_y sits right at the lower bound (10 mm min) with only 2.9 mm of wall around the bore, while Candidate B lands squarely in the middle of the footprint window at 16\u00d712 mm with a healthier 3.4 mm minimum wall. That gives B noticeably more material resisting the screw's clamping/crushing load, which the spec explicitly calls out. B also better matches the stated design intent ('about 16\u00d712 mm') and has a larger bed contact (170 vs 140 mm\u00b2) for adhesion. A is perfectly acceptable but B is the one I'd send to the printer."
+      },
+      "A_is": "kintsugi",
+      "preferred": "human",
+      "scores": {
+        "kintsugi": {
+          "fit": 8,
+          "printability": 9,
+          "strength": 7,
+          "intent": 7,
+          "overall": 7
+        },
+        "human": {
+          "fit": 9,
+          "printability": 9,
+          "strength": 9,
+          "intent": 9,
+          "overall": 9
+        }
+      }
+    }
   },
   {
     "name": "cabinet_plug",

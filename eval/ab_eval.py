@@ -281,6 +281,14 @@ async def compare(names: list[str] | None, mode: str, judge_model: str | None, w
                 entry["interface_dims"][qname] = {"target": tr[qname]["target"], "tol": tr[qname]["tol"], "ref": tr[qname]["measured"],
                                                   "kin": tk[qname]["measured"], "ref_pass": tr[qname]["passed"], "kin_pass": tk[qname]["passed"],
                                                   "interface": is_itf}
+        prev_p0 = REPORTS / f"ab_{mode}.json"
+        if not with_judge and prev_p0.exists():
+            try:
+                old = {r["name"]: r for r in json.loads(prev_p0.read_text())}.get(name)
+                if old and old.get("judge"):
+                    entry["judge"] = old["judge"]
+            except json.JSONDecodeError:
+                pass
         if with_judge:
             flip = random.Random(hash(name) & 0xFFFF).random() < 0.5
             a = [p for p in (bp_kin.sheet_path, bp_kin.sections_path) if p] if flip else [p for p in (bp_ref.sheet_path, bp_ref.sections_path) if p]
@@ -323,7 +331,7 @@ def write_report(results: list[dict], mode: str) -> None:
         sc = r.get("judge", {}).get("scores", {})
         js = f"{judge}" + (f" (kin {sc.get('kintsugi', {}).get('overall', '?')} / human {sc.get('human', {}).get('overall', '?')})" if sc else "")
         cost = r.get("kintsugi_cost_usd")
-        r["kintsugi_cost_usd"] = f"{cost:.2f}" if isinstance(cost, (int, float)) else "in progress"
+        r["kintsugi_cost_usd"] = f"{cost:.2f}" if isinstance(cost, (int, float)) else "n/a (run interrupted)"
         lines.append(f"| {r['name']} | {'pass' if r['kin_hard_pass'] else 'FAIL: ' + ', '.join(r['kin_fails'])} | "
                      f"{'pass' if r['ref_hard_pass'] else 'fail: ' + ', '.join(r['ref_fails'])} | {r['kintsugi_iterations']} | ${r['kintsugi_cost_usd']} | "
                      f"{m['silhouette_iou_mean']:.2f} | {m['chamfer_mm']['chamfer']:.2f} | {vr:.2f} | {js} |" if vr else

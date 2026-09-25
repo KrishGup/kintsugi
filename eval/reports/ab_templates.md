@@ -4,11 +4,11 @@ Each reference is a human-designed replacement part from a public OpenSCAD repos
 
 | part | kin checks | human checks | iterations | cost | silhouette IoU | Chamfer (mm) | volume kin/human | blind judge |
 |---|---|---|---|---|---|---|---|---|
-| rack_spacer | pass | pass | 2 | $0.50 | 0.89 | 0.31 | 0.83 | — |
+| rack_spacer | pass | pass | 2 | $0.50 | 0.89 | 0.31 | 0.83 | human (kin 7 / human 9) |
 | cabinet_plug | pass | fail: walls.p05, walls.min | 1 | $0.35 | 0.92 | 1.22 | 7.78 | kintsugi (kin 9 / human 6) |
 | ikea_dombas_handle | pass | pass | 1 | $0.89 | 0.96 | 0.54 | 1.33 | kintsugi (kin 9 / human 5) |
 | trailer_jack_cap | pass | pass | 2 | $1.26 | 0.99 | 0.17 | 0.95 | kintsugi (kin 9 / human 7) |
-| wine_glass_rack_hinge | pass | fail | 4 | $in progress | 0.89 | 0.18 | — | kintsugi (kin 8 / human 6) |
+| wine_glass_rack_hinge | pass | fail | 4 | $n/a (run interrupted) | 0.89 | 0.18 | — | kintsugi (kin 8 / human 6) |
 
 ## Interface dimensions (measured on the meshes)
 
@@ -20,6 +20,8 @@ Each reference is a human-designed replacement part from a public OpenSCAD repos
 | stack.height | 11.0 ±0.15 | 11.0 ✓ | 11.0 ✓ |
 | footprint.width_x | ≥14 ≤16.5 | 16.0 ✓ | 15.0 ✓ |
 | footprint.width_y | ≥10 ≤12.5 | 12.0 ✓ | 11.0 ✓ |
+
+**Blind judge** preferred **human**. Both parts pass all spec checks: 5.2 mm bore, 11 mm stack height, watertight single body, flat-on-bed with 0% overhang. However, Candidate A's footprint is 15×11 mm — width_y sits right at the lower bound (10 mm min) with only 2.9 mm of wall around the bore, while Candidate B lands squarely in the middle of the footprint window at 16×12 mm with a healthier 3.4 mm minimum wall. That gives B noticeably more material resisting the screw's clamping/crushing load, which the spec explicitly calls out. B also better matches the stated design intent ('about 16×12 mm') and has a larger bed contact (170 vs 140 mm²) for adhesion. A is perfectly acceptable but B is the one I'd send to the printer.
 
 Sheets: human `eval/reports/templates/rack_spacer/ref/iter_00_sheet.png` · kintsugi `eval/reports/templates/rack_spacer/kin/iter_02_sheet.png`
 
