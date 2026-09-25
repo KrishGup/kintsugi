@@ -651,7 +651,7 @@
     "name": "wine_glass_rack_hinge",
     "title": "Miele dishwasher wine-glass rack hinge (xenomachina/3d-models)",
     "mode": "templates",
-    "kintsugi_status": "iterating",
+    "kintsugi_status": "interrupted (API retries after the second critic round; the environment was reset)",
     "kintsugi_iterations": 4,
     "kintsugi_cost_usd": null,
     "kintsugi_duration_s": null,
@@ -776,7 +776,133 @@
       "ref_sections": "eval/reports/templates/wine_glass_rack_hinge/ref/iter_00_sections.png",
       "kin_sections": "eval/reports/templates/wine_glass_rack_hinge/kin/iter_04_sections.png"
     },
-    "critic": [],
+    "critic": [
+      {
+        "verdict": "revise",
+        "summary": "Geometry and interfaces match the spec and the clip captures the wire correctly, but two hard checks fail: a 0.88 mm wall on the load-bearing jaws (below the 0.90 mm floor and the 1.2 mm print minimum) and 8.12% overhang area. The ridge-to-shaft shoulder and the sharp clip-to-shaft junction need chamfers/fillets to address both.",
+        "discrepancies": [
+          {
+            "where": "clip jaws (walls.min)",
+            "expected": "minimum wall \u2265 1.2 mm per print settings, and \u2265 0.90 mm per hard check",
+            "observed": "0.88 mm minimum wall, likely on the outer skin of a jaw arm",
+            "severity": "high",
+            "suggestion": "Thicken the jaw outer wall \u2014 either widen clip_width toward the 10 mm envelope allowance, reduce the outer chamfer on the jaws, or add a small boss/rib on the arm exterior so no wall is below 1.2 mm."
+          },
+          {
+            "where": "ridge-to-shaft shoulder (print.overhang)",
+            "expected": "\u2264 5% overhang area beyond 45\u00b0 in the printed orientation",
+            "observed": "8.12% overhang area; the 0.67 mm radial step at the underside of the 8.21 mm ridge sits at ~90\u00b0 to the shaft in the on-side orientation",
+            "severity": "medium",
+            "suggestion": "Chamfer the underside of the retention ridge at ~45\u00b0 (a 0.6\u20130.7 mm chamfer) so it self-supports; consider a teardrop profile for the 2.31 mm axial hole to eliminate its upper-half overhang."
+          },
+          {
+            "where": "clip-to-shaft junction (TOP / ISO views)",
+            "expected": "fillet at a loaded cantilever root to avoid stress concentration during repeated snap-in cycles",
+            "observed": "sharp inside corner where the flat clip body meets the cylindrical shaft",
+            "severity": "medium",
+            "suggestion": "Add a ~0.8\u20131.0 mm fillet at the clip-body / shaft base intersection on both sides."
+          }
+        ],
+        "question_for_user": null,
+        "model": "opus",
+        "duration_s": 40.8,
+        "inspection": {
+          "load_path": "Wire enters through the 4 mm mouth at +Y end of the clip, seats in the 5.15 mm circular pocket, load transfers through the two jaw arms (clip_width 9.20 mm across) into the clip body, across the flat clip-to-shaft junction into the 6.87 mm shaft, past the 8.21 mm retention ridge and out to the rack's hinge hole wall. The 2.31 mm axial hole runs the full length down this load path.",
+          "intent_features": [
+            {
+              "feature": "6.87 mm shaft (sliding fit in rack hole)",
+              "present": true
+            },
+            {
+              "feature": "8.21 mm retention ridge",
+              "present": true
+            },
+            {
+              "feature": "clip with 5.15 mm seat",
+              "present": true
+            },
+            {
+              "feature": "4 mm snap opening (smaller than wire)",
+              "present": true
+            },
+            {
+              "feature": "2.31 mm axial hole through shaft",
+              "present": true
+            },
+            {
+              "feature": "orientation on side so jaws flex along layers",
+              "present": true
+            }
+          ],
+          "unexplained_features": [],
+          "thinnest_section": "walls.min reports 0.88 mm \u2014 this falls below the 0.90 mm floor and well below the 1.2 mm print min wall. From the top/front detail views the likely location is the outer skin of the jaw arms near the mouth, where the 5.15 mm seat + 4 mm mouth geometry leaves only ~2 mm of arm and the outer chamfer/curvature thins the wall to sub-mm. This is on the primary load-bearing member and will delaminate under snap-in load.",
+          "junctions": "Clip body meets shaft as a flat face with no visible fillet in the TOP or ISO views \u2014 a sharp inside corner right where the cantilever bending moment from the wire snap peaks. The ridge-to-shaft transitions appear as square shoulders (BACK view rings), no chamfer visible.",
+          "assembly": "Assembly TOP view shows the clip pocket wrapping the ghosted wire past its centerline with the 4 mm mouth clearly narrower than the 5.15 mm wire \u2014 capture geometry is correct. Interference measured at 0.01 mm\u00b3 (essentially zero). Shaft and ridge sit inside the rack hinge envelope.",
+          "printability": "As modeled, 8.12% of area is beyond 45\u00b0 overhang (FAIL vs 5% target); best orientation only drops it to 6.9%, still failing. On its side, the underside of the 8.21 mm ridge overhanging the 6.87 mm shaft (0.67 mm radial step at ~90\u00b0) and the upper half of the 2.31 mm axial hole are the offenders. The 0.88 mm wall is below 2 perimeters at 0.4 mm nozzle and will be weak/porous."
+        }
+      },
+      {
+        "verdict": "revise",
+        "summary": "Every interface, envelope and assembly check passes cleanly and all design-intent features are present with a clean load path. Two printability advisories still fail: a 0.89 mm knife-edge (vs 0.90 mm) and 7.3% overhang (vs 5%), both localized and worth one more pass of chamfer/teardrop cleanup before sign-off.",
+        "discrepancies": [
+          {
+            "where": "walls.min (likely ridge lead-in bevel tip or jaw-mouth tip; visible in top detail and section A-A)",
+            "expected": "no knife edges thinner than the 0.90 mm advisory; ideally \u22651.2 mm per print spec, or a deliberate rounded/flat termination so the thinnest wall is on-nozzle",
+            "observed": "walls.min = 0.89 mm (p05 2.23 mm, median 2.80 mm) \u2014 a very localized sub-threshold sliver",
+            "severity": "medium",
+            "suggestion": "Terminate the ridge lead-in with a small flat (0.2\u20130.3 mm) instead of a knife edge, or add a 0.2 mm fillet at the jaw-mouth tips, so the thinnest wall along that edge is \u22651.2 mm."
+          },
+          {
+            "where": "print.overhang (as-modeled orientation, on side along -Y)",
+            "expected": "\u22645% of area beyond 45\u00b0 in the intent orientation (rotating to the 'best' orientation would run layers across the jaws and is not acceptable given the snap-flex intent)",
+            "observed": "7.31% overhang in the intent orientation; improved from 13% last iteration but still over threshold",
+            "severity": "medium",
+            "suggestion": "Chamfer/teardrop the underside of the clip body and the underside of the ridge (facets facing -Z in the print orientation), and taper the shaft-end face so the remaining >45\u00b0 faces are broken up. Keep the on-side orientation \u2014 do not re-orient."
+          }
+        ],
+        "question_for_user": null,
+        "model": "opus",
+        "duration_s": 60.9,
+        "inspection": {
+          "load_path": "Load enters through the wire seated in the clip jaws (top/front views), transfers through the clip body into the shaft base, then radially into the rack hole where the 8.21 mm ridge retains axially. The only opening along that path is the intentional 2.31 mm axial hole down the shaft and the intentional 4 mm jaw mouth \u2014 no unexplained material removal.",
+          "intent_features": [
+            {
+              "feature": "6.87 mm shaft (sliding fit in rack hole)",
+              "present": true
+            },
+            {
+              "feature": "8.21 mm retention ridge",
+              "present": true
+            },
+            {
+              "feature": "2.31 mm axial hole through shaft",
+              "present": true
+            },
+            {
+              "feature": "5.15 mm wire seat (notch circle)",
+              "present": true
+            },
+            {
+              "feature": "4 mm jaw opening (snap mouth)",
+              "present": true
+            },
+            {
+              "feature": "on-side orientation so jaws flex along layers",
+              "present": true
+            },
+            {
+              "feature": "ridge bevel/lead-in for snap into rack hole",
+              "present": true
+            }
+          ],
+          "unexplained_features": [],
+          "thinnest_section": "walls.min reports 0.89 mm, 0.01 mm below the 0.90 mm advisory threshold and well below the print spec's 1.2 mm min wall; p05 is 2.23 mm and median 2.80 mm, so this is a very localized knife edge (most likely the ridge lead-in bevel tip or the jaw mouth tip), not a structural neck. Structural sections of the clip and shaft are comfortably thick.",
+          "junctions": "Clip base to shaft transition is visible in front/right/isometric views; ridge-to-shaft transition uses a small bevel (lead-in for the snap). Inside corners at the clip mouth appear rounded into the 5.15 mm seat. No sharp loaded inside corner is obvious on the load path.",
+          "assembly": "Ghosted wire in assembly views sits inside the 5.15 mm seat behind the 4 mm mouth \u2014 jaws wrap past the wire centerline, so the wire is captured. Rack-hole envelope in the ghosted iso is cleared by the shaft with the ridge just past it, consistent with retention. Interference check reports 0.01 mm\u00b3, effectively zero.",
+          "printability": "As modeled (on side, shaft axis along -Y) overhang beyond 45\u00b0 is 7.31% vs the 5% advisory \u2014 down from 13% last iteration but still over. Best-orientation note (+90\u00b0 about X) would reach 5.5% but would run the layers across the jaws and defeat the stated snap-flex intent, so re-orienting is not a good trade. Bed contact 42.6 mm\u00b2 is modest; part is on the bed."
+        }
+      }
+    ],
     "narration": "",
     "judge": {
       "raw": {

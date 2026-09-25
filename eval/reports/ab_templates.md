@@ -8,7 +8,7 @@ Each reference is a human-designed replacement part from a public OpenSCAD repos
 | cabinet_plug | pass | fail: walls.p05, walls.min | 1 | $0.35 | 0.92 | 1.22 | 7.78 | kintsugi (kin 9 / human 6) |
 | ikea_dombas_handle | pass | pass | 1 | $0.89 | 0.96 | 0.54 | 1.33 | kintsugi (kin 9 / human 5) |
 | trailer_jack_cap | pass | pass | 2 | $1.26 | 0.99 | 0.17 | 0.95 | kintsugi (kin 9 / human 7) |
-| wine_glass_rack_hinge | pass | fail | 4 | $n/a (run interrupted) | 0.89 | 0.18 | — | kintsugi (kin 8 / human 6) |
+| wine_glass_rack_hinge | pass | fail: mesh.watertight, walls.min, print.overhang | 4 | $n/a (run interrupted) | 0.89 | 0.18 | — | kintsugi (kin 8 / human 6) |
 
 ## Interface dimensions (measured on the meshes)
 

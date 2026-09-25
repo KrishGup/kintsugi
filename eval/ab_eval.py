@@ -332,11 +332,11 @@ def write_report(results: list[dict], mode: str) -> None:
         js = f"{judge}" + (f" (kin {sc.get('kintsugi', {}).get('overall', '?')} / human {sc.get('human', {}).get('overall', '?')})" if sc else "")
         cost = r.get("kintsugi_cost_usd")
         r["kintsugi_cost_usd"] = f"{cost:.2f}" if isinstance(cost, (int, float)) else "n/a (run interrupted)"
-        lines.append(f"| {r['name']} | {'pass' if r['kin_hard_pass'] else 'FAIL: ' + ', '.join(r['kin_fails'])} | "
-                     f"{'pass' if r['ref_hard_pass'] else 'fail: ' + ', '.join(r['ref_fails'])} | {r['kintsugi_iterations']} | ${r['kintsugi_cost_usd']} | "
-                     f"{m['silhouette_iou_mean']:.2f} | {m['chamfer_mm']['chamfer']:.2f} | {vr:.2f} | {js} |" if vr else
-                     f"| {r['name']} | {'pass' if r['kin_hard_pass'] else 'FAIL'} | {'pass' if r['ref_hard_pass'] else 'fail'} | {r['kintsugi_iterations']} | "
-                     f"${r['kintsugi_cost_usd']} | {m['silhouette_iou_mean']:.2f} | {m['chamfer_mm']['chamfer']:.2f} | — | {js} |")
+        kin_s = "pass" if r["kin_hard_pass"] else "FAIL: " + ", ".join(r["kin_fails"])
+        ref_s = "pass" if r["ref_hard_pass"] else "fail: " + ", ".join(r["ref_fails"])
+        vr_s = f"{vr:.2f}" if vr else "—"
+        lines.append(f"| {r['name']} | {kin_s} | {ref_s} | {r['kintsugi_iterations']} | ${r['kintsugi_cost_usd']} | "
+                     f"{m['silhouette_iou_mean']:.2f} | {m['chamfer_mm']['chamfer']:.2f} | {vr_s} | {js} |")
     lines += ["", "## Interface dimensions (measured on the meshes)", ""]
     for r in results:
         lines += [f"### {r['name']} — {r['title']}", "", "| dimension | target | human | kintsugi |", "|---|---|---|---|"]

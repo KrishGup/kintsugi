@@ -28,3 +28,5 @@ web/node_modules/
 eval/references/src/
 eval/references/*.stl
 eval/runs/
+eval/reports/**/views/
+eval/reports/**/*.stl
