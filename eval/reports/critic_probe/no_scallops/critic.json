@@ -4,21 +4,14 @@
   "hard_checks_pass": true,
   "hard_failures": [],
   "verdict": "revise",
-  "summary": "Dimensions, fit, clearance and printability all pass, but the design_intent 'reinforced loop with finger scallops' is not delivered: the loop is a plain racetrack with the same 4 mm wall as the ring \u2014 no scallops on the finger-facing edge and no local thickening.",
+  "summary": "All hard checks pass and the geometry is clean, but the design_intent 'finger scallops' on the loop are missing \u2014 the loop is a plain oblong with no indentations for finger placement.",
   "discrepancies": [
     {
-      "where": "TOP view / detail \u2014 loop inner and outer edges",
-      "expected": "Finger scallops (two concave depressions on the finger-contact edge of the loop) so two adult fingers seat comfortably under load, per design_intent.",
-      "observed": "Loop is a plain oval/racetrack; inner edge is a smooth constant-radius curve with no scalloping.",
+      "where": "TOP view / detail \u2014 loop opening",
+      "expected": "Loop with finger scallops (two concave indentations along the long edges of the loop opening) so two adult fingers seat positively, as called out in design_intent",
+      "observed": "Plain oblong hole with uniform straight sides; no scallops or finger-locating features",
       "severity": "medium",
-      "suggestion": "Add two shallow concave scallops (~R12\u201315, ~2\u20133 mm deep) on the outer top edge of the loop (or on the inner long edges) spaced ~18\u201320 mm apart so each finger has a seat. Keep the remaining wall \u2265 2.5 mm."
-    },
-    {
-      "where": "SECTION A-A / TOP detail \u2014 loop wall thickness",
-      "expected": "A 'reinforced' loop, i.e. a loop section visibly stouter than the ring wall or with a local rib, to carry the 1.5 kg \u00d7 2 finger load with margin.",
-      "observed": "Loop wall is ~4.0 mm, identical to the ring wall and the bridge wall \u2014 no reinforcement is visible.",
-      "severity": "medium",
-      "suggestion": "Thicken the loop rim to ~5\u20136 mm (in-plane), or increase the loop's Z-height locally (e.g. an 8\u201310 mm tall boss around the loop) so the finger-bearing member is stiffer and more comfortable than a thin flat strap."
+      "suggestion": "Add two shallow concave scallops (~R10\u201312 mm, ~1.5\u20132 mm deep) on the inner long edges of the loop opening, symmetric about the loop center, so each finger has a defined seat. Keep loop_inner_width \u2265 40 mm at the narrowest point between the scallops."
     }
   ],
   "caught": true

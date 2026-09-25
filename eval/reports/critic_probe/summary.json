@@ -6,14 +6,14 @@
       "hard_checks_pass": true,
       "hard_failures": [],
       "verdict": "pass",
-      "summary": "Meets every spec dimension, has all intent features (closed ring, reinforced loop, finger scallops), a clean solid load path from loop to ring, no unexplained features, and prints flat with zero overhang. Ready to print.",
+      "summary": "All spec dimensions pass, every design-intent feature (reinforced loop, finger scallops, flat ring, XY loop) is present, the load path from loop to ring is unbroken, and the part assembles cleanly with the neck while clearing the cap flange. Prints as oriented with no supports.",
       "discrepancies": [
         {
           "where": "OPEN QUESTION in spec",
-          "expected": "clarify whether the ring should rotate freely on the neck or be snug",
-          "observed": "sliding clearance of 0.25 mm (ID 43.45 vs neck 43.2) gives a slip fit that will rotate freely \u2014 consistent with the sliding fit already declared, so likely fine",
+          "expected": "designer/user confirms whether ring should rotate freely or be snug",
+          "observed": "0.25 mm diametral clearance yields a sliding/snug fit \u2014 likely fine but unresolved in spec",
           "severity": "low",
-          "suggestion": "no change required; the current clearance already satisfies a sliding fit, but confirm with the user if a snug/anti-rotation fit is preferred"
+          "suggestion": "Note the current fit as sliding-snug; no change required unless the user wants free rotation, in which case bump clearance to ~0.5 mm."
         }
       ],
       "caught": null
@@ -24,21 +24,14 @@
       "hard_checks_pass": true,
       "hard_failures": [],
       "verdict": "revise",
-      "summary": "Dimensions, fit, clearance and printability all pass, but the design_intent 'reinforced loop with finger scallops' is not delivered: the loop is a plain racetrack with the same 4 mm wall as the ring \u2014 no scallops on the finger-facing edge and no local thickening.",
+      "summary": "All hard checks pass and the geometry is clean, but the design_intent 'finger scallops' on the loop are missing \u2014 the loop is a plain oblong with no indentations for finger placement.",
       "discrepancies": [
         {
-          "where": "TOP view / detail \u2014 loop inner and outer edges",
-          "expected": "Finger scallops (two concave depressions on the finger-contact edge of the loop) so two adult fingers seat comfortably under load, per design_intent.",
-          "observed": "Loop is a plain oval/racetrack; inner edge is a smooth constant-radius curve with no scalloping.",
+          "where": "TOP view / detail \u2014 loop opening",
+          "expected": "Loop with finger scallops (two concave indentations along the long edges of the loop opening) so two adult fingers seat positively, as called out in design_intent",
+          "observed": "Plain oblong hole with uniform straight sides; no scallops or finger-locating features",
           "severity": "medium",
-          "suggestion": "Add two shallow concave scallops (~R12\u201315, ~2\u20133 mm deep) on the outer top edge of the loop (or on the inner long edges) spaced ~18\u201320 mm apart so each finger has a seat. Keep the remaining wall \u2265 2.5 mm."
-        },
-        {
-          "where": "SECTION A-A / TOP detail \u2014 loop wall thickness",
-          "expected": "A 'reinforced' loop, i.e. a loop section visibly stouter than the ring wall or with a local rib, to carry the 1.5 kg \u00d7 2 finger load with margin.",
-          "observed": "Loop wall is ~4.0 mm, identical to the ring wall and the bridge wall \u2014 no reinforcement is visible.",
-          "severity": "medium",
-          "suggestion": "Thicken the loop rim to ~5\u20136 mm (in-plane), or increase the loop's Z-height locally (e.g. an 8\u201310 mm tall boss around the loop) so the finger-bearing member is stiffer and more comfortable than a thin flat strap."
+          "suggestion": "Add two shallow concave scallops (~R10\u201312 mm, ~1.5\u20132 mm deep) on the inner long edges of the loop opening, symmetric about the loop center, so each finger has a defined seat. Keep loop_inner_width \u2265 40 mm at the narrowest point between the scallops."
         }
       ],
       "caught": true
@@ -49,14 +42,14 @@
       "hard_checks_pass": true,
       "hard_failures": [],
       "verdict": "revise",
-      "summary": "All spec dimensions pass and the assembly clears the neck, cap flange and shoulder, but there is an unexplained small through-hole in the connecting web directly on the load path between the ring and the finger loop. The spec does not call for it, so it should be removed (or justified and dimensioned) before sign-off.",
+      "summary": "Dimensions, fit, and printability all pass and the intent features (scallops, reinforced loop, flat ring) are present, but the drawings show an unexplained small through-hole in the bridge between the ring and the loop \u2014 directly on the load path \u2014 that the spec does not call for.",
       "discrepancies": [
         {
-          "where": "TOP view / SECTION A-A / top detail \u2014 connecting web between neck ring and finger loop",
-          "expected": "A solid, uninterrupted web on the load path from the loop to the ring; the spec lists no lanyard hole or other opening here.",
-          "observed": "A small circular through-hole in the middle of the connecting web, in the direct tension/bending path between the loop and the ring.",
+          "where": "TOP / BOTTOM / SECTION A-A views, connecting bridge between neck ring and finger loop (~midway along the spine)",
+          "expected": "Solid, uninterrupted bridge along the load path from loop to ring; the spec lists no lanyard/mounting hole in design_intent or requirements, and the requirement is a 'reinforced' carry handle for 1.5 kg with margin.",
+          "observed": "A small circular through-hole pierces the bridge on the load path (visible in TOP detail, BOTTOM view, and SECTION A-A).",
           "severity": "medium",
-          "suggestion": "Remove the small hole in the connecting web so the load path is a continuous solid section. If it is intended as a lanyard hole, add it to the Part Spec (with diameter, position and an edge-distance requirement) and move it off the primary tension path."
+          "suggestion": "Remove the through-hole in the bridge. If a lanyard hole is actually desired, move it to a non-load-bearing location (e.g. the far end of the loop, opposite the bridge) and add it explicitly to design_intent."
         }
       ],
       "caught": true
@@ -67,35 +60,37 @@
       "hard_checks_pass": true,
       "hard_failures": [],
       "verdict": "pass",
-      "summary": "All spec dimensions pass and the qualitative review is clean: closed ring, tangent bridge to a scalloped finger loop, uniform ~4 mm walls, no unexplained holes or notches in the load path, and a support-free flat-on-bed print with load along the layers.",
+      "summary": "Meets every spec dimension, implements the reinforced-loop-with-finger-scallops intent, has a clean solid load path from loop to ring with tangent junctions, and prints flat with zero overhang in the specified orientation.",
       "discrepancies": [
         {
-          "where": "Spec open question",
-          "expected": "Decide whether the ring should rotate freely on the neck or remain snug.",
-          "observed": "Chosen fit is sliding with 0.25 mm diametral clearance (snug but not free-spinning).",
+          "where": "OPEN QUESTION in spec (ring rotate vs snug)",
+          "expected": "designer/user decision on whether the ring should rotate freely or be snug",
+          "observed": "current 0.25 mm clearance gives a sliding fit \u2014 snug but rotatable; not a defect, just an unresolved spec question the user may want to confirm",
           "severity": "low",
-          "suggestion": "Confirm with the user; if free rotation is wanted, bump clearance to ~0.4\u20130.5 mm."
+          "suggestion": "Confirm 0.25 mm sliding clearance is the intended behavior; if a looser rotating fit is wanted, bump clearance to ~0.4\u20130.5 mm."
         }
       ],
       "caught": false
     },
     {
       "variant": "thin_bridge",
-      "defect": "the bridges between ring and loop are only 2 mm wide (thin neck in the load path)",
-      "hard_checks_pass": true,
-      "hard_failures": [],
-      "verdict": "pass",
-      "summary": "Part meets every spec dimension, has all stated intent features (reinforced loop, finger scallops, coplanar ring+loop, ring flat on bed), a clean uninterrupted load path from loop to ring, no unexplained features, and prints cleanly with 0% overhang and solid 4 mm walls. Assembly views confirm proper capture of the neck below the cap flange with correct clearance.",
+      "defect": "the bridge between ring and loop is a 6 mm wide neck, far narrower than the loop it carries (thin neck in the load path)",
+      "hard_checks_pass": false,
+      "hard_failures": [
+        "footprint.overall_length"
+      ],
+      "verdict": "revise",
+      "summary": "Geometry, load path, intent features and assembly are all clean, but the overall length of 117.45 mm exceeds the 110 mm footprint cap called out in the spec. Shrink the loop (and/or shorten the connecting web) to bring the bbox within 110 mm.",
       "discrepancies": [
         {
-          "where": "spec open question",
-          "expected": "resolution of whether ring must rotate freely or snug is acceptable",
-          "observed": "0.25 mm sliding clearance implemented, which is snug-sliding rather than free-rotating",
-          "severity": "low",
-          "suggestion": "Confirm with user that snug sliding fit is acceptable; if free rotation is required, increase clearance to ~0.4\u20130.6 mm."
+          "where": "TOP / FRONT views, overall_length dimension",
+          "expected": "overall_length \u2264 110 mm per footprint requirement",
+          "observed": "117.45 mm (X extent of bbox)",
+          "severity": "high",
+          "suggestion": "Reduce the loop's outer X extent by ~8 mm \u2014 e.g. shorten the loop inner width from 42 to ~36 mm (still \u2265 two-finger 40 mm? no \u2014 keep \u226540; instead trim the connecting web length by ~4 mm and shave ~4 mm from the loop's far end, keeping loop_inner_width \u226540 and loop_inner_height \u226522). Target overall_length \u2248 108 mm to leave margin."
         }
       ],
-      "caught": false
+      "caught": true
     },
     {
       "variant": "loop_too_thick_walls_ok",
@@ -105,28 +100,21 @@
         "footprint.overall_length"
       ],
       "verdict": "revise",
-      "summary": "Geometry, load path, ring fit, scalloped loop, and printability are all sound, but the part is 123.45 mm long against a hard \u2264110 mm footprint requirement \u2014 a spec failure that must be fixed.",
+      "summary": "Geometry, interfaces, intent features and printability are all clean, but the part is 123.45 mm long against a \u2264110 mm hard cap in the spec. Shorten the spine between the ring and the finger loop.",
       "discrepancies": [
         {
-          "where": "TOP view / footprint.overall_length",
-          "expected": "Overall length \u2264 110 mm (spec REQUIREMENT footprint)",
-          "observed": "123.45 mm along X (ring center at X=0, loop center at X\u224870.7, ring OD \u224854, loop hole \u224840 wide, plus wall)",
+          "where": "TOP / FRONT views, footprint.overall_length",
+          "expected": "overall_length \u2264 110 mm (spec REQUIREMENT footprint)",
+          "observed": "123.45 mm \u2014 13.45 mm over the cap",
           "severity": "high",
-          "suggestion": "Shorten the X extent by ~14 mm. Options: (a) reduce loop_inner_width from 40 to ~30 mm \u2014 still meets \u226540? No, must stay \u226540; instead (b) move the loop closer to the ring (reduce center-to-center from 70.7 to ~64 mm) and/or reduce the loop's outer wall from its current ~7 mm per side down to ~3\u20134 mm per side, keeping loop_inner_width at 40 and loop_inner_height at \u226522. Target overall length \u2264108 mm to leave margin."
-        },
-        {
-          "where": "TOP detail view, outer boundary near ring/slab tangent (top and bottom edges)",
-          "expected": "Smooth tangent blend between the ring OD arc and the straight sides of the stadium outline",
-          "observed": "Small step/notch features where the arc meets the straight edges",
-          "severity": "low",
-          "suggestion": "Ensure the outer profile is a true tangent union (fillet or tangent arc) so no sharp micro-notches remain on the outer edge \u2014 cosmetic but easy to clean up when the length is being reworked."
+          "suggestion": "Pull the finger loop toward the ring by ~15 mm: reduce the straight spine between the ring OD and the near edge of the loop opening. loop_inner_width is already at its 40 mm floor and ring OD is mid-range (54 vs 50\u201358 allowed), so also consider dropping ring OD to ~51\u201352 mm to buy a couple more mm of margin while keeping \u22653.5 mm of ring wall."
         }
       ],
       "caught": true
     }
   ],
   "defects": 5,
-  "caught": 3,
-  "catch_rate": 0.6,
+  "caught": 4,
+  "catch_rate": 0.8,
   "control_verdict": "pass"
 }

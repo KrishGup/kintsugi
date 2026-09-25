@@ -12,7 +12,7 @@ ring_wall = 4;           // [2:0.5:10]
 loop_inner_w = 42;       // [25:1:80]
 loop_inner_h = 26;       // [15:1:45]
 loop_thick = 6;          // [4:0.5:14]
-bridge_len = 4;          // [0:0.5:20]  straight bridge between ring and loop (keeps the bore closed)
+bridge_len = 12;          // [0:0.5:20]  straight bridge between ring and loop (keeps the bore closed)
 fillet_r = 4;            // [0:0.5:10]  fillet where bridges meet ring and loop
 scallops = true;         // finger scallops on the inside long edges
 scallop_depth = 1.5;     // [0:0.25:4]
@@ -40,7 +40,7 @@ module outline2d() {
         circle(d = ring_od);
         translate([loop_cx, 0]) stadium2d(loop_ow, loop_oh);
         // solid bridge from the ring to the loop, as tall as the loop, so the load path has no waist or notch
-        translate([0, -loop_oh / 2]) square([loop_cx, loop_oh]);
+        translate([0, -3]) square([loop_cx, 6]);
     }
 }
 

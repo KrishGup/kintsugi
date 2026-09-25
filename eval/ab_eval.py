@@ -106,8 +106,8 @@ async def design(names: list[str] | None, mode: str, model: str | None, budget: 
         print(f"designing {ref['name']} ({mode}) ...", flush=True)
         t0 = time.time()
         out = await run_designer(s, spec=spec, model=model, budget=budget, critic_rounds=critic_rounds, strategy=strategy)
-        if out.status == "error" and "stalled" in (out.state.error or ""):
-            print("  stalled; retrying once", flush=True)
+        if out.status in ("error", "stopped") and not out.state.iterations:
+            print(f"  {out.status} with no iterations ({out.state.error}); retrying once", flush=True)
             shutil.rmtree(sess_dir)
             s = Session.create(ref["name"], spec, sessions_dir=run_dir, session_id=ref["name"])
             out = await run_designer(s, spec=spec, model=model, budget=budget, critic_rounds=critic_rounds, strategy=strategy)

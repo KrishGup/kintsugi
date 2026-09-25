@@ -6,21 +6,14 @@
     "footprint.overall_length"
   ],
   "verdict": "revise",
-  "summary": "Geometry, load path, ring fit, scalloped loop, and printability are all sound, but the part is 123.45 mm long against a hard \u2264110 mm footprint requirement \u2014 a spec failure that must be fixed.",
+  "summary": "Geometry, interfaces, intent features and printability are all clean, but the part is 123.45 mm long against a \u2264110 mm hard cap in the spec. Shorten the spine between the ring and the finger loop.",
   "discrepancies": [
     {
-      "where": "TOP view / footprint.overall_length",
-      "expected": "Overall length \u2264 110 mm (spec REQUIREMENT footprint)",
-      "observed": "123.45 mm along X (ring center at X=0, loop center at X\u224870.7, ring OD \u224854, loop hole \u224840 wide, plus wall)",
+      "where": "TOP / FRONT views, footprint.overall_length",
+      "expected": "overall_length \u2264 110 mm (spec REQUIREMENT footprint)",
+      "observed": "123.45 mm \u2014 13.45 mm over the cap",
       "severity": "high",
-      "suggestion": "Shorten the X extent by ~14 mm. Options: (a) reduce loop_inner_width from 40 to ~30 mm \u2014 still meets \u226540? No, must stay \u226540; instead (b) move the loop closer to the ring (reduce center-to-center from 70.7 to ~64 mm) and/or reduce the loop's outer wall from its current ~7 mm per side down to ~3\u20134 mm per side, keeping loop_inner_width at 40 and loop_inner_height at \u226522. Target overall length \u2264108 mm to leave margin."
-    },
-    {
-      "where": "TOP detail view, outer boundary near ring/slab tangent (top and bottom edges)",
-      "expected": "Smooth tangent blend between the ring OD arc and the straight sides of the stadium outline",
-      "observed": "Small step/notch features where the arc meets the straight edges",
-      "severity": "low",
-      "suggestion": "Ensure the outer profile is a true tangent union (fillet or tangent arc) so no sharp micro-notches remain on the outer edge \u2014 cosmetic but easy to clean up when the length is being reworked."
+      "suggestion": "Pull the finger loop toward the ring by ~15 mm: reduce the straight spine between the ring OD and the near edge of the loop opening. loop_inner_width is already at its 40 mm floor and ring OD is mid-range (54 vs 50\u201358 allowed), so also consider dropping ring OD to ~51\u201352 mm to buy a couple more mm of margin while keeping \u22653.5 mm of ring wall."
     }
   ],
   "caught": true

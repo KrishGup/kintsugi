@@ -4,14 +4,14 @@
   "hard_checks_pass": true,
   "hard_failures": [],
   "verdict": "pass",
-  "summary": "Meets every spec dimension, has all intent features (closed ring, reinforced loop, finger scallops), a clean solid load path from loop to ring, no unexplained features, and prints flat with zero overhang. Ready to print.",
+  "summary": "All spec dimensions pass, every design-intent feature (reinforced loop, finger scallops, flat ring, XY loop) is present, the load path from loop to ring is unbroken, and the part assembles cleanly with the neck while clearing the cap flange. Prints as oriented with no supports.",
   "discrepancies": [
     {
       "where": "OPEN QUESTION in spec",
-      "expected": "clarify whether the ring should rotate freely on the neck or be snug",
-      "observed": "sliding clearance of 0.25 mm (ID 43.45 vs neck 43.2) gives a slip fit that will rotate freely \u2014 consistent with the sliding fit already declared, so likely fine",
+      "expected": "designer/user confirms whether ring should rotate freely or be snug",
+      "observed": "0.25 mm diametral clearance yields a sliding/snug fit \u2014 likely fine but unresolved in spec",
       "severity": "low",
-      "suggestion": "no change required; the current clearance already satisfies a sliding fit, but confirm with the user if a snug/anti-rotation fit is preferred"
+      "suggestion": "Note the current fit as sliding-snug; no change required unless the user wants free rotation, in which case bump clearance to ~0.5 mm."
     }
   ],
   "caught": null

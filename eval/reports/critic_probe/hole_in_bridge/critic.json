@@ -4,14 +4,14 @@
   "hard_checks_pass": true,
   "hard_failures": [],
   "verdict": "revise",
-  "summary": "All spec dimensions pass and the assembly clears the neck, cap flange and shoulder, but there is an unexplained small through-hole in the connecting web directly on the load path between the ring and the finger loop. The spec does not call for it, so it should be removed (or justified and dimensioned) before sign-off.",
+  "summary": "Dimensions, fit, and printability all pass and the intent features (scallops, reinforced loop, flat ring) are present, but the drawings show an unexplained small through-hole in the bridge between the ring and the loop \u2014 directly on the load path \u2014 that the spec does not call for.",
   "discrepancies": [
     {
-      "where": "TOP view / SECTION A-A / top detail \u2014 connecting web between neck ring and finger loop",
-      "expected": "A solid, uninterrupted web on the load path from the loop to the ring; the spec lists no lanyard hole or other opening here.",
-      "observed": "A small circular through-hole in the middle of the connecting web, in the direct tension/bending path between the loop and the ring.",
+      "where": "TOP / BOTTOM / SECTION A-A views, connecting bridge between neck ring and finger loop (~midway along the spine)",
+      "expected": "Solid, uninterrupted bridge along the load path from loop to ring; the spec lists no lanyard/mounting hole in design_intent or requirements, and the requirement is a 'reinforced' carry handle for 1.5 kg with margin.",
+      "observed": "A small circular through-hole pierces the bridge on the load path (visible in TOP detail, BOTTOM view, and SECTION A-A).",
       "severity": "medium",
-      "suggestion": "Remove the small hole in the connecting web so the load path is a continuous solid section. If it is intended as a lanyard hole, add it to the Part Spec (with diameter, position and an edge-distance requirement) and move it off the primary tension path."
+      "suggestion": "Remove the through-hole in the bridge. If a lanyard hole is actually desired, move it to a non-load-bearing location (e.g. the far end of the loop, opposite the bridge) and add it explicitly to design_intent."
     }
   ],
   "caught": true

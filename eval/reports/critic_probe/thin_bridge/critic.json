@@ -1,18 +1,20 @@
 {
   "variant": "thin_bridge",
-  "defect": "the bridges between ring and loop are only 2 mm wide (thin neck in the load path)",
-  "hard_checks_pass": true,
-  "hard_failures": [],
-  "verdict": "pass",
-  "summary": "Part meets every spec dimension, has all stated intent features (reinforced loop, finger scallops, coplanar ring+loop, ring flat on bed), a clean uninterrupted load path from loop to ring, no unexplained features, and prints cleanly with 0% overhang and solid 4 mm walls. Assembly views confirm proper capture of the neck below the cap flange with correct clearance.",
+  "defect": "the bridge between ring and loop is a 6 mm wide neck, far narrower than the loop it carries (thin neck in the load path)",
+  "hard_checks_pass": false,
+  "hard_failures": [
+    "footprint.overall_length"
+  ],
+  "verdict": "revise",
+  "summary": "Geometry, load path, intent features and assembly are all clean, but the overall length of 117.45 mm exceeds the 110 mm footprint cap called out in the spec. Shrink the loop (and/or shorten the connecting web) to bring the bbox within 110 mm.",
   "discrepancies": [
     {
-      "where": "spec open question",
-      "expected": "resolution of whether ring must rotate freely or snug is acceptable",
-      "observed": "0.25 mm sliding clearance implemented, which is snug-sliding rather than free-rotating",
-      "severity": "low",
-      "suggestion": "Confirm with user that snug sliding fit is acceptable; if free rotation is required, increase clearance to ~0.4\u20130.6 mm."
+      "where": "TOP / FRONT views, overall_length dimension",
+      "expected": "overall_length \u2264 110 mm per footprint requirement",
+      "observed": "117.45 mm (X extent of bbox)",
+      "severity": "high",
+      "suggestion": "Reduce the loop's outer X extent by ~8 mm \u2014 e.g. shorten the loop inner width from 42 to ~36 mm (still \u2265 two-finger 40 mm? no \u2014 keep \u226540; instead trim the connecting web length by ~4 mm and shave ~4 mm from the loop's far end, keeping loop_inner_width \u226540 and loop_inner_height \u226522). Target overall_length \u2248 108 mm to leave margin."
     }
   ],
-  "caught": false
+  "caught": true
 }

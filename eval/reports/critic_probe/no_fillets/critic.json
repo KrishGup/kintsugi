@@ -4,14 +4,14 @@
   "hard_checks_pass": true,
   "hard_failures": [],
   "verdict": "pass",
-  "summary": "All spec dimensions pass and the qualitative review is clean: closed ring, tangent bridge to a scalloped finger loop, uniform ~4 mm walls, no unexplained holes or notches in the load path, and a support-free flat-on-bed print with load along the layers.",
+  "summary": "Meets every spec dimension, implements the reinforced-loop-with-finger-scallops intent, has a clean solid load path from loop to ring with tangent junctions, and prints flat with zero overhang in the specified orientation.",
   "discrepancies": [
     {
-      "where": "Spec open question",
-      "expected": "Decide whether the ring should rotate freely on the neck or remain snug.",
-      "observed": "Chosen fit is sliding with 0.25 mm diametral clearance (snug but not free-spinning).",
+      "where": "OPEN QUESTION in spec (ring rotate vs snug)",
+      "expected": "designer/user decision on whether the ring should rotate freely or be snug",
+      "observed": "current 0.25 mm clearance gives a sliding fit \u2014 snug but rotatable; not a defect, just an unresolved spec question the user may want to confirm",
       "severity": "low",
-      "suggestion": "Confirm with the user; if free rotation is wanted, bump clearance to ~0.4\u20130.5 mm."
+      "suggestion": "Confirm 0.25 mm sliding clearance is the intended behavior; if a looser rotating fit is wanted, bump clearance to ~0.4\u20130.5 mm."
     }
   ],
   "caught": false

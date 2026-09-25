@@ -268,6 +268,8 @@ async def run_designer(session: Session, *, spec: PartSpec | None = None, model:
                 status = "waiting_user"
             elif state.finished:
                 status = "done"
+            elif state.error:
+                status = "error"
             elif state.last_result and state.last_result.budget_left == 0:
                 status = "budget_exhausted"
             else:
@@ -311,6 +313,11 @@ async def _drain(client, state: RunState, emit) -> None:
         elif isinstance(msg, ResultMessage):
             state.cost_usd += float(msg.total_cost_usd or 0.0)
             state.turns += int(msg.num_turns or 0)
+            if msg.is_error or (msg.subtype and msg.subtype != "success"):
+                state.error = f"{msg.subtype}: {(msg.result or '')[:400]} {' | '.join(msg.errors or [])}".strip()
+                emit("error", message=state.error, stop_reason=msg.stop_reason)
+            elif msg.stop_reason:
+                emit("result", stop_reason=msg.stop_reason, turns=msg.num_turns)
 
 
 async def _run_critic(session: Session, spec: PartSpec, state: RunState, critic_model, photos, emit) -> CriticVerdict:
