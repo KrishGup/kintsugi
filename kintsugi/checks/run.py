@@ -67,7 +67,12 @@ class CheckReport:
     def summary_for_model(self) -> str:
         lines = [f"CHECKS iteration {self.iteration}: {'ALL HARD CHECKS PASS' if self.all_hard_pass else 'FAILURES PRESENT'}"]
         for it in self.items:
-            mark = "PASS" if it.passed else ("FAIL" if it.passed is False else "n/a ")
+            if it.passed is None:
+                mark = "info"
+            elif it.passed:
+                mark = "PASS"
+            else:
+                mark = "FAIL" if it.kind == "hard" else "warn"
             meas = _fmt(it.measured)
             tgt = _fmt(it.target)
             tol = f" ±{it.tol:g}" if it.tol is not None and it.target is not None and not isinstance(it.target, str) else ""
