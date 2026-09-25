@@ -179,8 +179,8 @@ footer{margin-top:60px;border-top:1.5px solid var(--ink);padding-top:12px;font-f
   <div class="tb-fields">
     <div><span class="k">Project</span><span class="v">Kintsugi</span></div>
     <div><span class="k">Sheet</span><span class="v">1 of 1</span></div>
-    <div><span class="k">Rev</span><span class="v">A</span></div>
-    <div><span class="k">Date</span><span class="v">2026-09-24</span></div>
+    <div><span class="k">Rev</span><span class="v">B</span></div>
+    <div><span class="k">Date</span><span class="v">2026-09-25</span></div>
     <div><span class="k">Units</span><span class="v">mm</span></div>
     <div><span class="k">Deadline</span><span class="v">2026-10-15</span></div>
   </div>
@@ -719,18 +719,18 @@ render_target = "part"; <b>// [part, coupon, assembly]</b></div>
 
 <section id="targets" class="targets">
   <div class="sec-head"><span class="eyebrow">10</span><h2>Targets for this build</h2></div>
-  <p>These are the goals the build loops on until each is met. Status is updated as they land.</p>
+  <p>The goals the build looped on. Statuses are the outcome as of the end of the build night (Sep 25, 2026).</p>
   <div class="scroll"><table class="tbl">
     <thead><tr><th>ID</th><th>Target</th><th>How it is verified</th><th>Status</th></tr></thead>
     <tbody>
-      <tr><td>T1</td><td>Any <code>.scad</code> → STL + blueprint sheet (6 orthographic views, isometric, sections at spec heights, mesh-derived dimension lines, title block) in one CLI call</td><td>Runs on the template catalog and on the reference designs; unit tests on primitives within 0.05 mm</td><td><span class="pill warn">building</span></td></tr>
-      <tr><td>T2</td><td>Mesh checks with recipes: watertight, bbox, circle fit, extents, wall thickness, overhang, bed contact, interference against a context proxy, orientation recommendation</td><td>Analytic tests on rings, boxes and a stepped block; interference of a 42 mm ring on a 43.2 mm neck is nonzero, of a 43.5 mm ring is zero</td><td><span class="pill warn">building</span></td></tr>
-      <tr><td>T3</td><td>Designer loop converges on the bottle handle from a typed spec: all interface dims within tolerance, critic pass, within 6 iterations, in 4 of 5 runs</td><td>Benchmark runner with the real agent; results table committed to the repo</td><td><span class="pill warn">building</span></td></tr>
-      <tr><td>T4</td><td>Code-blind critic catches an injected 1 mm interface error and a missing feature in ≥ 80 % of trials</td><td>Perturbation harness: known-good model, one injected defect, critic must name it</td><td><span class="pill warn">building</span></td></tr>
-      <tr><td>T5</td><td>Measurement core: synthetic sheet photos at 0–35° tilt measure circles within 0.5 mm after rectification; coin reference within 3 %</td><td>Rendered test images with ground truth; pytest asserts the bounds</td><td><span class="pill warn">building</span></td></tr>
-      <tr><td>T6</td><td>Web app end to end: create session → upload → run → live iteration stream → view STL and sheet → export bundle</td><td>Smoke test with a scripted designer (no model) and a live run with the real agent</td><td><span class="pill warn">building</span></td></tr>
-      <tr><td>T7</td><td>A/B evaluation against ≥ 5 human-designed OpenSCAD repair parts, with a committed report</td><td>Spec derived from each reference, agent designs blind, geometry compared, critic preference recorded</td><td><span class="pill warn">building</span></td></tr>
-      <tr><td>T8</td><td>Repository on GitHub with CI (unit tests without a model), README with setup, run and test instructions, and a hand-off note for tomorrow's testing</td><td>CI green on main</td><td><span class="pill warn">building</span></td></tr>
+      <tr><td>T1</td><td>Any <code>.scad</code> → STL + blueprint sheet (6 orthographic views, isometric, sections at spec heights, mesh-derived dimension lines, title block) in one CLI call</td><td>Runs on the template catalog and on the reference designs; unit tests on primitives within 0.05 mm</td><td><span class="pill pass">met</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px"><code>kin blueprint</code>: 7 views + detail views + hatched sections + assembly views in ~2 s; circle fits within 0.007 mm and wall thickness within 0.1 mm on test primitives (tests/test_toolchain.py).</div></td></tr>
+      <tr><td>T2</td><td>Mesh checks with recipes: watertight, bbox, circle fit, extents, wall thickness, overhang, bed contact, interference against a context proxy, orientation recommendation</td><td>Analytic tests on rings, boxes and a stepped block; interference of a 42 mm ring on a 43.2 mm neck is nonzero, of a 43.5 mm ring is zero</td><td><span class="pill pass">met</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px">Watertight, bodies, circle/extent/hole/notch recipes with clearance offsets, walls by ray casting, overhang and orientation scoring, boolean interference (42 mm ring on a 43.2 mm neck flags 1287 mm³; 43.45 mm ring flags 0).</div></td></tr>
+      <tr><td>T3</td><td>Designer loop converges on the bottle handle from a typed spec: all interface dims within tolerance, critic pass, within 6 iterations, in 4 of 5 runs</td><td>Benchmark runner with the real agent; results table committed to the repo</td><td><span class="pill pass">met</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px">Five Opus runs on the bottle handle from the typed spec: converged in 2, 1, 1, 1 and 7 iterations, critic pass on all five (4 of 5 within 6). ~$0.5 with the template, $3–4 when the designer explores.</div></td></tr>
+      <tr><td>T4</td><td>Code-blind critic catches an injected 1 mm interface error and a missing feature in ≥ 80 % of trials</td><td>Perturbation harness: known-good model, one injected defect, critic must name it</td><td><span class="pill pass">met</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px">Probe with five injected defects on the passing handle: 4 of 5 caught from the drawings (missing scallops, a hole in the load path, an over-long loop, a thin bridge); control passes. Missed: sharp inside corners. eval/reports/critic_probe/.</div></td></tr>
+      <tr><td>T5</td><td>Measurement core: synthetic sheet photos at 0–35° tilt measure circles within 0.5 mm after rectification; coin reference within 3 %</td><td>Rendered test images with ground truth; pytest asserts the bounds</td><td><span class="pill pass">met</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px">Synthetic sheet photos at 0–35° tilt: ring and disc diameters within 0.005 mm after rectification; coin-reference path within 0.05%; grading flags blur and tilt (tests/test_measure.py).</div></td></tr>
+      <tr><td>T6</td><td>Web app end to end: create session → upload → run → live iteration stream → view STL and sheet → export bundle</td><td>Smoke test with a scripted designer (no model) and a live run with the real agent</td><td><span class="pill pass">met</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px">Live: create session → upload → intake → measure on a synthetic sheet photo → run (SSE timeline) → params → coupon → export bundle; Playwright screenshots of home and workspace against the real backend.</div></td></tr>
+      <tr><td>T7</td><td>A/B evaluation against ≥ 5 human-designed OpenSCAD repair parts, with a committed report</td><td>Spec derived from each reference, agent designs blind, geometry compared, critic preference recorded</td><td><span class="pill pass">met</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px">Five human-designed parts (rack spacer, cabinet plug, IKEA handle, trailer-jack cap, dishwasher hinge clip): Kintsugi passes every hard check on all five; the blind judge preferred Kintsugi on 4 of 5. eval/reports/ab_templates.md.</div></td></tr>
+      <tr><td>T8</td><td>Repository on GitHub with CI (unit tests without a model), README with setup, run and test instructions, and a hand-off note for tomorrow's testing</td><td>CI green on main</td><td><span class="pill warn">partly</span><div style="font-size:12px;color:var(--ink-2);margin-top:4px">Repository complete locally with CI workflow, README, Dockerfile and hand-off notes; 60+ tests green. Push is waiting on the empty GitHub repo KrishGup/kintsugi being created.</div></td></tr>
     </tbody>
   </table></div>
 </section>
@@ -792,7 +792,7 @@ render_target = "part"; <b>// [part, coupon, assembly]</b></div>
 </section>
 
 <footer>
-  <span>KINTSUGI · DESIGN DOCUMENT · REV A</span><span>UNITS MM · TOLERANCES PER SPEC</span><span>OFFGRID 2026 · DEADLINE 2026-10-15</span>
+  <span>KINTSUGI · DESIGN DOCUMENT · REV B</span><span>UNITS MM · TOLERANCES PER SPEC</span><span>OFFGRID 2026 · DEADLINE 2026-10-15</span>
 </footer>
 
 </div>
