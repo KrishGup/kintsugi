@@ -281,10 +281,26 @@ async def run_designer(session: Session, *, spec: PartSpec | None = None, model:
     return RunOutcome(status, state, session, time.time() - t0)
 
 
+STALL_TIMEOUT_S = float(os.environ.get("KIN_STALL_TIMEOUT_S", "900"))
+
+
+class StalledError(RuntimeError):
+    pass
+
+
 async def _drain(client, state: RunState, emit) -> None:
+    """Consume the designer's messages; raise StalledError when nothing arrives for STALL_TIMEOUT_S."""
     from agent_sdk import AssistantMessage, ResultMessage, TextBlock, ToolUseBlock
 
-    async for msg in client.receive_response():
+    it = client.receive_response().__aiter__()
+    while True:
+        try:
+            msg = await asyncio.wait_for(it.__anext__(), timeout=STALL_TIMEOUT_S)
+        except StopAsyncIteration:
+            break
+        except asyncio.TimeoutError:
+            emit("error", message=f"no message from the model for {STALL_TIMEOUT_S:.0f}s; run aborted as stalled")
+            raise StalledError("designer stalled")
         if isinstance(msg, AssistantMessage):
             for b in msg.content:
                 if isinstance(b, TextBlock) and b.text.strip():

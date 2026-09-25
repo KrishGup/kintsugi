@@ -318,14 +318,34 @@ def hole_positions(mesh, at: float, plane_axis: str = "z") -> list[dict]:
     return out
 
 
+def clip_to_region(mesh: trimesh.Trimesh, region: list[list[float]]) -> trimesh.Trimesh | None:
+    """The part of the mesh inside an axis-aligned box (surface clipped by the six planes, not a vertex filter)."""
+    lo, hi = np.asarray(region[0], float), np.asarray(region[1], float)
+    m = mesh
+    for i in range(3):
+        for sign, bound in ((1.0, lo[i]), (-1.0, hi[i])):
+            normal = np.zeros(3)
+            normal[i] = sign
+            origin = np.zeros(3)
+            origin[i] = bound
+            try:
+                m = trimesh.intersections.slice_mesh_plane(m, plane_normal=normal, plane_origin=origin, cap=False)
+            except Exception:
+                return None
+            if m is None or len(m.vertices) == 0:
+                return None
+    return m
+
+
 def extent(mesh, axis: str, region: list[list[float]] | None = None) -> float | None:
+    """Size along an axis; with `region`, of the geometry inside that box (clipped, so a feature that crosses the
+    box boundary still measures correctly)."""
     v = mesh.vertices
     if region:
-        lo, hi = np.asarray(region[0], float), np.asarray(region[1], float)
-        mask = np.all((v >= lo - 1e-9) & (v <= hi + 1e-9), axis=1)
-        v = v[mask]
-        if len(v) == 0:
+        clipped = clip_to_region(mesh, region)
+        if clipped is None or len(clipped.vertices) == 0:
             return None
+        v = clipped.vertices
     col = AXIS_INDEX[axis]
     return float(v[:, col].max() - v[:, col].min())
 

@@ -29,7 +29,7 @@ interfaces:
         tol: 0.3
         status: confirmed
         estimates: [{value: 8.35, source: user_caliper, conf: 0.95}]
-        measure: {recipe: extent, axis: y, region: [[-5, -8.6, -1], [5, 0.1, 9]], feature: shaft length (y = 0 to -8.35)}
+        note: "shaft from y = 0 to the clip face at y = -8.35; verified through overall_length minus clip_length below"
       axial_hole:
         target: 2.31
         tol: 0.2
@@ -60,7 +60,8 @@ requirements:
   - id: envelope
     text: the clip end is about 9.2 mm wide and 7 mm deep so it clears the neighboring wires; overall length about 15.4 mm
     derived:
-      overall_length: {min: 14.5, max: 16.5, measure: {recipe: extent, axis: y, feature: overall length}}
+      overall_length: {target: 15.38, tol: 0.4, measure: {recipe: extent, axis: y, feature: overall length}}
+      clip_length: {target: 7.03, tol: 0.3, measure: {recipe: extent, axis: y, region: [[4.3, -20, -1], [10, 1, 9]], feature: clip length (measured on the slab beside the shaft)}}
       clip_width: {min: 8.5, max: 10.0, measure: {recipe: extent, axis: x, region: [[-10, -16, -1], [10, -8.36, 9]], feature: clip width}}
   - id: hold
     text: the jaws must retain the wire (opening smaller than the wire) yet snap on by hand; jaws flex along the layers

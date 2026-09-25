@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 
 from kintsugi.checks import geometry as G  # noqa: E402
 from kintsugi.checks.run import run_checks  # noqa: E402
-from kintsugi.render.raster import VIEWS, pick_scale  # noqa: E402
+from kintsugi.render.raster import VIEWS  # noqa: E402
 from kintsugi.spec.model import PartSpec  # noqa: E402
 
 EVAL = ROOT / "eval"
@@ -106,6 +106,11 @@ async def design(names: list[str] | None, mode: str, model: str | None, budget: 
         print(f"designing {ref['name']} ({mode}) ...", flush=True)
         t0 = time.time()
         out = await run_designer(s, spec=spec, model=model, budget=budget, critic_rounds=critic_rounds, strategy=strategy)
+        if out.status == "error" and "stalled" in (out.state.error or ""):
+            print("  stalled; retrying once", flush=True)
+            shutil.rmtree(sess_dir)
+            s = Session.create(ref["name"], spec, sessions_dir=run_dir, session_id=ref["name"])
+            out = await run_designer(s, spec=spec, model=model, budget=budget, critic_rounds=critic_rounds, strategy=strategy)
         d = out.to_dict()
         d["duration_s"] = round(time.time() - t0, 1)
         d["session"] = str(sess_dir)
@@ -144,8 +149,9 @@ def geometry_metrics(ref: trimesh.Trimesh, kin: trimesh.Trimesh) -> dict:
     views = ["top", "front", "right"]
     lo = np.minimum(ref.bounds[0], kin.bounds[0])
     hi = np.maximum(ref.bounds[1], kin.bounds[1])
-    both = trimesh.Trimesh(vertices=np.vstack([ref.vertices, kin.vertices]))
-    scale = pick_scale(both, 400)
+    allv = np.vstack([ref.vertices, kin.vertices])
+    ext = float(max((allv.max(axis=0) - allv.min(axis=0)).max(), 1e-6))
+    scale = float(min(10.0, 400.0 / ext))
     ious = {}
     for v in views:
         R = VIEWS[v]
