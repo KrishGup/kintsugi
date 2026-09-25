@@ -322,6 +322,8 @@ def write_report(results: list[dict], mode: str) -> None:
         judge = r.get("judge", {}).get("preferred", "—")
         sc = r.get("judge", {}).get("scores", {})
         js = f"{judge}" + (f" (kin {sc.get('kintsugi', {}).get('overall', '?')} / human {sc.get('human', {}).get('overall', '?')})" if sc else "")
+        cost = r.get("kintsugi_cost_usd")
+        r["kintsugi_cost_usd"] = f"{cost:.2f}" if isinstance(cost, (int, float)) else "in progress"
         lines.append(f"| {r['name']} | {'pass' if r['kin_hard_pass'] else 'FAIL: ' + ', '.join(r['kin_fails'])} | "
                      f"{'pass' if r['ref_hard_pass'] else 'fail: ' + ', '.join(r['ref_fails'])} | {r['kintsugi_iterations']} | ${r['kintsugi_cost_usd']} | "
                      f"{m['silhouette_iou_mean']:.2f} | {m['chamfer_mm']['chamfer']:.2f} | {vr:.2f} | {js} |" if vr else
@@ -339,7 +341,13 @@ def write_report(results: list[dict], mode: str) -> None:
             raw = r["judge"]["raw"]
             lines += ["", f"**Blind judge** preferred **{r['judge']['preferred']}**. {raw.get('reasoning', '')}"]
         lines += ["", f"Sheets: human `{r['sheets']['ref']}` · kintsugi `{r['sheets']['kin']}`", ""]
-    lines += ["", "## Reading the numbers", "",
+    lines += ["", "## Caveats", "",
+              "- The specs were written by the Kintsugi authors from each reference's own parameters; a spec that better captures a designer's unstated intent would change the comparison.",
+              "- The judge is the same model family as the designer, sees the check tables (which the human designs were never written against), and judges from drawings, not from printed parts.",
+              "- Silhouette IoU and Chamfer distance describe how different the shapes are, not which is better; only interfaces are specified, so bodies are free to differ.",
+              "- Costs are Agent API list prices for the design run (designer + critic); the human designs' cost is a person's time.",
+              "- `n = 1` run per part. Runs vary (the bottle-handle benchmark converged in 1, 1, 1, 2 and 7 iterations across five runs).",
+              "", "## Reading the numbers", "",
               "- *checks*: every hard check in the spec (interface dimensions with clearance, interference against the context proxies, walls, topology).",
               "- *silhouette IoU*: overlap of top/front/right silhouettes at the same scale and frame; low values mean a different body shape, which is allowed (only interfaces are specified).",
               "- *Chamfer*: mean surface-to-surface distance (mm) between the two meshes; a shape-difference measure, not a quality measure.",

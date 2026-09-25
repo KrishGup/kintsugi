@@ -1,0 +1,26 @@
+{
+  "sheet": "eval/reports/templates/wine_glass_rack_hinge/kin/iter_04_sheet.png",
+  "sections": "eval/reports/templates/wine_glass_rack_hinge/kin/iter_04_sections.png",
+  "views": {
+    "top": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_top.png",
+    "iso": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_iso.png",
+    "front": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_front.png",
+    "right": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_right.png",
+    "bottom": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_bottom.png",
+    "left": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_left.png",
+    "back": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_back.png",
+    "top_detail": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_top_detail.png",
+    "front_detail": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_front_detail.png"
+  },
+  "section_views": {
+    "A": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_section_A.png",
+    "B": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_section_B.png",
+    "C": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_section_C.png"
+  },
+  "assembly": {
+    "top": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_assembly_top.png",
+    "front": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_assembly_front.png",
+    "iso": "eval/reports/templates/wine_glass_rack_hinge/kin/views/iter_04_assembly_iso.png"
+  },
+  "scale_px_per_mm": 10.0
+}

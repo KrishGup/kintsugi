@@ -4,10 +4,11 @@ Each reference is a human-designed replacement part from a public OpenSCAD repos
 
 | part | kin checks | human checks | iterations | cost | silhouette IoU | Chamfer (mm) | volume kin/human | blind judge |
 |---|---|---|---|---|---|---|---|---|
-| rack_spacer | pass | pass | 2 | $0.498 | 0.89 | 0.31 | 0.83 | human (kin 8 / human 9) |
-| cabinet_plug | pass | fail: walls.p05, walls.min | 1 | $0.3514 | 0.92 | 1.22 | 7.78 | kintsugi (kin 9 / human 6) |
-| ikea_dombas_handle | pass | pass | 1 | $0.8903 | 0.96 | 0.54 | 1.33 | kintsugi (kin 9 / human 5) |
-| trailer_jack_cap | pass | pass | 2 | $1.2642 | 0.99 | 0.17 | 0.95 | kintsugi (kin 9 / human 7) |
+| rack_spacer | pass | pass | 2 | $0.50 | 0.89 | 0.31 | 0.83 | — |
+| cabinet_plug | pass | fail: walls.p05, walls.min | 1 | $0.35 | 0.92 | 1.22 | 7.78 | kintsugi (kin 9 / human 6) |
+| ikea_dombas_handle | pass | pass | 1 | $0.89 | 0.96 | 0.54 | 1.33 | kintsugi (kin 9 / human 5) |
+| trailer_jack_cap | pass | pass | 2 | $1.26 | 0.99 | 0.17 | 0.95 | kintsugi (kin 9 / human 7) |
+| wine_glass_rack_hinge | pass | fail | 4 | $in progress | 0.89 | 0.18 | — | kintsugi (kin 8 / human 6) |
 
 ## Interface dimensions (measured on the meshes)
 
@@ -19,8 +20,6 @@ Each reference is a human-designed replacement part from a public OpenSCAD repos
 | stack.height | 11.0 ±0.15 | 11.0 ✓ | 11.0 ✓ |
 | footprint.width_x | ≥14 ≤16.5 | 16.0 ✓ | 15.0 ✓ |
 | footprint.width_y | ≥10 ≤12.5 | 12.0 ✓ | 11.0 ✓ |
-
-**Blind judge** preferred **human**. Both candidates pass all measured checks: bore ~5.2 mm with proper loose clearance around the 4.7 mm shank, 11 mm stack height, watertight single body, and flat-on-bed orientation with 0% overhangs. A uses the full 16×12 mm footprint giving 3.4+ mm walls around the bore (well above the 1.6 mm minimum), maximizing crush resistance under screw clamping load — the stated strength requirement. B is trimmed to 15×11 mm with ~2.9 mm walls; still passes but leaves less material around the bore for the clamping load, and its more rounded corners slightly reduce side-by-side packing density on the rail. Both are equally printable (170 vs 140 mm² bed contact, no supports), but A better honors the 'solid body, no thin walls' strength intent and sits closer to the nominal 16×12 footprint called out in the spec. I'd print A.
 
 Sheets: human `eval/reports/templates/rack_spacer/ref/iter_00_sheet.png` · kintsugi `eval/reports/templates/rack_spacer/kin/iter_02_sheet.png`
 
@@ -65,6 +64,31 @@ Sheets: human `eval/reports/templates/ikea_dombas_handle/ref/iter_00_sheet.png` 
 
 Sheets: human `eval/reports/templates/trailer_jack_cap/ref/iter_00_sheet.png` · kintsugi `eval/reports/templates/trailer_jack_cap/kin/iter_02_sheet.png`
 
+### wine_glass_rack_hinge — Miele dishwasher wine-glass rack hinge (xenomachina/3d-models)
+
+| dimension | target | human | kintsugi |
+|---|---|---|---|
+| shaft.outer_diameter | 6.87 ±0.15 | 6.867 ✓ | 6.869 ✓ |
+| shaft.ridge_diameter | 8.21 ±0.25 | 8.21 ✓ | 8.209 ✓ |
+| shaft.axial_hole | 2.31 ±0.2 | 2.309 ✓ | 2.31 ✓ |
+| wire_clip.seat_diameter | 5.15 ±0.2 | 5.149 ✓ | 5.149 ✓ |
+| wire_clip.opening_width | 4.0 ±0.2 | 4.0 ✓ | 4.0 ✓ |
+| envelope.overall_length | 15.38 ±0.4 | 15.38 ✓ | 15.38 ✓ |
+| envelope.clip_length | 7.03 ±0.3 | 7.03 ✓ | 7.03 ✓ |
+| envelope.clip_width | ≥8.5 ≤10 | 9.24 ✓ | 9.6 ✓ |
+
+**Blind judge** preferred **kintsugi**. Both candidates hit the critical interface dimensions (6.87 shaft, 8.21 ridge, 2.31 axial hole, 5.15 seat, 4.00 opening) and the overall envelope. Candidate A fails watertight, has a min wall of 0.01 mm (essentially a sliver/degenerate geometry), 13.8% steep overhang, and zero bed contact — it's not a printable model as delivered. Candidate B is watertight, single body, has a healthier p05 wall of 2.23 mm and 43 mm² of bed contact for stability on its side, and cuts overhang area nearly in half (7.3%). B's min wall of 0.89 mm is slightly under the 1.2 mm spec at one location (likely the jaw tip), but that's a minor chamfer fix versus A's structural/manifold problems. B is the one I'd send to the printer.
+
+Sheets: human `eval/reports/templates/wine_glass_rack_hinge/ref/iter_00_sheet.png` · kintsugi `eval/reports/templates/wine_glass_rack_hinge/kin/iter_04_sheet.png`
+
+
+## Caveats
+
+- The specs were written by the Kintsugi authors from each reference's own parameters; a spec that better captures a designer's unstated intent would change the comparison.
+- The judge is the same model family as the designer, sees the check tables (which the human designs were never written against), and judges from drawings, not from printed parts.
+- Silhouette IoU and Chamfer distance describe how different the shapes are, not which is better; only interfaces are specified, so bodies are free to differ.
+- Costs are Agent API list prices for the design run (designer + critic); the human designs' cost is a person's time.
+- `n = 1` run per part. Runs vary (the bottle-handle benchmark converged in 1, 1, 1, 2 and 7 iterations across five runs).
 
 ## Reading the numbers
 

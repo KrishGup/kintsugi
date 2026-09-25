@@ -95,47 +95,7 @@
         "duration_s": 3.6
       }
     ],
-    "narration": "rack_spacer \u2014 a solid rounded-rectangle spacer, 15.0 \u00d7 11.0 mm footprint \u00d7 11.0 mm tall, with a \u00d85.2 mm central bore for the 4.7 mm screw shank (0.5 mm loose-fit clearance). Every hard check passes: bore diameter 5.20 mm (target 5.2 \u00b10.2), stack height 11.00 mm (target 11 \u00b10.15), footprint 15 \u00d7 11 mm (within 14\u201316.5 \u00d7 10\u201312.5), all walls \u2265 2.90 mm (well above the 1.6 mm two-perimeter minimum). Corners are rounded at r = 2 mm so several spacers pack cleanly on the rail. Prints flat on the bed with the screw axis vertical \u2014 0% overhang beyond 45\u00b0, no supports needed, and the compressive clamp load runs along the print layers between the two plates (the strongest direction for FDM). Volume \u2248 1.54 cm\u00b3, print time is short. No open issues.",
-    "judge": {
-      "raw": {
-        "preferred": "A",
-        "scores": {
-          "A": {
-            "fit": 9,
-            "printability": 9,
-            "strength": 10,
-            "intent": 9,
-            "overall": 9
-          },
-          "B": {
-            "fit": 9,
-            "printability": 9,
-            "strength": 8,
-            "intent": 8,
-            "overall": 8
-          }
-        },
-        "reasoning": "Both candidates pass all measured checks: bore ~5.2 mm with proper loose clearance around the 4.7 mm shank, 11 mm stack height, watertight single body, and flat-on-bed orientation with 0% overhangs. A uses the full 16\u00d712 mm footprint giving 3.4+ mm walls around the bore (well above the 1.6 mm minimum), maximizing crush resistance under screw clamping load \u2014 the stated strength requirement. B is trimmed to 15\u00d711 mm with ~2.9 mm walls; still passes but leaves less material around the bore for the clamping load, and its more rounded corners slightly reduce side-by-side packing density on the rail. Both are equally printable (170 vs 140 mm\u00b2 bed contact, no supports), but A better honors the 'solid body, no thin walls' strength intent and sits closer to the nominal 16\u00d712 footprint called out in the spec. I'd print A."
-      },
-      "A_is": "human",
-      "preferred": "human",
-      "scores": {
-        "human": {
-          "fit": 9,
-          "printability": 9,
-          "strength": 10,
-          "intent": 9,
-          "overall": 9
-        },
-        "kintsugi": {
-          "fit": 9,
-          "printability": 9,
-          "strength": 8,
-          "intent": 8,
-          "overall": 8
-        }
-      }
-    }
+    "narration": "rack_spacer \u2014 a solid rounded-rectangle spacer, 15.0 \u00d7 11.0 mm footprint \u00d7 11.0 mm tall, with a \u00d85.2 mm central bore for the 4.7 mm screw shank (0.5 mm loose-fit clearance). Every hard check passes: bore diameter 5.20 mm (target 5.2 \u00b10.2), stack height 11.00 mm (target 11 \u00b10.15), footprint 15 \u00d7 11 mm (within 14\u201316.5 \u00d7 10\u201312.5), all walls \u2265 2.90 mm (well above the 1.6 mm two-perimeter minimum). Corners are rounded at r = 2 mm so several spacers pack cleanly on the rail. Prints flat on the bed with the screw axis vertical \u2014 0% overhang beyond 45\u00b0, no supports needed, and the compressive clamp load runs along the print layers between the two plates (the strongest direction for FDM). Volume \u2248 1.54 cm\u00b3, print time is short. No open issues."
   },
   {
     "name": "cabinet_plug",
@@ -643,6 +603,178 @@
           "strength": 6,
           "intent": 8,
           "overall": 7
+        }
+      }
+    }
+  },
+  {
+    "name": "wine_glass_rack_hinge",
+    "title": "Miele dishwasher wine-glass rack hinge (xenomachina/3d-models)",
+    "mode": "templates",
+    "kintsugi_status": "iterating",
+    "kintsugi_iterations": 4,
+    "kintsugi_cost_usd": null,
+    "kintsugi_duration_s": null,
+    "final_iteration": 4,
+    "ref_hard_pass": false,
+    "kin_hard_pass": true,
+    "ref_fails": [
+      "mesh.watertight",
+      "walls.min",
+      "print.overhang"
+    ],
+    "kin_fails": [
+      "walls.min",
+      "print.overhang"
+    ],
+    "interface_dims": {
+      "shaft.outer_diameter": {
+        "target": 6.87,
+        "tol": 0.15,
+        "ref": 6.867,
+        "kin": 6.869,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "shaft.ridge_diameter": {
+        "target": 8.21,
+        "tol": 0.25,
+        "ref": 8.21,
+        "kin": 8.209,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "shaft.axial_hole": {
+        "target": 2.31,
+        "tol": 0.2,
+        "ref": 2.309,
+        "kin": 2.31,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "wire_clip.seat_diameter": {
+        "target": 5.15,
+        "tol": 0.2,
+        "ref": 5.149,
+        "kin": 5.149,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "wire_clip.opening_width": {
+        "target": 4.0,
+        "tol": 0.2,
+        "ref": 4.0,
+        "kin": 4.0,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "envelope.overall_length": {
+        "target": 15.38,
+        "tol": 0.4,
+        "ref": 15.38,
+        "kin": 15.38,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": false
+      },
+      "envelope.clip_length": {
+        "target": 7.03,
+        "tol": 0.3,
+        "ref": 7.03,
+        "kin": 7.03,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": false
+      },
+      "envelope.clip_width": {
+        "target": "\u22658.5 \u226410",
+        "tol": null,
+        "ref": 9.24,
+        "kin": 9.6,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": false
+      }
+    },
+    "metrics": {
+      "silhouette_iou": {
+        "top": 0.9569785884218874,
+        "front": 0.8097052845528455,
+        "right": 0.8999314599040439
+      },
+      "silhouette_iou_mean": 0.8888717776262589,
+      "volume_ref_mm3": null,
+      "volume_kin_mm3": 640.9504495091793,
+      "bbox_ref": [
+        9.24,
+        15.38,
+        8.21
+      ],
+      "bbox_kin": [
+        9.6,
+        15.38,
+        8.21
+      ],
+      "surface_ref_mm2": 691.953007959133,
+      "surface_kin_mm2": 706.8015703979333,
+      "chamfer_mm": {
+        "mean_a_to_b": 0.16921978737297183,
+        "mean_b_to_a": 0.18267623787495899,
+        "p95_a_to_b": 0.7669849861866687,
+        "p95_b_to_a": 0.7233725646423482,
+        "chamfer": 0.17594801262396542
+      }
+    },
+    "sheets": {
+      "ref": "eval/reports/templates/wine_glass_rack_hinge/ref/iter_00_sheet.png",
+      "kin": "eval/reports/templates/wine_glass_rack_hinge/kin/iter_04_sheet.png",
+      "ref_sections": "eval/reports/templates/wine_glass_rack_hinge/ref/iter_00_sections.png",
+      "kin_sections": "eval/reports/templates/wine_glass_rack_hinge/kin/iter_04_sections.png"
+    },
+    "critic": [],
+    "narration": "",
+    "judge": {
+      "raw": {
+        "preferred": "B",
+        "scores": {
+          "A": {
+            "fit": 8,
+            "printability": 4,
+            "strength": 5,
+            "intent": 7,
+            "overall": 6
+          },
+          "B": {
+            "fit": 9,
+            "printability": 7,
+            "strength": 7,
+            "intent": 8,
+            "overall": 8
+          }
+        },
+        "reasoning": "Both candidates hit the critical interface dimensions (6.87 shaft, 8.21 ridge, 2.31 axial hole, 5.15 seat, 4.00 opening) and the overall envelope. Candidate A fails watertight, has a min wall of 0.01 mm (essentially a sliver/degenerate geometry), 13.8% steep overhang, and zero bed contact \u2014 it's not a printable model as delivered. Candidate B is watertight, single body, has a healthier p05 wall of 2.23 mm and 43 mm\u00b2 of bed contact for stability on its side, and cuts overhang area nearly in half (7.3%). B's min wall of 0.89 mm is slightly under the 1.2 mm spec at one location (likely the jaw tip), but that's a minor chamfer fix versus A's structural/manifold problems. B is the one I'd send to the printer."
+      },
+      "A_is": "human",
+      "preferred": "kintsugi",
+      "scores": {
+        "human": {
+          "fit": 8,
+          "printability": 4,
+          "strength": 5,
+          "intent": 7,
+          "overall": 6
+        },
+        "kintsugi": {
+          "fit": 9,
+          "printability": 7,
+          "strength": 7,
+          "intent": 8,
+          "overall": 8
         }
       }
     }
