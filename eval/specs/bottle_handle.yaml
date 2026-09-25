@@ -1,0 +1,68 @@
+part:
+  name: bottle_handle
+  role: carry handle; a ring sits around the bottle neck under the cap flange, with a loop for two fingers
+  object: 1 L wide-mouth plastic water bottle
+  design_intent: reinforced loop with finger scallops; ring flat on the bed; loop in the XY plane
+
+interfaces:
+  - id: neck_ring
+    type: cylindrical_bore
+    mates_with: bottle neck between cap flange and shoulder
+    fit: sliding
+    clearance: 0.25
+    dims:
+      inner_diameter:
+        target: 43.2
+        tol: 0.3
+        status: confirmed
+        estimates:
+          - {value: 43.4, source: rectified_sheet, photo: shot3.jpg, conf: 0.75}
+          - {value: 43.2, source: user_caliper, conf: 0.95}
+        measure: {recipe: circle_fit_inner, at_z: 3.0, near: [0, 0], feature: ring bore}
+      ring_height:
+        target: 6.0
+        tol: 0.5
+        status: confirmed
+        estimates:
+          - {value: 6.2, source: jig_side_view, conf: 0.6}
+          - {value: 6.0, source: user_ruler, conf: 0.9}
+        measure: {recipe: extent, axis: z, region: [[-40, -40, -1], [40, 40, 20]], feature: ring height}
+      ring_outer_diameter:
+        min: 50
+        max: 58
+        measure: {recipe: circle_fit_outer, at_z: 3.0, near: [0, 0], feature: ring OD}
+
+requirements:
+  - id: load
+    text: carry a 1.5 kg full bottle by two fingers, with margin; loop must fit two adult fingers
+    derived:
+      loop_inner_width:
+        min: 40
+        measure: {recipe: hole_extent, at_z: 3.0, axis: x, near: [60, 0], feature: loop opening width}
+      loop_inner_height:
+        min: 22
+        measure: {recipe: hole_extent, at_z: 3.0, axis: y, near: [60, 0], feature: loop opening height}
+  - id: cap_clearance
+    text: the cap (62 mm flange) must thread on and off with the ring in place; nothing above the ring near the neck
+  - id: footprint
+    text: overall length under 110 mm so it prints on any bed and does not swing into the hand
+    derived:
+      overall_length:
+        max: 110
+        measure: {recipe: extent, axis: x, feature: overall length}
+
+context:
+  - {id: neck, shape: cylinder, d: 43.2, h: 12, at: [0, 0, -3]}
+  - {id: cap_flange, shape: cylinder, d: 62, h: 3, at: [0, 0, 6.3]}
+  - {id: shoulder, shape: cone, d1: 85, d2: 43.2, h: 10, at: [0, 0, -13]}
+
+print:
+  material: PETG
+  nozzle: 0.4
+  layer_height: 0.2
+  min_wall: 1.6
+  orientation_hint: ring flat on the bed, loop in the XY plane, so the carrying load runs along the layers
+  supports_ok: false
+
+open_questions:
+  - does the ring need to rotate freely, or is snug fine?

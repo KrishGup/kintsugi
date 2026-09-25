@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Env
+.env
+
+# Sessions and scratch output (kept out of the repo; eval reports are committed explicitly)
+sessions/
+scratch/
+*.log
+
+# Web
+web/node_modules/
+
+
+# OS
+.DS_Store
+web/node_modules/

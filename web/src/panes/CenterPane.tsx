@@ -1,0 +1,171 @@
+import { useEffect, useMemo, useState } from "react";
+import { fileUrl, kin } from "../api";
+import ImageZoom from "../components/ImageZoom";
+import StlViewer from "../components/StlViewer";
+import { useLocal } from "../hooks";
+import { iterPath, useSession } from "../pages/session-context";
+import { useToast } from "../toast";
+import { Pill, Spinner } from "../ui";
+
+type Tab = "3d" | "views" | "sections" | "view";
+
+export default function CenterPane() {
+  const s = useSession();
+  const { toast, error } = useToast();
+  const d = s.detail!;
+  const [tab, setTab] = useLocal<Tab>("kin.center.tab", "3d");
+  const [view, setView] = useState<string>("");
+  const [branching, setBranching] = useState(false);
+
+  const it = s.selectedIter;
+  const isLatest = !it || !s.latestIter || it.iteration === s.latestIter.iteration;
+  const n = it?.iteration;
+
+  // STL: the selected iteration's own mesh, else (latest) the session's part.stl (last successful compile)
+  const stlUrl = useMemo(() => {
+    if (it && it.stl) return fileUrl(s.sid, it.stl, it.iteration);
+    if (isLatest && d.stl) return fileUrl(s.sid, d.stl, s.stlVersion);
+    return null;
+  }, [it, isLatest, d.stl, s.sid, s.stlVersion]);
+  const stlNote = it && !it.stl && isLatest && d.stl ? `iteration ${it.iteration} did not compile — showing the last compiled mesh` : null;
+
+  const sheetUrl = it?.sheet ? fileUrl(s.sid, it.sheet, it.iteration) : null;
+  const sectionsUrl = it?.sections ? fileUrl(s.sid, it.sections, it.iteration) : null;
+  const views = it?.views || [];
+  const viewUrl = it && view && views.includes(view) ? fileUrl(s.sid, iterPath(it.iteration, `sheets/views/${view}`), it.iteration) : null;
+
+  useEffect(() => {
+    // keep the picked view valid when the iteration changes
+    if (view && !views.includes(view)) {
+      const same = views.find((v) => v.replace(/^iter_\d+_/, "") === view.replace(/^iter_\d+_/, ""));
+      setView(same || "");
+      if (!same && tab === "view") setTab("views");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [views.join("|")]);
+
+  const branch = async () => {
+    if (!it) return;
+    if (!window.confirm(`Restore part.scad from iteration ${it.iteration}? The current code is kept in the history.`)) return;
+    setBranching(true);
+    try {
+      await kin.branch(s.sid, it.iteration);
+      toast(`Branched from iteration ${it.iteration} — part.scad restored`, "pass");
+      await s.refresh();
+      s.setSelected(null);
+    } catch (e) {
+      error(e, "Branch failed");
+    } finally {
+      setBranching(false);
+    }
+  };
+
+  const viewLabel = (name: string) => name.replace(/^iter_\d+_/, "").replace(/\.png$/, "").replace(/_/g, " ");
+
+  return (
+    <div className="pane">
+      <div className="center-head">
+        <div className="tabs" role="tablist" aria-label="Viewer">
+          <button role="tab" aria-selected={tab === "3d"} className={`tab${tab === "3d" ? " active" : ""}`} onClick={() => setTab("3d")}>
+            3D
+          </button>
+          <button role="tab" aria-selected={tab === "views"} className={`tab${tab === "views" ? " active" : ""}`} onClick={() => setTab("views")}>
+            Views
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === "sections"}
+            className={`tab${tab === "sections" ? " active" : ""}`}
+            onClick={() => setTab("sections")}
+          >
+            Sections
+          </button>
+        </div>
+        <div className="view-picker">
+          {n !== undefined && (
+            <span className="small muted num nowrap">
+              it {n}
+              {isLatest ? "" : " (past)"}
+            </span>
+          )}
+          <select
+            className="select"
+            value={tab === "view" ? view : ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              setView(v);
+              setTab(v ? "view" : "views");
+            }}
+            disabled={views.length === 0}
+            aria-label="Single view"
+            title="Open one rendered view"
+          >
+            <option value="">{views.length ? "Single view…" : "No views yet"}</option>
+            {views.map((v) => (
+              <option key={v} value={v}>
+                {viewLabel(v)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="center-body">
+        {tab === "3d" && (
+          <>
+            <StlViewer url={stlUrl} placeholder="The 3D model appears here after the first iteration compiles. Run the designer, apply params or run code to create one." />
+            {stlNote && (
+              <div style={{ position: "absolute", left: 10, top: 8 }}>
+                <Pill tone="warn">{stlNote}</Pill>
+              </div>
+            )}
+          </>
+        )}
+        {tab === "views" && <ImageZoom src={sheetUrl} alt={`Views sheet, iteration ${n ?? ""}`} placeholder="The annotated views sheet (top, iso, front, right…) is rendered after each iteration compiles." />}
+        {tab === "sections" && (
+          <ImageZoom src={sectionsUrl} alt={`Sections sheet, iteration ${n ?? ""}`} placeholder="Sections through each measured plane, with the assembly ghost, appear here after the first iteration." />
+        )}
+        {tab === "view" && <ImageZoom src={viewUrl} alt={`View ${view}`} placeholder="Pick a single view from the menu above." />}
+      </div>
+
+      <div className="center-foot">
+        <span className="label">Iterations</span>
+        {d.iterations.length === 0 ? (
+          <span className="small muted">none yet</span>
+        ) : (
+          <div className="chips" role="tablist" aria-label="Iterations">
+            {d.iterations.map((x) => (
+              <button
+                key={x.iteration}
+                role="tab"
+                aria-selected={x.iteration === n}
+                className={`chip ${x.ok ? "pass" : "fail"}${x.iteration === n ? " active" : ""}`}
+                onClick={() => s.setSelected(x.iteration === s.latestIter?.iteration ? null : x.iteration)}
+                title={`${x.label || "iteration " + x.iteration}${x.failures.length ? "\nfailing: " + x.failures.join(", ") : ""}${x.compile_ok ? "" : "\ncompile error"}`}
+              >
+                it {x.iteration}
+              </button>
+            ))}
+          </div>
+        )}
+        {it && it.label ? (
+          <span className="small dim" style={{ flex: "1 1 0px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }} title={it.label}>
+            {it.label}
+          </span>
+        ) : (
+          <span className="grow" />
+        )}
+        {!isLatest && (
+          <>
+            <button className="btn btn-xs" onClick={() => s.setSelected(null)}>
+              Latest
+            </button>
+            <button className="btn btn-xs btn-primary" onClick={branch} disabled={branching || s.running || !!s.busy} title="Restore this iteration's part.scad as the working copy">
+              {branching ? <Spinner size={10} /> : null} Branch from here
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

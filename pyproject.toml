@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kintsugi"
+version = "0.1.0"
+description = "Photograph what broke. Print what fits. An agent that turns photos of a broken object into a verified, parametric, printable replacement part."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "trimesh>=4.4",
+  "manifold3d>=2.5",
+  "shapely>=2.0",
+  "rtree>=1.1",
+  "networkx>=3.2",
+  "opencv-contrib-python-headless>=4.9",
+  "pillow>=10.0",
+  "pydantic>=2.6",
+  "pyyaml>=6.0",
+  "reportlab>=4.0",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "python-multipart>=0.0.9",
+  "sse-starlette>=2.0",
+  "httpx>=0.27",
+  "agent-agent-sdk>=0.1.20",
+  "vendor>=0.40",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-timeout>=2.3", "ruff>=0.5"]
+
+[project.scripts]
+kin = "kintsugi.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["kintsugi*"]
+
+[tool.setuptools.package-data]
+kintsugi = ["agent/prompts/*.md", "templates/*.scad"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+timeout = 600
+addopts = "-q"
+markers = [
+  "llm: needs a live model (skipped in CI)",
+  "slow: long-running",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
