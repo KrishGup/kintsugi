@@ -17,7 +17,7 @@ interfaces:
         status: confirmed
         estimates:
           - {value: 3.0, source: user_caliper, conf: 0.95}
-        measure: {recipe: extent, axis: y, region: [[0.5, -3.0, -1], [15.8, 3.0, 13]], feature: slot width between the jaw faces}
+        measure: {recipe: gap, plane_axis: z, at_z: 6.0, axis: y, near: [3.0, 0.0], feature: slot width between the jaw faces}
       length:
         target: 12
         tol: 0.3

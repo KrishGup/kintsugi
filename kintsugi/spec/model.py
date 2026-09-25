@@ -70,11 +70,13 @@ class MeasureRecipe(BaseModel):
       bbox               overall extents [x, y, z]
       notch_circle       circle fitted to an open-sided hole (a clip's jaws) in the section at `at_z`, nearest `near`
       notch_mouth        width of that notch's opening (the gap the object snaps through)
+      gap                free distance across empty space along `axis` through `near`, in the section at `at_z`
+                         (a slot width between jaw faces, a bore depth along its axis, a channel opening)
     """
 
     recipe: Literal[
         "circle_fit_inner", "circle_fit_outer", "extent", "hole_extent", "section_extent",
-        "hole_positions", "wall_min", "bbox", "notch_circle", "notch_mouth", "none",
+        "hole_positions", "wall_min", "bbox", "notch_circle", "notch_mouth", "gap", "none",
     ] = "none"
     at_z: float | None = None
     axis: Literal["x", "y", "z"] = "z"

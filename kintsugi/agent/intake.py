@@ -27,7 +27,7 @@ def parse_intake(text: str) -> dict[str, Any]:
 _FITS = ("press", "sliding", "loose", "snap", "none")
 _TYPES = ("cylindrical_bore", "cylindrical_boss", "slot", "plate", "hole_pattern", "snap", "thread", "custom")
 _RECIPES = ("circle_fit_inner", "circle_fit_outer", "extent", "hole_extent", "section_extent", "hole_positions", "wall_min",
-            "bbox", "notch_circle", "notch_mouth", "none")
+            "bbox", "notch_circle", "notch_mouth", "gap", "none")
 
 
 def _coerce_fit(v: Any) -> tuple[str, str | None]:

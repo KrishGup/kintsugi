@@ -123,7 +123,7 @@ def run_checks(mesh_path: str | Path, spec: PartSpec, iteration: int = 0, *, wal
         if item is not None:
             rep.items.append(item)
             r = dim.measure
-            if r and r.at_z is not None and r.recipe in ("circle_fit_inner", "circle_fit_outer", "hole_extent", "section_extent", "hole_positions", "notch_circle", "notch_mouth"):
+            if r and r.at_z is not None and r.recipe in ("circle_fit_inner", "circle_fit_outer", "hole_extent", "section_extent", "hole_positions", "notch_circle", "notch_mouth", "gap"):
                 planes.setdefault((r.plane_axis, float(r.at_z)), []).append(qname)
     rep.sections = [{"plane_axis": ax, "at": at, "dims": names} for (ax, at), names in planes.items()]
     if not rep.sections:
@@ -266,6 +266,18 @@ def _measure_dim(mesh: trimesh.Trimesh, qname: str, dim: Dim, is_itf: bool, offs
                              tol=dim.tol if dim.target is not None else None, unit=unit,
                              detail=(f"expected {dim.target:g} {'+' if offset > 0 else '-'} clearance {abs(offset):g}" if offset and dim.target is not None else ""),
                              annotate={"type": r.recipe, "plane_axis": r.plane_axis, "at": r.at_z, "axis": r.axis, "near": r.near})
+        if r.recipe == "gap":
+            if r.at_z is None:
+                return CheckItem(qname, label, kind, None, detail="recipe needs at_z")
+            v = G.gap_extent(mesh, r.at_z, r.axis, r.plane_axis, r.near)
+            if v is None:
+                return CheckItem(qname, label, kind, False, target=dim.target, tol=dim.tol, unit=unit,
+                                 detail=f"no free gap through {r.near} along {r.axis} at {r.plane_axis}={r.at_z:g} (the point is inside material)")
+            return CheckItem(qname, label, kind, dim.passes(v - offset), measured=round(v, 3),
+                             target=(round(dim.target + offset, 3) if dim.target is not None else _bounds(dim)),
+                             tol=dim.tol if dim.target is not None else None, unit=unit,
+                             detail=(f"expected {dim.target:g} {'+' if offset > 0 else '-'} clearance {abs(offset):g}" if offset and dim.target is not None else ""),
+                             annotate={"type": "gap", "plane_axis": r.plane_axis, "at": r.at_z, "axis": r.axis, "near": r.near})
         if r.recipe in ("notch_circle", "notch_mouth"):
             if r.at_z is None:
                 return CheckItem(qname, label, kind, None, detail="recipe needs at_z")

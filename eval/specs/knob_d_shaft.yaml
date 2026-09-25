@@ -37,7 +37,7 @@ interfaces:
         status: confirmed
         estimates:
           - {value: 11, source: user_stated, conf: 0.9, note: shaft protrudes 10 mm from the panel}
-        measure: {recipe: extent, axis: z, region: [[-3.8, -3.8, -0.5], [3.8, 2.5, 12]], feature: bore depth (to the cone base)}
+        measure: {recipe: gap, plane_axis: x, at_z: 0.0, axis: z, near: [-3.0, 1.0], feature: bore depth near the bore wall (to the cone base)}
   - id: set_screw
     type: thread
     mates_with: M3 grub screw, thread-forming into the pilot hole

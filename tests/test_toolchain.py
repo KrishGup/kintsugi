@@ -160,7 +160,7 @@ def test_blueprint_renders(tmp):
     rep = run_checks(stl, spec, iteration=3)
     res = make_blueprint(stl, spec, rep, tmp / "sheets", 3)
     assert res.sheet_path.exists() and res.sections_path and res.sections_path.exists()
-    assert set(res.view_paths) == {"top", "iso", "front", "right", "bottom", "left", "back"}
+    assert {"top", "iso", "front", "right", "bottom", "left", "back", "top_detail", "front_detail"} <= set(res.view_paths)
     assert "A" in res.section_paths and "top" in res.assembly_paths
     from PIL import Image
     im = Image.open(res.sheet_path)
@@ -246,3 +246,7 @@ def test_notch_recipes_and_clipped_extent(tmp):
     # region extents clip geometry instead of filtering vertices: a box from z=2 to z=10 sees 4 mm of a 6 mm part
     assert abs(G.extent(m, "z", [[-20, -20, 2.0], [20, 20, 10.0]]) - 4.0) < 1e-6
     assert abs(G.extent(m, "x", [[-20, -20, 2.0], [20, 20, 10.0]]) - 12.0) < 1e-6
+    # gap: free distance across the mouth (4.0 wide slot) and along the notch (from the seat bottom to the open edge)
+    assert abs(G.gap_extent(m, 3.0, "x", "z", near=[0.0, 4.0]) - 4.0) < 0.05
+    assert abs(G.gap_extent(m, 3.0, "y", "z", near=[0.0, 4.0]) - (6.0 + 5.15 / 2)) < 0.05
+    assert G.gap_extent(m, 3.0, "x", "z", near=[5.0, -5.0]) is None  # inside material

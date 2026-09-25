@@ -305,6 +305,36 @@ def notch_measure(mesh, at: float, plane_axis: str = "z", near: list[float] | No
             "widest_depth": float(ts[k_max]) if len(ts) else 0.0}
 
 
+def gap_extent(mesh, at: float, axis: str, plane_axis: str = "z", near: list[float] | None = None) -> float | None:
+    """Free distance across empty space: the length of the line through `near` along `axis`, in the section plane at
+    `at`, between the part's boundaries (clipped to the part's bounding box). Measures a slot width between two jaw
+    faces, a bore depth along its axis, a channel opening — anything that is a gap rather than a solid."""
+    polys = section_polygons(mesh, plane_axis, at)
+    if not polys:
+        return None
+    keep = [a for a in "xyz" if a != plane_axis]
+    col = keep.index(axis)
+    lo, hi = mesh.bounds
+    lo2 = np.array([lo[AXIS_INDEX[keep[0]]], lo[AXIS_INDEX[keep[1]]]])
+    hi2 = np.array([hi[AXIS_INDEX[keep[0]]], hi[AXIS_INDEX[keep[1]]]])
+    if near is None:
+        near = list((lo2 + hi2) / 2)
+    p = np.array(near, float)
+    a = p.copy()
+    b = p.copy()
+    a[col] = lo2[col] - 1e-6
+    b[col] = hi2[col] + 1e-6
+    line = LineString([a, b])
+    solid = unary_union(polys)
+    free = line.difference(solid)
+    pt = shapely.Point(p)
+    pieces = [g for g in (free.geoms if hasattr(free, "geoms") else [free]) if g.geom_type == "LineString" and not g.is_empty]
+    for g in pieces:
+        if g.distance(pt) < 1e-6:
+            return float(g.length)
+    return None
+
+
 def hole_positions(mesh, at: float, plane_axis: str = "z") -> list[dict]:
     out = []
     for poly in section_polygons(mesh, plane_axis, at):
