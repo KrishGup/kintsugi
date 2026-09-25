@@ -52,7 +52,7 @@ class RunOutcome:
         }
 
 
-def _img_content(path: Path, max_side: int = 1400, quality: int = 82) -> dict[str, Any] | None:
+def _img_content(path: Path, max_side: int = 1280, quality: int = 76) -> dict[str, Any] | None:
     """Sheet image for a tool result: JPEG keeps the SDK message small (the sheets are line drawings on white)."""
     try:
         Image.init()
