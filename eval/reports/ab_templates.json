@@ -115,7 +115,7 @@
             "overall": 8
           }
         },
-        "reasoning": "Both parts pass all measured checks: bore ~5.2 mm (loose fit on 4.7 mm shank), 11 mm stack height, footprint within limits, flat-on-bed orientation, no overhangs, and no interference with the screw. A uses a 16\u00d712 mm footprint giving 3.4+ mm of surrounding wall (well above the 1.6 mm minimum) and 170 mm\u00b2 bed contact, providing better clamping-load resistance around the bore. B is slightly more compact at 15\u00d711 mm with ~2.9 mm walls \u2014 still compliant but with less material margin around the bore and less bed adhesion. Both honor the rounded-rectangle design intent, but A's extra wall thickness better satisfies the explicit 'no thin walls / no crushing' strength requirement while remaining within footprint bounds. I would print A."
+        "reasoning": "Both candidates pass all measured checks: bore ~5.2 mm with proper loose clearance around the 4.7 mm shank, 11 mm stack height, watertight single body, and flat-on-bed orientation with 0% overhangs. A uses the full 16\u00d712 mm footprint giving 3.4+ mm walls around the bore (well above the 1.6 mm minimum), maximizing crush resistance under screw clamping load \u2014 the stated strength requirement. B is trimmed to 15\u00d711 mm with ~2.9 mm walls; still passes but leaves less material around the bore for the clamping load, and its more rounded corners slightly reduce side-by-side packing density on the rail. Both are equally printable (170 vs 140 mm\u00b2 bed contact, no supports), but A better honors the 'solid body, no thin walls' strength intent and sits closer to the nominal 16\u00d712 footprint called out in the spec. I'd print A."
       },
       "A_is": "human",
       "preferred": "human",
@@ -282,7 +282,7 @@
             "overall": 6
           }
         },
-        "reasoning": "Both candidates hit the opening (37.26 x 60.39) and tube bore (~5.55 with clearance) targets and satisfy the flange overlap and skirt height requirements. Candidate A passes all wall-thickness checks (min 1.65 mm, p05 11.0 mm) well above the 1.2 mm minimum, giving a robust skirt and flange suitable for PLA at 0.4 nozzle. Candidate B fails walls.p05 and walls.min at 0.50 mm \u2014 1421 sampled points thinner than 1.2 mm \u2014 which means single-perimeter, fragile walls that will likely delaminate or crack when press-fit into the panel. Both print flange-down with no overhang issues, but B's paper-thin skirt undermines strength and printability despite its smaller, lighter volume. A is the clear choice to print."
+        "reasoning": "Both candidates meet the interface dimensions (opening 37.26\u00d760.39, tube bore ~5.55 with clearance) and flange overlap targets. Candidate A passes all wall-thickness checks with p05 = 11.0 mm and min 1.65 mm, giving a robust skirt that will survive insertion/removal and print reliably in PLA at 0.4 nozzle. Candidate B fails walls.p05 and walls.min at 0.50 mm \u2014 below the 1.2 mm minimum and even below a single 0.4 mm perimeter pair \u2014 meaning the skirt is a thin shell that will be fragile, may not slice as solid walls, and risks splitting. A's height (11 mm) also sits more centrally in the 10\u201312 mm band than B's 10.0 mm floor. Both print flange-down with 0% overhang, but A's substantially greater material and wall integrity make it the clear choice."
       },
       "A_is": "kintsugi",
       "preferred": "kintsugi",
@@ -466,11 +466,11 @@
             "fit": 8,
             "printability": 4,
             "strength": 4,
-            "intent": 6,
+            "intent": 7,
             "overall": 5
           }
         },
-        "reasoning": "Both candidates hit the interface targets: 136.4 mm length, 24 mm standoff, 10 mm bar width, and screw positions at \u00b163.2 mm all pass. The decisive difference is wall thickness and geometry. Candidate A uses a rectangular bar/pillar cross-section giving a min wall of 1.82 mm and p05 of 3.94 mm \u2014 comfortably above the 1.6 mm minimum with two solid perimeters. Candidate B uses cylindrical pillars around 3 mm screw holes, producing a min wall of 0.09 mm (FAIL) and a thin knife-edge tangent between the round pillar and the flat bar, which will not print reliably in PETG at 0.4 nozzle and will snap under pull-out load. A also has a larger, cleaner bed-contact footprint and a more elegant, uniform slim-bar aesthetic that matches the design intent. I would print A."
+        "reasoning": "Both parts hit the interface targets: 136.4 mm overall, 24 mm standoff, 10 mm bar width, and screw bosses at \u00b163.2 mm. However, Candidate B fails walls.min at 0.09 mm \u2014 the round pillars leave a razor-thin sliver of material around the 3 mm screw pocket inside a 10 mm boss, which will not print reliably in PETG at 0.4 nozzle and will shear under pull-out load. Candidate A uses a rectangular section with a min wall of 1.82 mm and p05 of 3.94 mm, giving a solid, printable, and stronger boss while still passing every spec check. A's flat-bottomed U-profile also seats cleanly on the bed with 1332 mm\u00b2 contact and near-zero overhang. A is the one I would print."
       },
       "A_is": "kintsugi",
       "preferred": "kintsugi",
@@ -486,8 +486,163 @@
           "fit": 8,
           "printability": 4,
           "strength": 4,
-          "intent": 6,
+          "intent": 7,
           "overall": 5
+        }
+      }
+    }
+  },
+  {
+    "name": "trailer_jack_cap",
+    "title": "Trailer jack stand cap (chrishad95/3dPrintingProjects)",
+    "mode": "templates",
+    "kintsugi_status": "done",
+    "kintsugi_iterations": 2,
+    "kintsugi_cost_usd": 1.2642,
+    "kintsugi_duration_s": 447.6,
+    "final_iteration": 2,
+    "ref_hard_pass": true,
+    "kin_hard_pass": true,
+    "ref_fails": [
+      "walls.min"
+    ],
+    "kin_fails": [],
+    "interface_dims": {
+      "pipe_bore.outer_diameter": {
+        "target": 45.79,
+        "tol": 0.25,
+        "ref": 45.78,
+        "kin": 45.785,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "pipe_bore.plug_depth": {
+        "target": "\u22658 \u226414",
+        "tol": null,
+        "ref": 9.99,
+        "kin": 9.99,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "rim.flange_diameter": {
+        "target": 50.8,
+        "tol": 0.5,
+        "ref": 50.791,
+        "kin": 50.792,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": true
+      },
+      "height.height": {
+        "target": 25.0,
+        "tol": 1.0,
+        "ref": 25.0,
+        "kin": 25.0,
+        "ref_pass": true,
+        "kin_pass": true,
+        "interface": false
+      }
+    },
+    "metrics": {
+      "silhouette_iou": {
+        "top": 0.9997771144278607,
+        "front": 0.9939407510834201,
+        "right": 0.990668411382952
+      },
+      "silhouette_iou_mean": 0.9947954256314109,
+      "volume_ref_mm3": 21059.375187644953,
+      "volume_kin_mm3": 20057.692959286054,
+      "bbox_ref": [
+        50.8,
+        50.8,
+        25.0
+      ],
+      "bbox_kin": [
+        50.8,
+        50.8,
+        25.0
+      ],
+      "surface_ref_mm2": 10494.772319115487,
+      "surface_kin_mm2": 10452.494828999475,
+      "chamfer_mm": {
+        "mean_a_to_b": 0.17264834549530217,
+        "mean_b_to_a": 0.1702126828797159,
+        "p95_a_to_b": 0.5,
+        "p95_b_to_a": 0.5,
+        "chamfer": 0.17143051418750904
+      }
+    },
+    "sheets": {
+      "ref": "eval/reports/templates/trailer_jack_cap/ref/iter_00_sheet.png",
+      "kin": "eval/reports/templates/trailer_jack_cap/kin/iter_02_sheet.png",
+      "ref_sections": "eval/reports/templates/trailer_jack_cap/ref/iter_00_sections.png",
+      "kin_sections": "eval/reports/templates/trailer_jack_cap/kin/iter_02_sections.png"
+    },
+    "critic": [
+      {
+        "verdict": "pass",
+        "summary": "All hard checks pass and the drawings match the spec: flange-down orientation, hollow plug up with visible tension tabs for retention, correct bore/flange diameters, 10 mm plug depth, and 25 mm total height. Assembly views show the flange seating on the pipe rim with the plug entering the bore as intended.",
+        "discrepancies": [
+          {
+            "where": "walls check / tension tabs",
+            "expected": "spec calls for min wall 3 mm",
+            "observed": "walls.min = 2.65 mm (p05 = 3.00 mm); the thin spots are almost certainly at the tension-tab tips or fillet transitions, which is acceptable for the retention feature",
+            "severity": "low",
+            "suggestion": "no change required, but if a future revision tunes the tabs, keep the tab body \u22652.5 mm to avoid snap-off along layer lines in PETG"
+          },
+          {
+            "where": "interference.pipe_wall",
+            "expected": "\u226425 mm\u00b3 allowed contact",
+            "observed": "24.18 mm\u00b3 \u2014 right at the limit, consistent with tab interference providing retention",
+            "severity": "low",
+            "suggestion": "intended behavior; keep an eye on this budget if tabs are enlarged in future iterations"
+          }
+        ],
+        "question_for_user": null,
+        "model": "opus",
+        "duration_s": 19.8
+      }
+    ],
+    "narration": "trailer_jack_cap is a push-in end cap for a 2\" steel pipe (OD 50.8, ID 46.04). It has a 15 mm tall flange (OD 50.79 measured) that sits on the pipe rim and a 10 mm hollow plug (OD 45.78, target 45.79 = pipe ID \u2212 0.25 clearance) that enters the bore. Total height 25.00 mm. The interior is a single hollow bore \u00d8 39.39, giving a 3.2 mm wall on the plug (safely above the 3 mm min-wall requirement) and a beefier 5.7 mm wall on the flange; the bottom has a 3 mm closed floor with a 0.5 mm bed chamfer. Retention is provided by six vertical friction ribs on the plug OD (0.3 mm radial protrusion, from z=19 to z=24.4), placed above the z=18 measurement plane so they don't skew the circle-fit; they push about 0.18 mm into the pipe wall (24 mm\u00b3 contact volume, within the allow_contact budget of 25). Print flange-down as modeled \u2014 no supports needed, all overhangs are chamfered lead-ins. All hard checks pass: bore fit, flange OD, plug depth, height, walls (p05 = 3.00, min = 2.65), watertight/single-body, on-bed, overhang, and interference. PETG is a good outdoor choice for UV stability.</narration>\n</invoke>",
+    "judge": {
+      "raw": {
+        "preferred": "A",
+        "scores": {
+          "A": {
+            "fit": 9,
+            "printability": 9,
+            "strength": 8,
+            "intent": 8,
+            "overall": 9
+          },
+          "B": {
+            "fit": 8,
+            "printability": 6,
+            "strength": 6,
+            "intent": 8,
+            "overall": 7
+          }
+        },
+        "reasoning": "Both candidates hit the key interface dimensions: plug OD 45.78 mm (within the 46.04 \u00b10.25 sliding-fit window with ~0.25 mm clearance), flange 50.79 mm, height 25 mm, and plug depth ~9.99 mm within the 8\u201314 mm band. Both show retention features (small tabs/ribs on the plug wall) consistent with the spec. The decisive difference is wall thickness: A reports walls.min 2.65 mm (p05 3.00 mm) and PASSES the min-wall check, while B reports walls.min 1.41 mm (p05 3.50 mm) and FAILS the 2.25 mm minimum \u2014 its retention tab roots are too thin for durable PETG outdoor service and risk splitting on insertion. A is also cleaner geometrically with more bed contact (1947 vs 2026 mm\u00b2 comparable) and no overhang issues. I would print A."
+      },
+      "A_is": "kintsugi",
+      "preferred": "kintsugi",
+      "scores": {
+        "kintsugi": {
+          "fit": 9,
+          "printability": 9,
+          "strength": 8,
+          "intent": 8,
+          "overall": 9
+        },
+        "human": {
+          "fit": 8,
+          "printability": 6,
+          "strength": 6,
+          "intent": 8,
+          "overall": 7
         }
       }
     }

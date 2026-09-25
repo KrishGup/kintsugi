@@ -8,7 +8,9 @@
     "right": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_right.png",
     "bottom": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_bottom.png",
     "left": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_left.png",
-    "back": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_back.png"
+    "back": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_back.png",
+    "top_detail": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_top_detail.png",
+    "front_detail": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_front_detail.png"
   },
   "section_views": {
     "A": "eval/reports/templates/ikea_dombas_handle/ref/views/iter_00_section_A.png"

@@ -287,7 +287,19 @@ async def compare(names: list[str] | None, mode: str, judge_model: str | None, w
         results.append(entry)
         print(f"{name}: kin pass={rep_kin.all_hard_pass} ref pass={rep_ref.all_hard_pass} IoU={metrics['silhouette_iou_mean']:.2f} "
               f"chamfer={metrics['chamfer_mm']['chamfer']:.2f} judge={entry.get('judge', {}).get('preferred')}")
-    (REPORTS / f"ab_{mode}.json").write_text(json.dumps(results, indent=2, default=str))
+    # merge with earlier results for parts not compared in this call
+    prev_p = REPORTS / f"ab_{mode}.json"
+    if prev_p.exists():
+        try:
+            prev = {r["name"]: r for r in json.loads(prev_p.read_text())}
+        except json.JSONDecodeError:
+            prev = {}
+        done = {r["name"] for r in results}
+        order = [ref["name"] for ref in manifest()]
+        merged = {**prev, **{r["name"]: r for r in results}}
+        results = [merged[n] for n in order if n in merged] + [r for n, r in merged.items() if n not in order]
+        del done
+    prev_p.write_text(json.dumps(results, indent=2, default=str))
     write_report(results, mode)
 
 

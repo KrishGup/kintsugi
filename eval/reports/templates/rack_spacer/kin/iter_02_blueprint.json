@@ -8,7 +8,9 @@
     "right": "eval/reports/templates/rack_spacer/kin/views/iter_02_right.png",
     "bottom": "eval/reports/templates/rack_spacer/kin/views/iter_02_bottom.png",
     "left": "eval/reports/templates/rack_spacer/kin/views/iter_02_left.png",
-    "back": "eval/reports/templates/rack_spacer/kin/views/iter_02_back.png"
+    "back": "eval/reports/templates/rack_spacer/kin/views/iter_02_back.png",
+    "top_detail": "eval/reports/templates/rack_spacer/kin/views/iter_02_top_detail.png",
+    "front_detail": "eval/reports/templates/rack_spacer/kin/views/iter_02_front_detail.png"
   },
   "section_views": {
     "A": "eval/reports/templates/rack_spacer/kin/views/iter_02_section_A.png"
