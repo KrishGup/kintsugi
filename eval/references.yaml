@@ -1,0 +1,50 @@
+# A/B references: human-designed OpenSCAD repair parts from public GitHub repositories.
+# The sources are NOT vendored (licenses vary); `python eval/ab_eval.py fetch` clones them at eval time.
+# `transform` brings the reference into the spec frame (origin at the primary interface, Z up, bed at z = 0):
+# a translation applied after an optional rotation (degrees about x, y, z) in trimesh/OpenSCAD order.
+
+references:
+  - name: rack_spacer
+    title: Rack spacer (xenomachina/3d-models)
+    repo: https://github.com/xenomachina/3d-models
+    path: rack-spacers/rack-spacer.scad
+    license: GPL-3.0 (repo LICENSE); file headers say LGPL-2.1
+    what: 16 x 12 x 11 mm spacer with rounded corners and a 5.2 mm screw hole (4.7 mm screw + 0.5 clearance)
+    transform: {rotate: [0, 0, 0], translate: [0, 0, 0]}
+    spec: eval/specs/ab_rack_spacer.yaml
+
+  - name: cabinet_plug
+    title: Cabinet plug (xenomachina/3d-models)
+    repo: https://github.com/xenomachina/3d-models
+    path: cabinet-plug/cabinet-plug.scad
+    license: GPL-3.0 (repo LICENSE); file headers say LGPL-2.1
+    what: rectangular plug for a 37.26 x 60.39 mm cabinet opening, 1 mm flange, 5.15 mm tube pass-through
+    transform: {rotate: [0, 0, 0], translate: [-18.63, -30.195, 0]}
+    spec: eval/specs/ab_cabinet_plug.yaml
+
+  - name: ikea_dombas_handle
+    title: IKEA DOMBAS wardrobe handle (frdmn/openscad-ikea-handle-replacement)
+    repo: https://github.com/frdmn/openscad-ikea-handle-replacement
+    path: 01-handle.scad
+    license: MIT
+    what: 136.4 mm half-round bar handle on two 24 mm pillars with 3 mm screw holes 126.4 mm apart
+    transform: {rotate: [0, 0, 0], translate: [-68.2, -5, 0]}
+    spec: eval/specs/ab_ikea_dombas_handle.yaml
+
+  - name: trailer_jack_cap
+    title: Trailer jack stand cap (chrishad95/3dPrintingProjects)
+    repo: https://github.com/chrishad95/3dPrintingProjects
+    path: Trailer-Jack-Cap/Trailer-Jack-Cap.scad
+    license: none stated (all rights reserved; used here for evaluation only, never redistributed)
+    what: "push-in cap for a 2 in pipe (ID 46.04 mm): 50.8 mm flange, hollow plug, two tension tabs with retention bumps"
+    transform: {rotate: [0, 0, 0], translate: [0, 0, 0]}
+    spec: eval/specs/ab_trailer_jack_cap.yaml
+
+  - name: wine_glass_rack_hinge
+    title: Miele dishwasher wine-glass rack hinge (xenomachina/3d-models)
+    repo: https://github.com/xenomachina/3d-models
+    path: miele-dishwasher/wine-glass-rack-hinge.scad
+    license: GPL-3.0 (repo LICENSE); file headers say LGPL-2.1
+    what: "snap-in hinge pin (6.87 mm shaft with a retention ridge) carrying a clip that grips a 5.15 mm wire through a 4 mm opening; printed on its side"
+    transform: {rotate: [0, 0, 0], translate: [0, 0, 0]}
+    spec: eval/specs/ab_wine_glass_rack_hinge.yaml

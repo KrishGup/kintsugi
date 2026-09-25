@@ -9,7 +9,7 @@ from typing import Iterable
 import numpy as np
 import shapely
 import trimesh
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import LineString, MultiPolygon, Polygon
 from shapely.ops import unary_union
 
 AXIS_INDEX = {"x": 0, "y": 1, "z": 2}
@@ -52,7 +52,10 @@ def section_polygons(mesh: trimesh.Trimesh, plane_axis: str = "z", at: float = 0
             ring = ring.buffer(0)
         if ring.is_empty or ring.area < 1e-9:
             continue
-        polys.append(ring)
+        if isinstance(ring, MultiPolygon):
+            polys.extend(g for g in ring.geoms if g.area > 1e-9)
+        else:
+            polys.append(ring)
     if not polys:
         return []
     # Nest loops: even-odd fill. Sort by area descending; a loop inside another is a hole (or an island inside a hole).
@@ -197,11 +200,23 @@ def circle_fit_inner(mesh, at: float, plane_axis: str = "z", near: list[float] |
 
 
 def circle_fit_outer(mesh, at: float, plane_axis: str = "z", near: list[float] | None = None) -> CircleFit | None:
+    """Circle through the outer envelope of the section: boundary points that lie on the convex hull, so a ring cut
+    by slits (tabs) or joined to another feature still measures its outer arc."""
     polys = section_polygons(mesh, plane_axis, at)
-    poly = _pick_polygon(polys, near)
-    if poly is None:
+    if not polys:
         return None
-    return fit_circle_robust(np.asarray(poly.exterior.coords)[:-1])
+    chosen = None
+    if near is not None:
+        pt = shapely.Point(near[0], near[1])
+        inside = [p for p in polys if p.contains(pt)]
+        chosen = inside[0] if inside else None
+    group = [chosen] if chosen is not None else polys
+    hull = unary_union(group).convex_hull
+    ring = hull.exterior
+    pts = np.vstack([np.asarray(p.exterior.coords)[:-1] for p in group])
+    on_hull = np.array([ring.distance(shapely.Point(q)) < 1e-6 for q in pts])
+    sel = pts[on_hull] if on_hull.sum() >= 6 else pts
+    return fit_circle_robust(sel)
 
 
 def hole_extent(mesh, at: float, axis: str, plane_axis: str = "z", near: list[float] | None = None) -> float | None:
@@ -227,6 +242,67 @@ def section_extent(mesh, at: float, axis: str, plane_axis: str = "z", near: list
     keep = [a for a in "xyz" if a != plane_axis]
     col = keep.index(axis)
     return float(coords[:, col].max() - coords[:, col].min())
+
+
+def notch_measure(mesh, at: float, plane_axis: str = "z", near: list[float] | None = None) -> dict | None:
+    """A notch (open-sided hole, as in a snap-on clip): the concavity of the section polygon nearest `near`.
+
+    Returns {mouth_width, hull_width, circle: CircleFit | None, depth, area}. `mouth_width` is the narrowest passage
+    between the jaws (the gap the object must snap through), `hull_width` the straight-line span at the convex hull,
+    `circle` a fit to the seat beyond the widest point of the cavity (a clean arc even for egg-shaped seats).
+    """
+    polys = section_polygons(mesh, plane_axis, at)
+    poly = _pick_polygon(polys, near)
+    if poly is None:
+        return None
+    hull = poly.convex_hull
+    diff = hull.difference(poly)
+    cands = [g for g in iter_polys(diff) if g.area > 0.05]
+    if not cands:
+        return None
+    if near is not None:
+        pt = shapely.Point(near[0], near[1])
+        cav = min(cands, key=lambda g: g.distance(pt) if not g.contains(pt) else 0.0)
+    else:
+        cav = max(cands, key=lambda g: g.area)
+    hull_ring = hull.exterior
+    pts = np.asarray(cav.exterior.coords)[:-1]
+    on_hull = np.array([hull_ring.distance(shapely.Point(p)) < 1e-6 for p in pts])
+    mouth_pts = pts[on_hull]
+    if len(mouth_pts) < 2:
+        return None
+    # mouth line a-b (extreme hull points), inward normal n
+    d = mouth_pts[:, None, :] - mouth_pts[None, :, :]
+    i, j = np.unravel_index(np.argmax((d ** 2).sum(-1)), (len(mouth_pts), len(mouth_pts)))
+    a, b = mouth_pts[i], mouth_pts[j]
+    ab = b - a
+    L = float(np.linalg.norm(ab)) + 1e-12
+    u = ab / L
+    n = np.array([-u[1], u[0]])
+    cen = np.asarray(cav.centroid.coords)[0]
+    if (cen - a) @ n < 0:
+        n = -n
+    depth = float(((pts - a) @ n).max())
+    # width profile along the depth
+    widths = []
+    ts = np.arange(0.0, depth + 1e-9, max(depth / 200.0, 0.02))
+    for t in ts:
+        p0 = a + n * t - u * L
+        p1 = a + n * t + u * L
+        chord = cav.intersection(LineString([p0, p1]))
+        widths.append(float(chord.length) if not chord.is_empty else 0.0)
+    widths = np.asarray(widths)
+    k_max = int(np.argmax(widths)) if len(widths) else 0
+    throat = float(widths[: k_max + 1].min()) if k_max >= 0 and len(widths) else L
+    seat_pts = pts[(~on_hull) & (((pts - a) @ n) > ts[k_max] - 1e-6)] if len(ts) else pts[~on_hull]
+    circle = None
+    if len(seat_pts) >= 6:
+        try:
+            circle = fit_circle_robust(seat_pts, tol=0.08)
+        except ValueError:
+            circle = None
+    return {"mouth_width": throat, "hull_width": L, "circle": circle, "depth": depth, "area": float(cav.area),
+            "widest_depth": float(ts[k_max]) if len(ts) else 0.0}
 
 
 def hole_positions(mesh, at: float, plane_axis: str = "z") -> list[dict]:
@@ -378,6 +454,11 @@ def context_mesh(shape: str, **kw) -> trimesh.Trimesh:
         m.apply_translation(size / 2)
     elif shape == "sphere":
         m = trimesh.creation.icosphere(subdivisions=3, radius=kw["d"] / 2)
+    elif shape == "tube":
+        outer = trimesh.creation.cylinder(radius=kw["d"] / 2, height=kw["h"], sections=96)
+        inner = trimesh.creation.cylinder(radius=kw["di"] / 2, height=kw["h"] + 2, sections=96)
+        m = trimesh.boolean.difference([outer, inner], engine="manifold")
+        m.apply_translation([0, 0, kw["h"] / 2])
     else:
         raise ValueError(shape)
     if axis == "x":

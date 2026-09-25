@@ -1,0 +1,44 @@
+part:
+  name: rack_spacer
+  role: spacer that holds two rack plates 11 mm apart around a single screw
+  object: equipment rack shelf (screw 4.7 mm shank)
+  design_intent: compact rectangular spacer with rounded corners; screw passes through the center; prints flat
+
+interfaces:
+  - id: screw
+    type: cylindrical_bore
+    mates_with: 4.7 mm screw shank passing through the spacer
+    fit: loose
+    clearance: 0.5
+    dims:
+      inner_diameter:
+        target: 4.7
+        tol: 0.2
+        status: confirmed
+        estimates: [{value: 4.7, source: user_caliper, conf: 0.95}]
+        measure: {recipe: circle_fit_inner, at_z: 5.5, near: [0, 0], feature: screw hole}
+  - id: stack
+    type: custom
+    mates_with: the two plates the spacer sits between
+    fit: none
+    dims:
+      height:
+        target: 11.0
+        tol: 0.15
+        status: confirmed
+        estimates: [{value: 11.0, source: user_caliper, conf: 0.95}]
+        measure: {recipe: extent, axis: z, feature: stack height}
+
+requirements:
+  - id: footprint
+    text: footprint about 16 x 12 mm so several spacers fit side by side on the rack rail
+    derived:
+      width_x: {min: 14, max: 16.5, measure: {recipe: section_extent, at_z: 5.5, axis: x, near: [0, 0], feature: footprint x}}
+      width_y: {min: 10, max: 12.5, measure: {recipe: section_extent, at_z: 5.5, axis: y, near: [0, 0], feature: footprint y}}
+  - id: strength
+    text: takes the screw's clamping load without crushing; solid body, no thin walls
+
+context:
+  - {id: screw_shank, shape: cylinder, d: 4.7, h: 20, at: [0, 0, -4]}
+
+print: {material: PLA, nozzle: 0.4, layer_height: 0.2, min_wall: 1.6, orientation_hint: flat on the bed, hole vertical}

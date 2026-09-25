@@ -68,11 +68,13 @@ class MeasureRecipe(BaseModel):
       hole_positions     centroids + diameters of every hole in the section at `at_z`; compared to `expect`
       wall_min           minimum wall thickness within `region` (falls back to global)
       bbox               overall extents [x, y, z]
+      notch_circle       circle fitted to an open-sided hole (a clip's jaws) in the section at `at_z`, nearest `near`
+      notch_mouth        width of that notch's opening (the gap the object snaps through)
     """
 
     recipe: Literal[
         "circle_fit_inner", "circle_fit_outer", "extent", "hole_extent", "section_extent",
-        "hole_positions", "wall_min", "bbox", "none",
+        "hole_positions", "wall_min", "bbox", "notch_circle", "notch_mouth", "none",
     ] = "none"
     at_z: float | None = None
     axis: Literal["x", "y", "z"] = "z"
@@ -147,15 +149,16 @@ class ContextShape(BaseModel):
     """Crude proxy of the object the part mates with. Used for interference checks and assembly views."""
 
     id: str
-    shape: Literal["cylinder", "cone", "box", "sphere"] = "cylinder"
+    shape: Literal["cylinder", "cone", "box", "sphere", "tube"] = "cylinder"
     d: float | None = None
     d1: float | None = None
     d2: float | None = None
+    di: float | None = None  # tube inner diameter
     h: float | None = None
     size: list[float] | None = None  # box
-    at: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0])  # base center (cylinder/cone) or box min corner
+    at: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0])  # base center (cylinder/cone/tube) or box min corner
     axis: Literal["x", "y", "z"] = "z"
-    allow_contact: bool = False  # True: small overlap tolerated (declared contact face)
+    allow_contact: bool | float = False  # True: 2 mm³ overlap tolerated; a number: that many mm³ (declared contact / flexing feature)
 
 
 class PrintSettings(BaseModel):

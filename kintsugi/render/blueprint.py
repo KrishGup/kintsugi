@@ -43,7 +43,7 @@ def context_ghost(spec: PartSpec) -> trimesh.Trimesh | None:
     meshes = []
     for c in spec.context:
         try:
-            meshes.append(G.context_mesh(c.shape, d=c.d, d1=c.d1, d2=c.d2, h=c.h, size=c.size, at=c.at, axis=c.axis))
+            meshes.append(G.context_mesh(c.shape, d=c.d, d1=c.d1, d2=c.d2, di=c.di, h=c.h, size=c.size, at=c.at, axis=c.axis))
         except Exception:
             continue
     if not meshes:

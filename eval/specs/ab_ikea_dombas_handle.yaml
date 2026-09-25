@@ -1,0 +1,42 @@
+part:
+  name: ikea_dombas_handle
+  role: "wardrobe door handle: a grip bar held off the door face by two pillars, fixed with two screws from inside the door"
+  object: IKEA DOMBAS wardrobe door (two existing screw holes 126.4 mm apart)
+  design_intent: a comfortable grip bar the full width of the screw spacing plus a little, standing 24 mm off the door; the flat side of the bar prints on the bed
+
+interfaces:
+  - id: screws
+    type: hole_pattern
+    mates_with: two screws through the door into the pillars (screws enter from the door face at z = 24 and go 10 mm into the pillars)
+    fit: press
+    clearance: 0.0
+    dims:
+      positions:
+        tol: 0.4
+        status: confirmed
+        estimates: [{value: 126.4, source: user_caliper, conf: 0.95}]
+        measure: {recipe: hole_positions, at_z: 20.0, expect: [[-63.2, 0, 3.0], [63.2, 0, 3.0]], feature: screw holes 126.4 mm apart, 3.0 mm pilot}
+        note: two blind 3.0 mm pilot holes at least 10 mm deep, opening at the door face (top, z = 24)
+      standoff:
+        target: 24.0
+        tol: 0.5
+        status: confirmed
+        estimates: [{value: 24.0, source: user_ruler, conf: 0.9}]
+        measure: {recipe: extent, axis: z, feature: door face to bar}
+
+requirements:
+  - id: length
+    text: overall length about 136 mm (must not exceed 140)
+    derived:
+      overall_length: {min: 130, max: 140, measure: {recipe: extent, axis: x, feature: overall length}}
+  - id: grip
+    text: "a hand must fit between the bar and the door: at least 18 mm of clear finger room under the bar between the pillars, bar about 10 mm across"
+  - id: bar_width
+    text: the bar and pillars are 10 mm wide (y) so the handle looks slim
+    derived:
+      bar_width: {min: 8, max: 14, measure: {recipe: extent, axis: y, feature: overall width}}
+
+context:
+  - {id: door, shape: box, size: [170, 60, 16], at: [-85, -30, 24.0]}
+
+print: {material: PETG, nozzle: 0.4, layer_height: 0.2, min_wall: 1.6, orientation_hint: flat face of the bar on the bed, pillars up}

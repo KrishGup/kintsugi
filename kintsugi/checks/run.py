@@ -118,7 +118,7 @@ def run_checks(mesh_path: str | Path, spec: PartSpec, iteration: int = 0, *, wal
         if item is not None:
             rep.items.append(item)
             r = dim.measure
-            if r and r.at_z is not None and r.recipe in ("circle_fit_inner", "circle_fit_outer", "hole_extent", "section_extent", "hole_positions"):
+            if r and r.at_z is not None and r.recipe in ("circle_fit_inner", "circle_fit_outer", "hole_extent", "section_extent", "hole_positions", "notch_circle", "notch_mouth"):
                 planes.setdefault((r.plane_axis, float(r.at_z)), []).append(qname)
     rep.sections = [{"plane_axis": ax, "at": at, "dims": names} for (ax, at), names in planes.items()]
     if not rep.sections:
@@ -159,12 +159,13 @@ def run_checks(mesh_path: str | Path, spec: PartSpec, iteration: int = 0, *, wal
     # --- interference with context (hard unless allow_contact)
     for c in spec.context:
         try:
-            other = G.context_mesh(c.shape, d=c.d, d1=c.d1, d2=c.d2, h=c.h, size=c.size, at=c.at, axis=c.axis)
+            other = G.context_mesh(c.shape, d=c.d, d1=c.d1, d2=c.d2, di=c.di, h=c.h, size=c.size, at=c.at, axis=c.axis)
             vol = G.interference_volume(mesh, other)
         except Exception as e:
             rep.items.append(CheckItem(f"interference.{c.id}", f"Interference with {c.id}", "info", None, detail=f"could not evaluate: {e}"))
             continue
-        limit = 2.0 if c.allow_contact else 0.05
+        limit = (float(c.allow_contact) if isinstance(c.allow_contact, (int, float)) and not isinstance(c.allow_contact, bool) and c.allow_contact > 0
+                 else (2.0 if c.allow_contact else 0.05))
         rep.interference.append({"id": c.id, "volume_mm3": vol, "allow_contact": c.allow_contact})
         rep.items.append(CheckItem(f"interference.{c.id}", f"Interference volume with {c.id}", "hard", vol <= limit,
                                    measured=round(vol, 3), target=0.0, tol=limit, unit="mm³",
@@ -260,6 +261,27 @@ def _measure_dim(mesh: trimesh.Trimesh, qname: str, dim: Dim, is_itf: bool, offs
                              tol=dim.tol if dim.target is not None else None, unit=unit,
                              detail=(f"expected {dim.target:g} {'+' if offset > 0 else '-'} clearance {abs(offset):g}" if offset and dim.target is not None else ""),
                              annotate={"type": r.recipe, "plane_axis": r.plane_axis, "at": r.at_z, "axis": r.axis, "near": r.near})
+        if r.recipe in ("notch_circle", "notch_mouth"):
+            if r.at_z is None:
+                return CheckItem(qname, label, kind, None, detail="recipe needs at_z")
+            nm = G.notch_measure(mesh, r.at_z, r.plane_axis, r.near)
+            if nm is None or (r.recipe == "notch_circle" and nm["circle"] is None):
+                return CheckItem(qname, label, kind, False, target=dim.target, tol=dim.tol, unit=unit,
+                                 detail=f"no open-sided notch found at {r.plane_axis}={r.at_z:g}")
+            if r.recipe == "notch_circle":
+                c = nm["circle"]
+                v = c.d
+                detail = f"center ({c.cx:.2f}, {c.cy:.2f}), rms {c.rms:.3f}, mouth {nm['mouth_width']:.2f}, depth {nm['depth']:.2f}"
+                ann = {"type": "circle", "plane_axis": r.plane_axis, "at": r.at_z, "cx": c.cx, "cy": c.cy, "r": c.r}
+            else:
+                v = nm["mouth_width"]
+                detail = f"notch depth {nm['depth']:.2f}" + (f", circle Ø{nm['circle'].d:.2f}" if nm["circle"] else "")
+                ann = None
+            return CheckItem(qname, label, kind, dim.passes(v - offset), measured=round(v, 3),
+                             target=(round(dim.target + offset, 3) if dim.target is not None else _bounds(dim)),
+                             tol=dim.tol if dim.target is not None else None, unit=unit,
+                             detail=detail + (f"; expected {dim.target:g} {'+' if offset > 0 else '-'} clearance {abs(offset):g}" if offset and dim.target is not None else ""),
+                             annotate=ann)
         if r.recipe == "hole_positions":
             if r.at_z is None:
                 return CheckItem(qname, label, kind, None, detail="recipe needs at_z")

@@ -23,3 +23,8 @@ web/node_modules/
 # OS
 .DS_Store
 web/node_modules/
+
+# A/B references are fetched at eval time (licenses vary); runs are large
+eval/references/src/
+eval/references/*.stl
+eval/runs/

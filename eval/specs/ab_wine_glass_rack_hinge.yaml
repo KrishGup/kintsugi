@@ -1,0 +1,71 @@
+part:
+  name: wine_glass_rack_hinge
+  role: "hinge pin for a dishwasher wine-glass rack: a shaft with a retention ridge snaps into the rack's hole and a clip on its end grips a 5.15 mm wire so the rack can pivot"
+  object: Miele dishwasher wine-glass rack (wire 5.15 mm; hinge hole takes a 6.87 mm shaft)
+  design_intent: replaces the original pin; the clip must snap over the wire (4 mm opening) and hold it; the part lies on its side on the bed with the shaft axis horizontal along -Y, so the clip jaws flex along the layers; a 2.31 mm hole runs down the shaft axis
+
+interfaces:
+  - id: shaft
+    type: cylindrical_boss
+    side: male
+    mates_with: the rack's hinge hole (takes the original 6.87 mm shaft; a ridge retains it)
+    fit: sliding
+    clearance: 0.0
+    dims:
+      outer_diameter:
+        target: 6.87
+        tol: 0.15
+        status: confirmed
+        estimates: [{value: 6.87, source: user_caliper, conf: 0.95}]
+        measure: {recipe: circle_fit_outer, plane_axis: y, at_z: -2.5, near: [0, 4.11], feature: shaft OD}
+      ridge_diameter:
+        target: 8.21
+        tol: 0.25
+        status: confirmed
+        estimates: [{value: 8.21, source: user_caliper, conf: 0.9}]
+        measure: {recipe: circle_fit_outer, plane_axis: y, at_z: -5.75, near: [0, 4.11], feature: retention ridge OD}
+      shaft_length:
+        target: 8.35
+        tol: 0.3
+        status: confirmed
+        estimates: [{value: 8.35, source: user_caliper, conf: 0.95}]
+        measure: {recipe: extent, axis: y, region: [[-5, -8.6, -1], [5, 0.1, 9]], feature: shaft length (y = 0 to -8.35)}
+      axial_hole:
+        target: 2.31
+        tol: 0.2
+        status: confirmed
+        estimates: [{value: 2.31, source: user_caliper, conf: 0.9}]
+        measure: {recipe: circle_fit_inner, plane_axis: y, at_z: -2.5, near: [0, 4.11], feature: axial hole}
+  - id: wire_clip
+    type: custom
+    side: female
+    mates_with: the 5.15 mm rack wire, snapped in through the jaw opening
+    fit: snap
+    clearance: 0.0
+    dims:
+      seat_diameter:
+        target: 5.15
+        tol: 0.2
+        status: confirmed
+        estimates: [{value: 5.15, source: user_caliper, conf: 0.95}]
+        measure: {recipe: notch_circle, plane_axis: z, at_z: 2.5, near: [0, -12], feature: wire seat}
+      opening_width:
+        target: 4.0
+        tol: 0.2
+        status: confirmed
+        estimates: [{value: 4.0, source: user_caliper, conf: 0.9}]
+        measure: {recipe: notch_mouth, plane_axis: z, at_z: 2.5, near: [0, -12], feature: jaw opening}
+
+requirements:
+  - id: envelope
+    text: the clip end is about 9.2 mm wide and 7 mm deep so it clears the neighboring wires; overall length about 15.4 mm
+    derived:
+      overall_length: {min: 14.5, max: 16.5, measure: {recipe: extent, axis: y, feature: overall length}}
+      clip_width: {min: 8.5, max: 10.0, measure: {recipe: extent, axis: x, region: [[-10, -16, -1], [10, -8.36, 9]], feature: clip width}}
+  - id: hold
+    text: the jaws must retain the wire (opening smaller than the wire) yet snap on by hand; jaws flex along the layers
+
+context:
+  - {id: wire, shape: cylinder, d: 5.15, h: 12, at: [0, -11.9, -2], axis: z, allow_contact: 1.0}
+
+print: {material: PETG, nozzle: 0.4, layer_height: 0.15, min_wall: 1.2, orientation_hint: on its side, shaft axis along -Y, clip jaws opening toward -Y}

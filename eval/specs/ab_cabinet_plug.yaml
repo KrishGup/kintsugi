@@ -1,0 +1,52 @@
+part:
+  name: cabinet_plug
+  role: plug that closes a rectangular cable opening in a cabinet panel while letting one 5.15 mm tube pass through
+  object: cabinet panel with a 37.26 x 60.39 mm rectangular opening; a 5.15 mm tube runs through it
+  design_intent: a skirt that sits inside the opening and a thin flange that covers its edge from the outside; tube hole in the center; prints flange-down
+
+interfaces:
+  - id: opening
+    type: custom
+    mates_with: the rectangular opening in the panel (the skirt sits inside it)
+    fit: none
+    dims:
+      width_x:
+        target: 37.26
+        tol: 0.3
+        status: confirmed
+        estimates: [{value: 37.26, source: user_caliper, conf: 0.95}]
+        measure: {recipe: section_extent, at_z: 5.0, axis: x, near: [0, 0], feature: skirt width}
+      depth_y:
+        target: 60.39
+        tol: 0.3
+        status: confirmed
+        estimates: [{value: 60.39, source: user_caliper, conf: 0.95}]
+        measure: {recipe: section_extent, at_z: 5.0, axis: y, near: [0, 0], feature: skirt depth}
+  - id: tube
+    type: cylindrical_bore
+    mates_with: 5.15 mm tube passing through the plug center
+    fit: loose
+    clearance: 0.4
+    dims:
+      inner_diameter:
+        target: 5.15
+        tol: 0.2
+        status: confirmed
+        estimates: [{value: 5.15, source: user_caliper, conf: 0.95}]
+        measure: {recipe: circle_fit_inner, at_z: 0.5, near: [0, 0], feature: tube hole}
+
+requirements:
+  - id: flange
+    text: the flange must overlap the opening by about 1 mm per side so it cannot fall through
+    derived:
+      flange_x: {min: 38.2, max: 41, measure: {recipe: section_extent, at_z: 0.5, axis: x, near: [0, 0], feature: flange x}}
+      flange_y: {min: 61.3, max: 64, measure: {recipe: section_extent, at_z: 0.5, axis: y, near: [0, 0], feature: flange y}}
+  - id: height
+    text: the skirt must reach 10 mm into the opening
+    derived:
+      height: {min: 10, max: 12, measure: {recipe: extent, axis: z, feature: overall height}}
+
+context:
+  - {id: tube, shape: cylinder, d: 5.15, h: 40, at: [0, 0, -15]}
+
+print: {material: PLA, nozzle: 0.4, layer_height: 0.2, min_wall: 1.2, orientation_hint: flange on the bed, skirt up}

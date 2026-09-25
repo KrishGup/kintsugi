@@ -1,0 +1,50 @@
+part:
+  name: trailer_jack_cap
+  role: "push-in end cap for the trailer jack's 2-inch steel tube: a flange that sits on the tube rim and a plug that enters the tube and holds by friction"
+  object: 2 in steel pipe, OD 50.8 mm, ID 46.04 mm (1 13/16 in)
+  design_intent: flange down on the bed, hollow plug up; some retention feature (tension tabs or ribs) so the cap does not fall out; outdoor material
+
+interfaces:
+  - id: pipe_bore
+    type: cylindrical_boss
+    side: male
+    mates_with: the inside of the pipe (ID 46.04 mm)
+    fit: sliding
+    clearance: 0.25
+    dims:
+      outer_diameter:
+        target: 46.04
+        tol: 0.25
+        status: confirmed
+        estimates: [{value: 46.04, source: user_caliper, conf: 0.95}]
+        measure: {recipe: circle_fit_outer, at_z: 18.0, near: [0, 0], feature: plug OD inside the pipe}
+      plug_depth:
+        min: 8
+        max: 14
+        measure: {recipe: extent, axis: z, region: [[-30, -30, 15.01], [30, 30, 40]], feature: plug depth into the pipe}
+  - id: rim
+    type: custom
+    mates_with: the pipe rim (the flange sits on it)
+    fit: none
+    dims:
+      flange_diameter:
+        target: 50.8
+        tol: 0.5
+        status: confirmed
+        estimates: [{value: 50.8, source: user_caliper, conf: 0.95}]
+        measure: {recipe: circle_fit_outer, at_z: 7.0, near: [0, 0], feature: flange OD}
+
+requirements:
+  - id: height
+    text: total height 25 mm (15 mm flange, 10 mm plug)
+    derived:
+      height: {target: 25.0, tol: 1.0, measure: {recipe: extent, axis: z, feature: total height}}
+  - id: retention
+    text: "the cap must not fall out: give the plug tension tabs, ribs, or a slight interference bump that flexes on insertion"
+  - id: material
+    text: hollow to save material but walls at least 3 mm; no supports needed printed flange-down
+
+context:
+  - {id: pipe_wall, shape: tube, d: 50.8, di: 46.04, h: 40, at: [0, 0, 15.0], allow_contact: 25}
+
+print: {material: PETG, nozzle: 0.4, layer_height: 0.2, min_wall: 3.0, orientation_hint: flange down on the bed, plug up; no supports}
