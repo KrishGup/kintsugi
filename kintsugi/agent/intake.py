@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import time
 from pathlib import Path
 from typing import Any
 
 from kintsugi import PACKAGE_DIR
-from kintsugi.agent.critic import _image_block
 from kintsugi.session.workspace import Session
 from kintsugi.spec.model import PartSpec
 
@@ -150,35 +148,22 @@ def sanitize_spec_data(data: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-async def run_intake(session: Session, text: str, photos: list[Path], model: str | None = None) -> dict[str, Any]:
-    from agent_sdk import AssistantMessage, AgentOptions, SDKClient, TextBlock
+async def run_intake(session: Session, text: str, photos: list[Path], model: str | None = None, llm=None) -> dict[str, Any]:
+    """Photos + a sentence -> what broke, a draft spec, a capture plan, batched questions (one vision call)."""
+    from kintsugi.agent.llm import get_llm, image_part, text_part
 
-    model = model or os.environ.get("KIN_VISION_MODEL", "opus")
-    content: list[dict[str, Any]] = [{"type": "text", "text": f"USER SAYS: {text or '(no description)'}\n\nPHOTOS FOLLOW."}]
+    llm = llm or get_llm()
+    model = model or llm.models["vision"]
+    parts: list[dict[str, Any]] = [text_part(f"USER SAYS: {text or '(no description)'}\n\nPHOTOS FOLLOW.")]
     for p in photos[:6]:
-        blk = _image_block(p, max_side=1400)
-        if blk:
-            content.append({"type": "text", "text": f"photo: {p.name}"})
-            content.append(blk)
-    content.append({"type": "text", "text": "Produce the JSON now."})
-    options = AgentOptions(system_prompt=INTAKE_PROMPT, model=model, allowed_tools=[], max_turns=1, setting_sources=[],
-                                 disallowed_tools=["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebSearch", "WebFetch", "Task", "TodoWrite"],
-                                 permission_mode="dontAsk", cwd=str(session.dir))
-    out: list[str] = []
+        img = image_part(p, max_side=1400)
+        if img:
+            parts.append(text_part(f"photo: {p.name}"))
+            parts.append(img)
+    parts.append(text_part("Produce the JSON now."))
     t0 = time.time()
-
-    async def gen():
-        yield {"type": "user", "message": {"role": "user", "content": content}, "parent_tool_use_id": None, "session_id": "intake"}
-
-    async with SDKClient(options) as client:
-        await client.query(gen(), session_id="intake")
-        async for msg in client.receive_response():
-            if isinstance(msg, AssistantMessage):
-                for b in msg.content:
-                    if isinstance(b, TextBlock):
-                        out.append(b.text)
-    data = parse_intake("\n".join(out))
-    # validate the spec part
+    raw = await llm.complete(system=INTAKE_PROMPT, parts=parts, model=model, json_mode=True, role="vision")
+    data = parse_intake(raw)
     spec_data = sanitize_spec_data(data.get("spec") or {})
     try:
         spec = PartSpec.model_validate(spec_data)
@@ -193,9 +178,10 @@ async def run_intake(session: Session, text: str, photos: list[Path], model: str
         spec.part.name = "_".join(words[:3]) or "part"
     spec.save(session.spec_path)
     (session.dir / "intake.json").write_text(json.dumps(data, indent=2))
-    session.update_meta(status="intake_done", name=spec.part.name)
+    session.update_meta(status="intake_done", name=spec.part.name, stage="capture")
     session.commit("intake: draft spec")
-    session.emit("intake", object=data.get("object"), part_role=data.get("part_role"), questions=data.get("questions", []),
-                 capture_plan=data.get("capture_plan", []), duration_s=round(time.time() - t0, 1))
+    session.emit("intake", object=data.get("object"), part_role=data.get("part_role"), damage=data.get("damage"),
+                 questions=data.get("questions", []), capture_plan=data.get("capture_plan", []), duration_s=round(time.time() - t0, 1))
     data["spec_yaml"] = spec.to_yaml()
+    data["spec"] = spec.model_dump(mode="json", exclude_none=True)
     return data

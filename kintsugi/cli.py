@@ -57,6 +57,8 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("design", help="run the designer agent (and critic) on a session")
     p.add_argument("session")
+    p.add_argument("--provider", choices=["openai", "agent", "fake"], help="model provider (default: KIN_PROVIDER or auto)")
+    p.add_argument("--no-templates", action="store_true", help="design from primitives; hide the template catalog")
     p.add_argument("--model")
     p.add_argument("--critic-model")
     p.add_argument("--budget", type=int, default=8)
@@ -145,17 +147,32 @@ def _dispatch(args) -> int:
         return 0 if res.ok else 1
 
     if args.cmd == "design":
+        import os
         from kintsugi.agent.designer import run_designer
+        from kintsugi.agent.llm import get_llm
         from kintsugi.session.workspace import Session
+        if args.provider:
+            os.environ["KIN_PROVIDER"] = args.provider
+        llm = get_llm(reset=True)
+        ok, why = llm.available()
+        if not ok:
+            print(f"model provider not ready: {why}", file=sys.stderr)
+            return 3
+        print(f"provider {llm.provider} · designer {args.model or llm.models['designer']} · critic {args.critic_model or llm.models['critic']}", file=sys.stderr)
         s = Session.open(args.session)
         out = asyncio.run(run_designer(s, model=args.model, budget=args.budget, critic_rounds=args.critic_rounds, user_message=args.message,
                                        strategy=args.strategy, resume_message=args.resume, run_critic=not args.no_critic,
-                                       critic_model=args.critic_model, max_turns=args.max_turns))
+                                       critic_model=args.critic_model, max_turns=args.max_turns, llm=llm, hide_templates=args.no_templates))
         print(json.dumps(out.to_dict(), indent=2))
         return 0 if out.status == "done" else 1
 
     if args.cmd == "critique":
         from kintsugi.agent.critic import critique
+        from kintsugi.agent.llm import get_llm
+        ok, why = get_llm().available()
+        if not ok:
+            print(f"model provider not ready: {why}", file=sys.stderr)
+            return 3
         from kintsugi.session.workspace import Session
         s = Session.open(args.session)
         n = args.iteration or int(s.meta.get("iteration", 0))
@@ -166,7 +183,7 @@ def _dispatch(args) -> int:
             from kintsugi.checks import run_checks
             rep = run_checks(it / "part.stl", s.spec(), iteration=n)
         sheets = [p for p in (it / "sheets" / f"iter_{n:02d}_sheet.png", it / "sheets" / f"iter_{n:02d}_sections.png") if p.exists()]
-        v = asyncio.run(critique(s.spec(), rep, sheets, model=args.model, cwd=s.dir))
+        v = asyncio.run(critique(s.spec(), rep, sheets, model=args.model))
         print(v.summary_for_model())
         return 0
 

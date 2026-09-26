@@ -176,10 +176,8 @@ def _check_table(rep) -> dict:
 
 
 async def blind_preference(spec: PartSpec, sheets_a: list[Path], sheets_b: list[Path], model: str | None) -> dict:
-    """Ask the critic to compare two candidates (order randomized by the caller) without knowing which is human."""
-    from agent_sdk import AssistantMessage, AgentOptions, SDKClient, TextBlock
-
-    from kintsugi.agent.critic import _image_block
+    """Ask the critic model to compare two candidates (order randomized by the caller) without knowing which is human."""
+    from kintsugi.agent.llm import get_llm, image_part, text_part
 
     prompt = (
         "You are a senior mechanical engineer judging two candidate replacement parts, A and B, designed to the same Part Spec. "
@@ -189,30 +187,16 @@ async def blind_preference(spec: PartSpec, sheets_a: list[Path], sheets_b: list[
         "Respond with ONLY JSON: {\"preferred\": \"A\"|\"B\"|\"tie\", \"scores\": {\"A\": {\"fit\":n,\"printability\":n,\"strength\":n,\"intent\":n,\"overall\":n}, "
         "\"B\": {...}}, \"reasoning\": \"3-6 sentences\"}"
     )
-    content = [{"type": "text", "text": "PART SPEC:\n" + spec.summary_for_model()}]
+    parts = [text_part("PART SPEC:\n" + spec.summary_for_model())]
     for label, sheets in (("A", sheets_a), ("B", sheets_b)):
         for p in sheets:
-            blk = _image_block(p, max_side=1400)
-            if blk:
-                content.append({"type": "text", "text": f"CANDIDATE {label} — {p.name}"})
-                content.append(blk)
-    content.append({"type": "text", "text": "Judge now. JSON only."})
-    options = AgentOptions(system_prompt=prompt, model=model or "opus", allowed_tools=[], max_turns=1, setting_sources=[],
-                                 disallowed_tools=["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebSearch", "WebFetch", "Task"],
-                                 permission_mode="dontAsk", cwd=str(ROOT))
-    out = []
-
-    async def gen():
-        yield {"type": "user", "message": {"role": "user", "content": content}, "parent_tool_use_id": None, "session_id": "judge"}
-
-    async with SDKClient(options) as client:
-        await client.query(gen(), session_id="judge")
-        async for msg in client.receive_response():
-            if isinstance(msg, AssistantMessage):
-                for b in msg.content:
-                    if isinstance(b, TextBlock):
-                        out.append(b.text)
-    text = "\n".join(out)
+            img = image_part(p, max_side=1400)
+            if img:
+                parts.append(text_part(f"CANDIDATE {label} — {p.name}"))
+                parts.append(img)
+    parts.append(text_part("Judge now. JSON only."))
+    llm = get_llm()
+    text = await llm.complete(system=prompt, parts=parts, model=model, json_mode=True, role="critic")
     import re
     m = re.search(r"\{.*\}", text, re.S)
     try:

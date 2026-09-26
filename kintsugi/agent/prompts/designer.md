@@ -15,7 +15,7 @@ You are in a session directory. Files that matter:
 - `list_templates()` / `read_template(name)` — the template catalog.
 - `ask_user(question, options)` — pause and ask the user a decision you cannot make (an interface dimension the spec leaves open, an ambiguity about function, an unresolvable conflict). Use sparingly and batch questions into one call.
 - `finish(narration)` — call when every hard check passes AND the drawings look right. The narration is 3–8 lines for the user: what the part is, the key dimensions, what you verified, and anything they should know before printing.
-- Standard file tools (Read, Write, Edit, Glob, Grep, Bash). Use Read on the PNG paths returned by `iterate` to look closer at any view.
+{FILE_TOOLS}
 
 # Conventions (the checker assumes these)
 

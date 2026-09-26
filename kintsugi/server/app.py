@@ -18,6 +18,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from kintsugi import REPO_DIR, TEMPLATES_DIR, __version__
 from kintsugi.agent.export import export_bundle
+from kintsugi.agent.llm import DEFAULT_MODELS, get_llm
 from kintsugi.agent.pipeline import run_iteration
 from kintsugi.scad.compile import compile_scad, openscad_version
 from kintsugi.scad.customizer import parse_customizer, set_param_values
@@ -50,7 +51,54 @@ def _safe_path(session: Session, rel: str) -> Path:
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "version": __version__, "openscad": openscad_version(), "sessions_dir": str(SESSIONS_DIR)}
+    llm = get_llm()
+    return {"ok": True, "version": __version__, "openscad": openscad_version(), "sessions_dir": str(SESSIONS_DIR), "llm": llm.status()}
+
+
+class Settings(BaseModel):
+    openai_api_key: str | None = None
+    provider: str | None = None  # openai | agent | fake
+    designer_model: str | None = None
+    critic_model: str | None = None
+    vision_model: str | None = None
+    effort: str | None = None
+    persist: bool = False  # also write to .env next to the working directory
+
+
+@app.get("/api/settings")
+def get_settings():
+    llm = get_llm()
+    key = os.environ.get("OPENAI_API_KEY", "")
+    return {"llm": llm.status(), "openai_key_masked": (key[:7] + "…" + key[-4:]) if len(key) > 12 else ("set" if key else ""),
+            "defaults": DEFAULT_MODELS, "providers": ["openai", "agent", "fake"]}
+
+
+@app.post("/api/settings")
+def set_settings(body: Settings):
+    changed = {}
+    if body.openai_api_key is not None and body.openai_api_key.strip():
+        os.environ["OPENAI_API_KEY"] = body.openai_api_key.strip()
+        changed["OPENAI_API_KEY"] = "set"
+    if body.provider:
+        if body.provider not in ("openai", "agent", "fake"):
+            raise HTTPException(400, "provider must be openai, agent or fake")
+        os.environ["KIN_PROVIDER"] = body.provider
+        changed["KIN_PROVIDER"] = body.provider
+    for k, v in (("KIN_DESIGNER_MODEL", body.designer_model), ("KIN_CRITIC_MODEL", body.critic_model), ("KIN_VISION_MODEL", body.vision_model),
+                 ("KIN_REASONING_EFFORT", body.effort)):
+        if v:
+            os.environ[k] = v
+            changed[k] = v
+    if body.persist and changed:
+        env_path = Path(".env")
+        lines = env_path.read_text().splitlines() if env_path.exists() else []
+        for k, v in changed.items():
+            val = os.environ[k]
+            lines = [ln for ln in lines if not ln.startswith(k + "=")]
+            lines.append(f"{k}={val}")
+        env_path.write_text("\n".join(lines) + "\n")
+    get_llm(reset=True)
+    return {"ok": True, "changed": list(changed), "llm": get_llm().status()}
 
 
 @app.get("/api/templates")
@@ -97,6 +145,63 @@ class NewSession(BaseModel):
     name: str | None = None
     spec_yaml: str | None = None
     scad: str | None = None
+    intake: bool = False  # photo-first session: starts at the intake stage
+
+
+class StageReq(BaseModel):
+    stage: str
+
+
+@app.post("/api/sessions/{sid}/stage")
+def set_stage(sid: str, body: StageReq):
+    if body.stage not in ("intake", "capture", "spec", "design", "review", "export"):
+        raise HTTPException(400, "unknown stage")
+    s = _session(sid)
+    s.update_meta(stage=body.stage)
+    s.emit("stage", stage=body.stage)
+    return {"ok": True, "stage": body.stage}
+
+
+class Answer(BaseModel):
+    id: str | None = None
+    dim: str | None = None
+    kind: str = "text"  # number | choice | text
+    value: str | float | None = None
+    question: str | None = None
+
+
+class AnswersReq(BaseModel):
+    answers: list[Answer]
+
+
+@app.post("/api/sessions/{sid}/answers")
+def answer_questions(sid: str, body: AnswersReq):
+    """Apply the user's answers to the intake questions: numbers confirm spec dimensions, choices become design notes."""
+    s = _session(sid)
+    spec = s.spec()
+    applied = []
+    for a in body.answers:
+        if a.value is None or a.value == "":
+            continue
+        if a.kind == "number" and a.dim:
+            try:
+                v = float(a.value)
+            except (TypeError, ValueError):
+                continue
+            if spec.get_dim(a.dim) is not None:
+                spec.confirm(a.dim, v, source="user_ruler")
+                applied.append({"dim": a.dim, "value": v})
+                continue
+        note = f"{a.question or a.id or 'answer'}: {a.value}"
+        spec.part.notes = (spec.part.notes + "\n" + note).strip() if spec.part.notes else note
+        if a.kind == "choice" and a.value:
+            spec.part.design_intent = (spec.part.design_intent + f"; {a.value}").strip("; ") if spec.part.design_intent else str(a.value)
+        applied.append({"note": note})
+    spec.save(s.spec_path)
+    s.update_meta(stage="spec")
+    s.commit("answers applied to spec")
+    s.emit("answers", applied=applied)
+    return {"ok": True, "applied": applied, "unconfirmed": spec.unconfirmed_interface_dims(), "spec_yaml": spec.to_yaml()}
 
 
 @app.get("/api/sessions")
@@ -111,6 +216,7 @@ def create_session(body: NewSession):
     if not spec.part.name or spec.part.name == "part":
         spec.part.name = name.replace(" ", "_")
     s = Session.create(name, spec, sessions_dir=SESSIONS_DIR)
+    s.update_meta(stage="intake" if body.intake else "spec")
     if body.scad:
         s.scad_path.write_text(body.scad, encoding="utf-8")
         s.commit("initial part.scad")
@@ -151,6 +257,9 @@ def session_detail(sid: str):
         "stl": "part.stl" if s.stl_path.exists() else None, "running": sid in RUNS and not RUNS[sid].done(),
         "export": sorted(p.name for p in (s.dir / "export").iterdir()) if (s.dir / "export").exists() else [],
         "unconfirmed": spec.unconfirmed_interface_dims(),
+        "intake": json.loads((s.dir / "intake.json").read_text()) if (s.dir / "intake.json").exists() else None,
+        "stage": meta.get("stage") or ("review" if meta.get("status") == "done" else ("design" if hist else "spec")),
+        "llm": get_llm().status(),
     }
 
 
@@ -292,6 +401,9 @@ class IntakeReq(BaseModel):
 @app.post("/api/sessions/{sid}/intake")
 async def intake(sid: str, body: IntakeReq):
     s = _session(sid)
+    ok, why = get_llm().available()
+    if not ok:
+        raise HTTPException(412, f"model provider not ready: {why}. Add your OpenAI API key in Settings.")
     from kintsugi.agent.intake import run_intake
     photos = [_safe_path(s, p) for p in body.photos] if body.photos else sorted(p for p in (s.dir / "photos").glob("*") if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"))
     res = await run_intake(s, body.text, photos)
@@ -314,7 +426,11 @@ async def start_run(sid: str, body: RunReq):
     s = _session(sid)
     if sid in RUNS and not RUNS[sid].done():
         raise HTTPException(409, "run already in progress")
+    ok, why = get_llm().available()
+    if not ok:
+        raise HTTPException(412, f"model provider not ready: {why}. Add your OpenAI API key in Settings.")
     from kintsugi.agent.designer import run_designer
+    s.update_meta(stage="design")
     resume = None
     if body.answer:
         q = s.meta.get("question")
@@ -325,8 +441,10 @@ async def start_run(sid: str, body: RunReq):
 
     async def _run():
         try:
-            await run_designer(s, model=body.model, budget=body.budget, critic_rounds=body.critic_rounds, user_message=body.message,
-                               strategy=body.strategy, resume_message=resume, photos=photos[:4])
+            out = await run_designer(s, model=body.model, budget=body.budget, critic_rounds=body.critic_rounds, user_message=body.message,
+                                     strategy=body.strategy, resume_message=resume, photos=photos[:4])
+            if out.status == "done":
+                s.update_meta(stage="review")
         except Exception as e:  # pragma: no cover
             s.emit("error", message=f"{type(e).__name__}: {e}")
             s.update_meta(status="error")
@@ -348,8 +466,12 @@ async def stop_run(sid: str):
 
 
 @app.get("/api/sessions/{sid}/events")
-async def events(sid: str, request: Request, since: int = 0):
+async def events(sid: str, request: Request, since: int = 0, once: bool = False):
+    """Server-sent events from the session log. `once=true` returns the events since `since` as JSON and closes."""
     s = _session(sid)
+    if once:
+        evs = s.events(since=since)
+        return {"since": since, "next": since + len(evs), "events": evs}
 
     async def gen():
         idx = since
@@ -460,7 +582,9 @@ def coupon_result(sid: str, body: CouponResult):
 def do_export(sid: str):
     s = _session(sid)
     try:
-        return export_bundle(s)
+        out = export_bundle(s)
+        s.update_meta(stage="export")
+        return out
     except RuntimeError as e:
         raise HTTPException(400, str(e))
 

@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import base64
 import json
-import os
 import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-
-from PIL import Image
 
 from kintsugi import PACKAGE_DIR
 from kintsugi.checks.run import CheckReport
@@ -51,18 +48,12 @@ class CriticVerdict:
 
 
 def _image_block(path: Path, max_side: int = 1600) -> dict[str, Any] | None:
-    try:
-        im = Image.open(path).convert("RGB")
-    except Exception:
+    """Agent-SDK-shaped image block (kept for the Agent runtime)."""
+    from kintsugi.agent.llm import image_part
+    p = image_part(path, max_side=max_side)
+    if not p:
         return None
-    w, h = im.size
-    if max(w, h) > max_side:
-        r = max_side / max(w, h)
-        im = im.resize((int(w * r), int(h * r)), Image.LANCZOS)
-    import io
-    buf = io.BytesIO()
-    im.save(buf, format="PNG", optimize=True)
-    return {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64.b64encode(buf.getvalue()).decode()}}
+    return {"type": "image", "source": {"type": "base64", "media_type": p["mime"], "data": base64.b64encode(p["data"]).decode()}}
 
 
 def detail_views(sheets: list[Path]) -> list[Path]:
@@ -81,37 +72,40 @@ def detail_views(sheets: list[Path]) -> list[Path]:
     return out
 
 
-def build_critic_content(spec: PartSpec, report: CheckReport | None, sheets: list[Path], prev_sheets: list[Path] | None = None,
-                         photos: list[Path] | None = None, extra_context: str = "") -> list[dict[str, Any]]:
-    content: list[dict[str, Any]] = []
+def build_critic_parts(spec: PartSpec, report: CheckReport | None, sheets: list[Path], prev_sheets: list[Path] | None = None,
+                       photos: list[Path] | None = None, extra_context: str = "") -> list[dict[str, Any]]:
+    """Provider-neutral parts: text + images (see kintsugi.agent.llm)."""
+    from kintsugi.agent.llm import image_part, text_part
+
+    parts: list[dict[str, Any]] = []
     text = ["PART SPEC:", spec.summary_for_model(), ""]
     if report:
         text += ["CHECK TABLE (measured on the exported mesh; covers only the dimensions listed in the spec):", report.summary_for_model(), ""]
     if extra_context:
         text += [extra_context, ""]
-    content.append({"type": "text", "text": "\n".join(text)})
+    parts.append(text_part("\n".join(text)))
     for i, p in enumerate(sheets):
-        blk = _image_block(p)
-        if blk:
-            content.append({"type": "text", "text": f"CURRENT ITERATION — sheet {i+1}: {p.name}"})
-            content.append(blk)
+        img = image_part(p)
+        if img:
+            parts.append(text_part(f"CURRENT ITERATION — sheet {i+1}: {p.name}"))
+            parts.append(img)
     for p in detail_views(sheets):
-        blk = _image_block(p, max_side=1600)
-        if blk:
-            content.append({"type": "text", "text": f"CURRENT ITERATION — detail view at full resolution: {p.name}"})
-            content.append(blk)
+        img = image_part(p, max_side=1600)
+        if img:
+            parts.append(text_part(f"CURRENT ITERATION — detail view at full resolution: {p.name}"))
+            parts.append(img)
     for i, p in enumerate(prev_sheets or []):
-        blk = _image_block(p, max_side=1000)
-        if blk:
-            content.append({"type": "text", "text": f"PREVIOUS ITERATION — sheet {i+1}: {p.name}"})
-            content.append(blk)
+        img = image_part(p, max_side=1000)
+        if img:
+            parts.append(text_part(f"PREVIOUS ITERATION — sheet {i+1}: {p.name}"))
+            parts.append(img)
     for p in photos or []:
-        blk = _image_block(p, max_side=1200)
-        if blk:
-            content.append({"type": "text", "text": f"REFERENCE PHOTO: {p.name}"})
-            content.append(blk)
-    content.append({"type": "text", "text": "Review now. Respond with the JSON object only."})
-    return content
+        img = image_part(p, max_side=1200)
+        if img:
+            parts.append(text_part(f"REFERENCE PHOTO: {p.name}"))
+            parts.append(img)
+    parts.append(text_part("Review now. Respond with the JSON object only."))
+    return parts
 
 
 def parse_verdict(text: str) -> CriticVerdict:
@@ -141,30 +135,23 @@ def parse_verdict(text: str) -> CriticVerdict:
 
 
 async def critique(spec: PartSpec, report: CheckReport | None, sheets: list[Path], *, prev_sheets: list[Path] | None = None,
-                   photos: list[Path] | None = None, model: str | None = None, extra_context: str = "", cwd: Path | None = None) -> CriticVerdict:
-    """Run the critic through the agent SDK with no tools (fresh context, images inline)."""
-    from agent_sdk import AssistantMessage, AgentOptions, SDKClient, ResultMessage, TextBlock
+                   photos: list[Path] | None = None, model: str | None = None, extra_context: str = "", cwd: Path | None = None,
+                   llm=None) -> CriticVerdict:
+    """Run the critic: one fresh-context model call with the spec, the check table and the drawings (never the code)."""
+    from kintsugi.agent.llm import get_llm
 
-    model = model or os.environ.get("KIN_CRITIC_MODEL", "opus")
-    content = build_critic_content(spec, report, sheets, prev_sheets, photos, extra_context)
+    llm = llm or get_llm()
+    model = model or llm.models["critic"]
+    parts = build_critic_parts(spec, report, sheets, prev_sheets, photos, extra_context)
     t0 = time.time()
-    options = AgentOptions(system_prompt=CRITIC_PROMPT, model=model, allowed_tools=[], disallowed_tools=["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebSearch", "WebFetch", "Task", "TodoWrite", "NotebookEdit"],
-                                 max_turns=1, cwd=str(cwd) if cwd else None, setting_sources=[], permission_mode="dontAsk")
-    text_out = []
-
-    async def gen():
-        yield {"type": "user", "message": {"role": "user", "content": content}, "parent_tool_use_id": None, "session_id": "critic"}
-
-    async with SDKClient(options) as client:
-        await client.query(gen(), session_id="critic")
-        async for msg in client.receive_response():
-            if isinstance(msg, AssistantMessage):
-                for b in msg.content:
-                    if isinstance(b, TextBlock):
-                        text_out.append(b.text)
-            elif isinstance(msg, ResultMessage):
-                pass
-    v = parse_verdict("\n".join(text_out))
+    try:
+        text = await llm.complete(system=CRITIC_PROMPT, parts=parts, model=model, json_mode=True, role="critic")
+    except Exception as e:
+        v = CriticVerdict("error", summary=f"critic call failed: {type(e).__name__}: {str(e)[:200]}")
+        v.model = model
+        v.duration_s = time.time() - t0
+        return v
+    v = parse_verdict(text)
     v.model = model
     v.duration_s = time.time() - t0
     return v
