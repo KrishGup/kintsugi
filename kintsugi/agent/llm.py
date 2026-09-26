@@ -111,13 +111,12 @@ def text_part(text: str) -> dict[str, Any]:
 
 
 def detect_provider() -> str:
+    """KIN_PROVIDER if set, else OpenAI (the default; the app asks for a key when none is configured).
+
+    The Agent and fake providers are opt-in only, so a stray Agent login on the machine never changes what runs."""
     p = os.environ.get("KIN_PROVIDER", "").lower().strip()
     if p in ("openai", "agent", "fake"):
         return p
-    if os.environ.get("OPENAI_API_KEY"):
-        return "openai"
-    if os.environ.get("AGENT_API_KEY") or shutil.which("agent"):
-        return "agent"
     return "openai"
 
 
