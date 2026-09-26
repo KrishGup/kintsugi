@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 # ---- pricing (USD per 1M tokens), used for the cost readout only ------------------------------------
 PRICES: dict[str, tuple[float, float, float]] = {  # input, cached input, output
@@ -94,7 +94,12 @@ def image_part(path: Path, max_side: int = 1600, quality: int = 80) -> dict[str,
     """A provider-neutral image part: {"type": "image", "data": bytes, "mime": "image/jpeg"}."""
     try:
         Image.init()
-        im = Image.open(path).convert("RGB")
+        im = Image.open(path)
+        try:
+            im = ImageOps.exif_transpose(im)  # phone photos carry their rotation in EXIF
+        except Exception:
+            pass
+        im = im.convert("RGB")
     except Exception:
         return None
     w, h = im.size
@@ -166,7 +171,7 @@ class LLM:
 
     # ---- one-turn completion -----------------------------------------------------------------------
     async def complete(self, *, system: str, parts: list[dict[str, Any]], model: str | None = None, json_mode: bool = True,
-                       effort: str | None = None, max_output_tokens: int = 12000, role: str = "vision") -> str:
+                       effort: str | None = None, max_output_tokens: int = 24000, role: str = "vision") -> str:
         model = model or self.models[role]
         if self.provider == "openai":
             return await self._openai_complete(system, parts, model, json_mode, effort or self.effort, max_output_tokens)
@@ -187,7 +192,16 @@ class LLM:
             kwargs["text"] = {"format": {"type": "json_object"}}
         resp = await client.responses.create(**kwargs)
         self._account(model, resp)
-        return _oa_output_text(resp)
+        text = _oa_output_text(resp)
+        if getattr(resp, "status", "") == "incomplete" and not text.strip():
+            # reasoning ate the output budget: once more with room to answer and a lighter effort
+            kwargs["max_output_tokens"] = max_output_tokens * 2
+            if "reasoning" in kwargs:
+                kwargs["reasoning"] = {"effort": "medium" if kwargs["reasoning"]["effort"] in ("high", "xhigh", "max") else kwargs["reasoning"]["effort"]}
+            resp = await client.responses.create(**kwargs)
+            self._account(model, resp)
+            text = _oa_output_text(resp)
+        return text
 
     async def _agent_complete(self, system, parts, model, json_mode) -> str:
         from agent_sdk import AssistantMessage, AgentOptions, SDKClient, TextBlock
