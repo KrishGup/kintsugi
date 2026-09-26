@@ -17,8 +17,11 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
+
+from kintsugi import __version__
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -82,8 +85,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--paper", default="letter", choices=["letter", "a4"])
 
     p = sub.add_parser("serve", help="run the web server")
-    p.add_argument("--host", default="0.0.0.0")
-    p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--host", default=os.environ.get("KIN_HOST", "0.0.0.0"))
+    p.add_argument("--port", type=int, default=int(os.environ.get("KIN_PORT", "8000")))
     p.add_argument("--reload", action="store_true")
 
     p = sub.add_parser("export", help="export bundle for a session")
@@ -199,7 +202,20 @@ def _dispatch(args) -> int:
         return 0
 
     if args.cmd == "serve":
+        import socket
+
         import uvicorn
+        from kintsugi.agent.llm import get_llm
+        st = get_llm().status()
+        lan = ""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sk:
+                sk.connect(("10.255.255.255", 1))
+                lan = sk.getsockname()[0]
+        except OSError:
+            pass
+        print(f"Kintsugi {__version__} · provider {st['provider']} ({'ready' if st['ready'] else 'not ready: ' + st['reason']})", file=sys.stderr)
+        print(f"  open http://localhost:{args.port}" + (f"  (phone on the same network: http://{lan}:{args.port})" if lan and args.host == "0.0.0.0" else ""), file=sys.stderr)
         uvicorn.run("kintsugi.server.app:app", host=args.host, port=args.port, reload=args.reload)
         return 0
 
