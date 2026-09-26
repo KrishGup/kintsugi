@@ -34,6 +34,12 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - Standards: `kintsugi/spec/standards.py` is a small knowledge base (bottle neck finishes, pipe ODs, shafts, metric fasteners, batteries, extrusions, bearings, bike parts…). Keywords in the sentence or in intake's object description attach a `standard:<id>` estimate (confidence 0.4–0.85, always below a real measurement). Extend it freely; entries are plain data.
 - The runtime is `kintsugi/graph/core.py` (about 300 lines): `Node(name, fn, inputs, outputs, kind, when, optional, after, est_s, ask)`, `Graph(name, nodes).run(state)` → `RunTrace`. Pipelines are in `kintsugi/graph/pipelines.py`, the session flow in `kintsugi/graph/flow.py`. Tests: `tests/test_graph.py`, `tests/test_capture_loop.py`.
 
+## What the designer knows about OpenSCAD
+
+- `kintsugi/agent/knowledge/guides/*.md` — seven guides written for the shipped toolchain (OpenSCAD 2021.01 + BOSL2 2.0.759): every ```scad block is compiled by `tests/test_scad_knowledge.py`, so a guide cannot drift from what actually runs. Edit them freely; a broken example fails the suite.
+- `openscad_builtins.json` — the language reference (74 entries: every builtin, the statements, special variables, what is *not* in 2021.01); `bosl2_index()` parses the vendored library's doc comments (980 entries) at first use.
+- The model sees a compact "OpenSCAD essentials" block in its system prompt and has the `scad_guide` / `scad_docs` tools; the prompt tells it to read `patterns` before a new part class and to look up any BOSL2 call before using it. People get the same through `kin docs …`, `kin guide …`, `/api/docs?q=…` and the *Reference* button in the Code tab.
+
 ## Model provider
 
 - Default: OpenAI Responses API, `gpt-6-astra` for the designer, critic and intake, reasoning effort `high`. `gpt-6-sol` for the critic/intake is ~5× cheaper and fine on simple parts; set it in Settings → *Models & reasoning effort*.

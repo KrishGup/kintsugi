@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fileUrl, kin } from "../api";
 import CodeEditor from "../components/CodeEditor";
+import DocsSearch from "../components/DocsSearch";
 import { useSession } from "../pages/session-context";
 import { useToast } from "../toast";
 import { Pill, Spinner } from "../ui";
@@ -17,6 +18,7 @@ export default function CodeTab() {
   const [label, setLabel] = useState("");
   const lastRemote = useRef(remote);
   const [stale, setStale] = useState(false);
+  const [showDocs, setShowDocs] = useState(false);
 
   // follow the file on disk unless the user has local edits
   useEffect(() => {
@@ -77,6 +79,9 @@ export default function CodeTab() {
             Download
           </a>
         )}
+        <button className={`btn btn-ghost btn-xs${showDocs ? " active" : ""}`} onClick={() => setShowDocs((v) => !v)} title="Search the OpenSCAD + BOSL2 reference and guides the designer uses">
+          Reference
+        </button>
         <button className="btn btn-ghost btn-xs" onClick={reload} disabled={!dirty || running} title="Discard local edits">
           Revert
         </button>
@@ -100,6 +105,11 @@ export default function CodeTab() {
             No part.scad yet — the designer writes it on the first run. You can also paste OpenSCAD here and press <b>Run</b> to compile and
             verify it against the spec.
           </span>
+        </div>
+      )}
+      {showDocs && (
+        <div className="editor-note" style={{ display: "block" }}>
+          <DocsSearch onInsert={(t) => onChange(text + (text.endsWith("\n") || !text ? "" : "\n") + t + "\n")} />
         </div>
       )}
       {stale && (

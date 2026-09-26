@@ -9,6 +9,8 @@
     kin critique SESSION_DIR [--iteration N]
     kin params part.scad                                                  -> customizer parameters as JSON
     kin sheet -o calibration_sheet.pdf                                    -> printable ArUco calibration sheet
+    kin docs tube wall | kin docs --name cuboid                        -> the OpenSCAD/BOSL2 reference the designer uses
+    kin guide [essentials|shapes|bosl2|fdm|kintsugi|patterns|errors]     -> curated guides (every example compiles)
     kin serve [--host 0.0.0.0 --port 8000]
 """
 
@@ -88,6 +90,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--host", default=os.environ.get("KIN_HOST", "0.0.0.0"))
     p.add_argument("--port", type=int, default=int(os.environ.get("KIN_PORT", "8000")))
     p.add_argument("--reload", action="store_true")
+
+    p = sub.add_parser("docs", help="search the OpenSCAD + BOSL2 reference the designer uses")
+    p.add_argument("query", nargs="*")
+    p.add_argument("--name", help="exact module/function name (full entry)")
+    p.add_argument("--limit", type=int, default=5)
+    p = sub.add_parser("guide", help="print a curated OpenSCAD guide (or list topics)")
+    p.add_argument("topic", nargs="?", default="list")
 
     p = sub.add_parser("export", help="export bundle for a session")
     p.add_argument("session")
@@ -201,6 +210,22 @@ def _dispatch(args) -> int:
         print(p)
         return 0
 
+    if args.cmd == "docs":
+        from kintsugi.agent.knowledge import docs_answer
+        print(docs_answer(" ".join(args.query), name=args.name, full=bool(args.name), limit=args.limit))
+        return 0
+    if args.cmd == "guide":
+        from kintsugi.agent.knowledge import guide, guide_topics
+        if args.topic == "list":
+            for k, v in guide_topics():
+                print(f"{k:12s} {v}")
+            return 0
+        text = guide(args.topic)
+        if text is None:
+            print(f"no guide {args.topic!r}; topics: {', '.join(k for k, _ in guide_topics())}", file=sys.stderr)
+            return 2
+        print(text)
+        return 0
     if args.cmd == "serve":
         import socket
 

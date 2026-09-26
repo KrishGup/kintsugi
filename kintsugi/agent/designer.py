@@ -39,7 +39,10 @@ FILE_TOOLS_AGENT = (
 
 
 def designer_prompt(provider: str) -> str:
-    return _PROMPT_TEMPLATE.replace("{FILE_TOOLS}", FILE_TOOLS_OPENAI if provider != "agent" else FILE_TOOLS_AGENT)
+    from kintsugi.agent.knowledge import summary_for_prompt
+
+    return (_PROMPT_TEMPLATE.replace("{FILE_TOOLS}", FILE_TOOLS_OPENAI if provider != "agent" else FILE_TOOLS_AGENT)
+            .replace("{KNOWLEDGE_TOOLS}", summary_for_prompt()))
 
 
 @dataclass

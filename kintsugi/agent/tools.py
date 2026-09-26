@@ -270,6 +270,43 @@ def make_kin_tools(session: Session, state: Any, spec: PartSpec, budget: int, em
                  "required": ["question"]}, ask_user),
         ToolDef("finish", "Declare the part done: all hard checks pass and the drawings look right. Give the user a 3-8 line narration.",
                 {"type": "object", "properties": {"narration": {"type": "string"}}, "required": ["narration"]}, finish),
+    ] + make_knowledge_tools()
+
+
+def make_knowledge_tools() -> list[ToolDef]:
+    """scad_guide / scad_docs: curated OpenSCAD + BOSL2 knowledge and the full reference, searchable."""
+    from kintsugi.agent import knowledge as K
+
+    async def scad_guide(args: dict[str, Any]) -> ToolResult:
+        topic = str(args.get("topic", "")).strip()
+        if not topic or topic.lower() in ("list", "topics", "?"):
+            return ToolResult("Guides:\n" + "\n".join(f"- {k}: {v}" for k, v in K.guide_topics()))
+        text = K.guide(topic)
+        if text is None:
+            return ToolResult(f"No guide {topic!r}. Topics: " + ", ".join(k for k, _ in K.guide_topics()), is_error=True)
+        return ToolResult(text)
+
+    async def scad_docs(args: dict[str, Any]) -> ToolResult:
+        query = str(args.get("query", "") or "")
+        name = args.get("name")
+        full = bool(args.get("full", False))
+        if not query and not name:
+            return ToolResult("Give a query (words or a name) or name=<exact module/function>.", is_error=True)
+        return ToolResult(K.docs_answer(query, name=str(name) if name else None, full=full, limit=int(args.get("limit", 5) or 5)))
+
+    return [
+        ToolDef("scad_guide", "Read a curated guide for OpenSCAD 2021.01 as Kintsugi runs it: `essentials` (language, scope, $fn, what is "
+                "not available), `shapes` (profiles, extrusions, offset/hull rounding, fillets, teardrops), `bosl2` (the vendored library: "
+                "anchors, attachments, rounded primitives, masks, threads, screws, joiners — every example verified), `fdm` (walls, clearances by "
+                "fit and material, overhangs, orientation, snap fits, inserts), `kintsugi` (customizer syntax, render_target/coupon/assembly, the "
+                "frame and the checker's recipes), `patterns` (compiling snippets: rings, bosses, D-bores, slots, clips, hole patterns, nut traps, "
+                "plugs, caps), `errors` (what each compile error/warning means). Call with topic=\"list\" for the index.",
+                {"type": "object", "properties": {"topic": {"type": "string"}}, "required": ["topic"]}, scad_guide),
+        ToolDef("scad_docs", "Search the reference: every OpenSCAD builtin and every module/function of the vendored BOSL2 (usage, arguments, "
+                "example, which file to include). `query` takes words or a name (\"tube wall\", \"threaded nut\", \"offset\"); `name` "
+                "returns one exact entry in full. Use it before calling any BOSL2 module you are not certain exists with those arguments.",
+                {"type": "object", "properties": {"query": {"type": "string"}, "name": {"type": "string"}, "full": {"type": "boolean"},
+                                                  "limit": {"type": "integer"}}}, scad_docs),
     ]
 
 

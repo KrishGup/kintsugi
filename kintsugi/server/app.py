@@ -162,6 +162,26 @@ def template_source(name: str):
     return PlainTextResponse(p.read_text(encoding="utf-8"))
 
 
+@app.get("/api/docs")
+def docs(q: str = "", name: str | None = None, limit: int = 5):
+    """The OpenSCAD + BOSL2 reference the designer uses (also for people editing code in the UI)."""
+    from kintsugi.agent.knowledge import docs_answer, guide_topics, search
+    if not q and not name:
+        return {"guides": [{"topic": k, "about": v} for k, v in guide_topics()], "text": ""}
+    hits = search(name or q, limit=limit)
+    return {"text": docs_answer(q, name=name, full=bool(name), limit=limit),
+            "hits": [{"name": h.name, "kind": h.kind, "source": h.source, "synopsis": h.synopsis, "usage": h.usage[:3], "includes": h.includes} for h in hits]}
+
+
+@app.get("/api/guides/{topic}")
+def guide_text(topic: str):
+    from kintsugi.agent.knowledge import guide
+    text = guide(topic)
+    if text is None:
+        raise HTTPException(404, "unknown guide")
+    return PlainTextResponse(text)
+
+
 @app.get("/api/specs/examples")
 def example_specs():
     out = []

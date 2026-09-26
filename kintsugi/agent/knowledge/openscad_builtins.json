@@ -1,0 +1,1522 @@
+[
+ {
+  "name": "cube",
+  "kind": "module",
+  "synopsis": "Axis-aligned box.",
+  "usage": [
+   "cube(size);",
+   "cube([x, y, z], center=false);"
+  ],
+  "description": "A box with one corner at the origin, or centred when center=true. size is a number (cube) or a [x, y, z] vector.",
+  "arguments": [
+   "size = number or [x, y, z]",
+   "center = true centres the box on the origin. Default false"
+  ],
+  "examples": [
+   "cube([30, 20, 6]);",
+   "translate([0, 0, 3]) cube([30, 20, 6], center=true);  // bottom on z = 0"
+  ],
+  "topics": [
+   "Shapes (3D)"
+  ],
+  "see_also": [
+   "cuboid (BOSL2: rounding, chamfer, anchors)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "sphere",
+  "kind": "module",
+  "synopsis": "Sphere at the origin.",
+  "usage": [
+   "sphere(r);",
+   "sphere(d=);"
+  ],
+  "description": "A sphere centred on the origin. Use $fn (or $fa/$fs) to control facets; a low-facet sphere measures under-size across flats.",
+  "arguments": [
+   "r = radius",
+   "d = diameter (alternative to r)"
+  ],
+  "examples": [
+   "sphere(d=10, $fn=48);"
+  ],
+  "topics": [
+   "Shapes (3D)"
+  ],
+  "see_also": [
+   "cylinder",
+   "hull"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "cylinder",
+  "kind": "module",
+  "synopsis": "Cylinder or cone along Z.",
+  "usage": [
+   "cylinder(h, r);",
+   "cylinder(h, d=);",
+   "cylinder(h, r1=, r2=);",
+   "cylinder(h, d1=, d2=, center=false);"
+  ],
+  "description": "A cylinder from z = 0 to z = h (or centred with center=true). Give r/d for a cylinder, r1,r2 or d1,d2 for a cone. Facets come from $fn (exact count), or $fa/$fs. For bores and bosses that are measured, set $fn on the primitive (96–160) and remember a polygon inscribed in the circle is under-size by r·(1 − cos(180/$fn)); the checker fits a circle to the polygon vertices, so 96+ facets keep that below 0.03 mm at 40 mm.",
+  "arguments": [
+   "h = height along Z",
+   "r | d = radius / diameter",
+   "r1, r2 | d1, d2 = bottom and top radii/diameters (cone)",
+   "center = centre on z = 0. Default false",
+   "$fn = facets on this primitive"
+  ],
+  "examples": [
+   "cylinder(h=6, d=43.25, $fn=128);",
+   "cylinder(h=10, d1=12, d2=8, $fn=64);  // taper",
+   "difference() { cylinder(h=6, d=54, $fn=128); translate([0,0,-1]) cylinder(h=8, d=43.25, $fn=128); }  // ring"
+  ],
+  "topics": [
+   "Shapes (3D)"
+  ],
+  "see_also": [
+   "cyl (BOSL2: rounding, chamfer, anchors)",
+   "tube (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "polyhedron",
+  "kind": "module",
+  "synopsis": "Arbitrary closed mesh from points and faces.",
+  "usage": [
+   "polyhedron(points, faces, convexity=1);"
+  ],
+  "description": "A solid from a list of vertices and faces (lists of point indices). Faces must be ordered clockwise when looking at the face from outside, and the surface must be closed and consistently oriented or the result is not a valid 2-manifold. Prefer linear_extrude/rotate_extrude of a polygon, hull(), or BOSL2 sweeps; reach for polyhedron only for lofts you cannot express otherwise.",
+  "arguments": [
+   "points = [[x,y,z], ...]",
+   "faces = [[i, j, k, ...], ...] indices into points, clockwise from outside",
+   "convexity = preview hint only"
+  ],
+  "examples": [
+   "polyhedron(points=[[0,0,0],[10,0,0],[10,10,0],[0,10,0],[5,5,8]], faces=[[0,1,2,3],[4,1,0],[4,2,1],[4,3,2],[4,0,3]]);"
+  ],
+  "topics": [
+   "Shapes (3D)"
+  ],
+  "see_also": [
+   "skin (BOSL2)",
+   "vnf_polyhedron (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "import",
+  "kind": "module",
+  "synopsis": "Load an external STL/DXF/SVG (not available in Kintsugi sessions).",
+  "usage": [
+   "import(\"file.stl\");"
+  ],
+  "description": "Imports a mesh or 2D file. Kintsugi parts must be self-contained: no import() unless the spec supplies the file. The checker measures the exported mesh, so an imported blob would be unverifiable anyway.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "I/O"
+  ],
+  "see_also": [],
+  "notes": "Do not use in part.scad."
+ },
+ {
+  "name": "surface",
+  "kind": "module",
+  "synopsis": "Height map from a data file or PNG (not used here).",
+  "usage": [
+   "surface(file=, center=false, invert=false);"
+  ],
+  "description": "Reads a height map. Not applicable to Kintsugi parts.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "I/O"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "square",
+  "kind": "module",
+  "synopsis": "Rectangle in the XY plane.",
+  "usage": [
+   "square(size);",
+   "square([w, h], center=false);"
+  ],
+  "description": "A rectangle with one corner at the origin, or centred. 2D shapes are extruded with linear_extrude/rotate_extrude; a 2D object left at top level exports as a thin 1 mm slab (avoid).",
+  "arguments": [
+   "size = number or [w, h]",
+   "center = centre on the origin"
+  ],
+  "examples": [
+   "linear_extrude(6) square([30, 20], center=true);"
+  ],
+  "topics": [
+   "Shapes (2D)"
+  ],
+  "see_also": [
+   "rect (BOSL2: rounding)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "circle",
+  "kind": "module",
+  "synopsis": "Circle in the XY plane.",
+  "usage": [
+   "circle(r);",
+   "circle(d=);"
+  ],
+  "description": "A circle as a regular polygon with $fn sides (or per $fa/$fs). The polygon is inscribed: its flats sit inside the true circle by r·(1 − cos(180/$fn)). Use $fn ≥ 96 for measured bores; 128–180 for press fits.",
+  "arguments": [
+   "r | d",
+   "$fn"
+  ],
+  "examples": [
+   "linear_extrude(6) difference() { circle(d=54, $fn=128); circle(d=43.25, $fn=128); }"
+  ],
+  "topics": [
+   "Shapes (2D)"
+  ],
+  "see_also": [
+   "cylinder",
+   "ellipse (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "polygon",
+  "kind": "module",
+  "synopsis": "2D shape from a point list, with optional holes.",
+  "usage": [
+   "polygon(points);",
+   "polygon(points, paths);"
+  ],
+  "description": "A polygon from [x, y] points in order (either winding). paths lists index loops: the first is the outline, the rest are holes. Self-intersecting outlines produce broken extrusions — build the outline from simple pieces and union them instead. This is the workhorse for measured outlines and profiles: build the profile as points, then linear_extrude (flat parts) or rotate_extrude (round parts).",
+  "arguments": [
+   "points = [[x, y], ...]",
+   "paths = [[outline indices], [hole indices], ...] optional",
+   "convexity = preview hint"
+  ],
+  "examples": [
+   "// L profile revolved into a flanged ring\nrotate_extrude($fn=128) polygon([[21.6,0],[27,0],[27,3],[24,3],[24,8],[21.6,8]]);",
+   "// hook outline from a point list\nlinear_extrude(4) polygon([[0,0],[20,0],[20,4],[4,4],[4,30],[0,30]]);"
+  ],
+  "topics": [
+   "Shapes (2D)"
+  ],
+  "see_also": [
+   "offset",
+   "linear_extrude",
+   "rotate_extrude",
+   "path (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "text",
+  "kind": "module",
+  "synopsis": "2D text outlines.",
+  "usage": [
+   "text(\"str\", size=10, font=, halign=\"left\", valign=\"baseline\", spacing=1, direction=\"ltr\", $fn=);"
+  ],
+  "description": "Outline glyphs in the XY plane; extrude to emboss or difference to engrave. size is roughly the cap height in mm. Fonts must exist on the machine; the default sans works everywhere. Keep embossed text ≥ 0.6 mm tall and 0.4–1 mm raised for FDM; engraved text 0.6–1 mm deep.",
+  "arguments": [
+   "text = the string",
+   "size = nominal size (≈ ascender height) in mm. Default 10",
+   "font = \"Liberation Sans:style=Bold\" etc.",
+   "halign = left | center | right",
+   "valign = top | center | baseline | bottom",
+   "spacing, direction, language, script"
+  ],
+  "examples": [
+   "difference() { cube([40, 12, 3]); translate([2, 3, 2.2]) linear_extrude(1) text(\"KIN\", size=7); }"
+  ],
+  "topics": [
+   "Shapes (2D)",
+   "Text"
+  ],
+  "see_also": [],
+  "notes": "textmetrics() does not exist in 2021.01 (it returns undef); size text by trial, or leave margin."
+ },
+ {
+  "name": "offset",
+  "kind": "module",
+  "synopsis": "Grow/shrink a 2D shape; rounds or chamfers corners.",
+  "usage": [
+   "offset(r=) ...2D;",
+   "offset(delta=, chamfer=false) ...2D;"
+  ],
+  "description": "Offsets a 2D shape by a distance. r rounds the corners (outward offset rounds convex corners; a negative r rounds concave corners and removes features thinner than 2|r|). delta keeps corners sharp (chamfer=true cuts them). The standard rounding idiom: offset(r=+R) offset(delta=-R) rounds convex corners of radius R without changing size; offset(r=-R) offset(delta=+R) rounds concave (inside) corners. Both together round everything. Use on the 2D profile before extruding — far cheaper than minkowski.",
+  "arguments": [
+   "r = offset distance with rounded corners",
+   "delta = offset distance with sharp corners",
+   "chamfer = with delta, chamfer the corners instead of extending them"
+  ],
+  "examples": [
+   "// 3 mm rounded outside corners, size unchanged\nlinear_extrude(4) offset(r=3) offset(delta=-3) square([40, 20]);",
+   "// fillet the inside corners of an L\nlinear_extrude(4) offset(r=-2) offset(delta=2) polygon([[0,0],[30,0],[30,8],[8,8],[8,30],[0,30]]);",
+   "// clearance ring: grow a measured outline by the fit clearance\nlinear_extrude(6) difference() { offset(delta=4) neck(); offset(delta=0.15) neck(); }\nmodule neck() circle(d=43, $fn=128);"
+  ],
+  "topics": [
+   "Shapes (2D)",
+   "Rounding"
+  ],
+  "see_also": [
+   "round2d (BOSL2)",
+   "minkowski",
+   "hull"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "projection",
+  "kind": "module",
+  "synopsis": "Flatten 3D to 2D (shadow or cut).",
+  "usage": [
+   "projection(cut=false) ...3D;"
+  ],
+  "description": "Projects a 3D object onto the XY plane. cut=false gives the silhouette (union of all sections); cut=true gives the section at z = 0 only — translate first to cut at another height. Useful for turning a body into a 2D outline to offset (a gasket, a lid that matches a base).",
+  "arguments": [
+   "cut = false: silhouette; true: section at z = 0"
+  ],
+  "examples": [
+   "linear_extrude(2) offset(r=1) projection() import_free_body();\nmodule import_free_body() cylinder(h=10, d=20, $fn=64);"
+  ],
+  "topics": [
+   "Shapes (2D)"
+  ],
+  "see_also": [
+   "offset",
+   "linear_extrude"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "linear_extrude",
+  "kind": "module",
+  "synopsis": "Extrude a 2D shape along Z (optionally twist/scale).",
+  "usage": [
+   "linear_extrude(height, center=false, convexity=10, twist=0, slices=, scale=1) ...2D;"
+  ],
+  "description": "Turns a 2D shape into a prism from z = 0 to height (centred with center=true). twist rotates the profile over the height (degrees), scale shrinks/grows it (number or [x, y]); slices controls the segmentation of twisted/scaled extrusions. convexity only affects preview rendering; the exported STL is exact. This plus polygon/offset is the cleanest way to build flat repair parts: model the outline in 2D, round it with offset, extrude the thickness.",
+  "arguments": [
+   "height = extrusion length",
+   "center = centre on z = 0",
+   "twist = degrees of rotation over the height",
+   "scale = top scale factor (number or [x, y]); 0 makes a point",
+   "slices = segments for twist/scale",
+   "convexity = preview hint"
+  ],
+  "examples": [
+   "linear_extrude(6) offset(r=2) offset(delta=-2) square([40, 20], center=true);",
+   "linear_extrude(15, scale=0.8, $fn=64) circle(d=20);  // tapered plug"
+  ],
+  "topics": [
+   "Extrusions"
+  ],
+  "see_also": [
+   "rotate_extrude",
+   "linear_sweep (BOSL2)",
+   "offset_sweep (BOSL2: rounded top/bottom edges)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "rotate_extrude",
+  "kind": "module",
+  "synopsis": "Revolve a 2D profile around Z.",
+  "usage": [
+   "rotate_extrude(angle=360, convexity=2) ...2D;"
+  ],
+  "description": "Revolves a 2D shape drawn in the XY plane around the Z axis: X becomes the radius, Y becomes Z. The profile must lie entirely at x ≥ 0 (or entirely ≤ 0). angle < 360 makes a partial revolve (arcs, snap-ring gaps). Ideal for rings, caps, knobs, bushings, flanges: draw the cross-section as a polygon and revolve. $fn on rotate_extrude sets the facets around the axis.",
+  "arguments": [
+   "angle = degrees of revolution. Default 360",
+   "convexity = preview hint",
+   "$fn = facets around the axis"
+  ],
+  "examples": [
+   "// ring: OD 54, bore 43.25, height 6, with a 1 mm chamfer at the bore entry\nrotate_extrude($fn=128) polygon([[21.625+1,0],[27,0],[27,6],[21.625,6],[21.625,1]]);",
+   "// knob with a rounded rim\nrotate_extrude($fn=96) { square([12, 8]); translate([12, 4]) circle(r=4, $fn=32); }"
+  ],
+  "topics": [
+   "Extrusions"
+  ],
+  "see_also": [
+   "linear_extrude",
+   "polygon",
+   "cyl (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "translate",
+  "kind": "module",
+  "synopsis": "Move children.",
+  "usage": [
+   "translate([x, y, z]) ...;"
+  ],
+  "description": "Moves the children by a vector. Transforms apply to everything that follows in the same statement or block.",
+  "arguments": [
+   "v = [x, y, z] (2D children take [x, y])"
+  ],
+  "examples": [
+   "translate([0, 0, 6]) cube(10);"
+  ],
+  "topics": [
+   "Transforms"
+  ],
+  "see_also": [
+   "rotate",
+   "mirror",
+   "up/down/left/right/fwd/back (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "rotate",
+  "kind": "module",
+  "synopsis": "Rotate children (degrees).",
+  "usage": [
+   "rotate([ax, ay, az]) ...;",
+   "rotate(a, v) ...;",
+   "rotate(a) ...;  // about Z"
+  ],
+  "description": "Rotates children by Euler angles in degrees, applied X then Y then Z, about the origin — translate afterwards, or rotate about a point with translate(p) rotate(a) translate(-p). rotate(a, v) rotates about an arbitrary axis vector. A single number rotates about Z (2D and 3D).",
+  "arguments": [
+   "a = angle or [ax, ay, az] in degrees",
+   "v = axis vector (with scalar a)"
+  ],
+  "examples": [
+   "rotate([90, 0, 0]) cylinder(h=20, d=6, $fn=48);  // horizontal hole along -Y",
+   "rotate(a=45, v=[1, 1, 0]) cube(10);"
+  ],
+  "topics": [
+   "Transforms"
+  ],
+  "see_also": [
+   "translate",
+   "mirror",
+   "xrot/yrot/zrot (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "scale",
+  "kind": "module",
+  "synopsis": "Scale children.",
+  "usage": [
+   "scale([sx, sy, sz]) ...;",
+   "scale(s) ...;"
+  ],
+  "description": "Scales children about the origin. Non-uniform scale of a circle gives an ellipse (facets are scaled too). Scaling a rounded shape scales its radii — use offset/BOSL2 rounding for true constant radii.",
+  "arguments": [
+   "v = factor or [sx, sy, sz]"
+  ],
+  "examples": [
+   "scale([1, 0.6, 1]) cylinder(h=6, d=40, $fn=96);  // oval boss"
+  ],
+  "topics": [
+   "Transforms"
+  ],
+  "see_also": [
+   "resize"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "resize",
+  "kind": "module",
+  "synopsis": "Scale children to an exact bounding size.",
+  "usage": [
+   "resize([x, y, z], auto=false) ...;"
+  ],
+  "description": "Scales children so their bounding box matches newsize. A 0 in newsize keeps that axis unscaled unless auto=true (then it scales proportionally). Forces geometry evaluation (slower).",
+  "arguments": [
+   "newsize = [x, y, z]; 0 = unchanged (or proportional with auto)",
+   "auto = scale zero entries proportionally"
+  ],
+  "examples": [
+   "resize([50, 0, 0], auto=true) sphere(d=10);"
+  ],
+  "topics": [
+   "Transforms"
+  ],
+  "see_also": [
+   "scale"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "mirror",
+  "kind": "module",
+  "synopsis": "Mirror children across a plane through the origin.",
+  "usage": [
+   "mirror([x, y, z]) ...;"
+  ],
+  "description": "Reflects children across the plane whose normal is the given vector. mirror does not keep the original — use a union of the shape and its mirror for symmetric parts: `module both() { children(); mirror([1,0,0]) children(); }`.",
+  "arguments": [
+   "v = plane normal, e.g. [1,0,0] mirrors X"
+  ],
+  "examples": [
+   "module both() { children(); mirror([1, 0, 0]) children(); }\nboth() translate([10, 0, 0]) cube(5);"
+  ],
+  "topics": [
+   "Transforms"
+  ],
+  "see_also": [
+   "mirror_copy (BOSL2)",
+   "xflip (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "multmatrix",
+  "kind": "module",
+  "synopsis": "Apply a 4×4 affine matrix.",
+  "usage": [
+   "multmatrix(m) ...;"
+  ],
+  "description": "Applies an arbitrary affine transform. Rarely needed by hand; BOSL2 provides shear/skew helpers.",
+  "arguments": [
+   "m = 4×4 matrix (rows)"
+  ],
+  "examples": [
+   "multmatrix([[1,0.3,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]) cube(10);  // shear X by Y"
+  ],
+  "topics": [
+   "Transforms"
+  ],
+  "see_also": [
+   "skew (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "color",
+  "kind": "module",
+  "synopsis": "Colour children in preview.",
+  "usage": [
+   "color(\"name\", alpha=1) ...;",
+   "color([r, g, b, a]) ...;"
+  ],
+  "description": "Preview colour only; it does not affect the exported mesh. Useful in assembly() to tell the part from the ghosted context.",
+  "arguments": [
+   "c = name string, [r,g,b] or [r,g,b,a] in 0–1, or \"#rrggbb\"",
+   "alpha = 0–1"
+  ],
+  "examples": [
+   "color(\"steelblue\") cube(10);"
+  ],
+  "topics": [
+   "Preview"
+  ],
+  "see_also": [
+   "%"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "hull",
+  "kind": "module",
+  "synopsis": "Convex hull of children.",
+  "usage": [
+   "hull() { ...; ...; }"
+  ],
+  "description": "The convex hull of all children — the fastest way to make rounded, tapered or lofted convex bodies: hull two spheres for a capsule, four cylinders for a rounded plate, two discs for a truncated cone with rounded ends. hull discards concavities, so build concave parts from several hulls unioned. Works in 2D too.",
+  "arguments": [],
+  "examples": [
+   "// rounded plate 40×20×4 with R3 corners\nhull() for (x=[-17,17], y=[-7,7]) translate([x, y, 0]) cylinder(h=4, r=3, $fn=32);",
+   "// loop: two rings joined by a hull bridge\nhull() { translate([0,0,0]) cylinder(h=6, d=54, $fn=96); translate([70,0,0]) cylinder(h=6, d=30, $fn=96); }"
+  ],
+  "topics": [
+   "Booleans",
+   "Rounding"
+  ],
+  "see_also": [
+   "minkowski",
+   "offset"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "minkowski",
+  "kind": "module",
+  "synopsis": "Minkowski sum of children (rounds every edge).",
+  "usage": [
+   "minkowski() { body; sphere(r); }"
+  ],
+  "description": "Sweeps the second child around the first: body + sphere(r) rounds all edges with radius r (and grows the body by r — model the body smaller). Correct but expensive (CGAL: seconds to minutes; cost grows with facets). Prefer offset() on 2D profiles, hull() of rounded primitives, or BOSL2 cuboid(rounding=) / rounded_prism(). If used, keep the sphere $fn low (16–24) and the body simple.",
+  "arguments": [],
+  "examples": [
+   "minkowski() { cube([40-6, 20-6, 6-6+0.01], center=true); sphere(r=3, $fn=20); }"
+  ],
+  "topics": [
+   "Booleans",
+   "Rounding"
+  ],
+  "see_also": [
+   "hull",
+   "offset",
+   "cuboid (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "union",
+  "kind": "module",
+  "synopsis": "Merge children into one solid (implicit at top level).",
+  "usage": [
+   "union() { ...; }"
+  ],
+  "description": "Combines children. Top-level statements are implicitly unioned. Overlap parts by a small epsilon (0.01–0.1 mm) rather than touching exactly — coincident faces make CGAL produce non-manifold results or slow renders.",
+  "arguments": [],
+  "examples": [
+   "union() { cube(10); translate([9.99, 0, 0]) cube(10); }"
+  ],
+  "topics": [
+   "Booleans"
+  ],
+  "see_also": [
+   "difference",
+   "intersection"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "difference",
+  "kind": "module",
+  "synopsis": "Subtract every child after the first.",
+  "usage": [
+   "difference() { base; cutter1; cutter2; }"
+  ],
+  "description": "Keeps the first child minus all others. Make cutters overshoot the faces they exit (start them 1 mm below and end 1 mm above) so no coincident faces remain — the classic cause of 'Object may not be a valid 2-manifold' and of zero-thickness skins. Use `#` on a cutter to see it in preview.",
+  "arguments": [],
+  "examples": [
+   "difference() { cylinder(h=6, d=54, $fn=128); translate([0, 0, -1]) cylinder(h=8, d=43.25, $fn=128); }"
+  ],
+  "topics": [
+   "Booleans"
+  ],
+  "see_also": [
+   "union",
+   "intersection",
+   "diff (BOSL2 tag-based)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "intersection",
+  "kind": "module",
+  "synopsis": "Keep only the volume common to all children.",
+  "usage": [
+   "intersection() { a; b; }"
+  ],
+  "description": "The overlap of all children. Handy to clip a shape to an envelope (a sphere intersected with a cube for a domed cap) or to bound a hull.",
+  "arguments": [],
+  "examples": [
+   "intersection() { sphere(d=40, $fn=96); translate([0, 0, 10]) cube([50, 50, 20], center=true); }"
+  ],
+  "topics": [
+   "Booleans"
+  ],
+  "see_also": [
+   "intersection_for",
+   "difference"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "intersection_for",
+  "kind": "module",
+  "synopsis": "Intersection over a loop (for() would union).",
+  "usage": [
+   "intersection_for (i = [start:end]) ...;"
+  ],
+  "description": "Like for(), but the iterations are intersected instead of unioned. Used for shapes defined as the common volume of rotated copies (a rounded-triangle knob, a spherical cap set).",
+  "arguments": [],
+  "examples": [
+   "intersection_for (a = [0, 60, 120]) rotate(a) cube([30, 8, 8], center=true);"
+  ],
+  "topics": [
+   "Booleans",
+   "Control"
+  ],
+  "see_also": [
+   "intersection",
+   "for"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "render",
+  "kind": "module",
+  "synopsis": "Force CGAL evaluation of children (preview only).",
+  "usage": [
+   "render(convexity=1) ...;"
+  ],
+  "description": "In preview (F5) it replaces the children with their computed mesh, fixing display artifacts of complex booleans. Headless STL export already evaluates everything; render() there only costs time. Not needed in Kintsugi parts.",
+  "arguments": [
+   "convexity = preview hint"
+  ],
+  "examples": [],
+  "topics": [
+   "Preview"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "for",
+  "kind": "statement",
+  "synopsis": "Repeat children over a range or list (results are unioned).",
+  "usage": [
+   "for (i = [start : end]) ...;",
+   "for (i = [start : step : end]) ...;",
+   "for (p = list) ...;",
+   "for (i = [0:2], j = [0:2]) ...;  // nested"
+  ],
+  "description": "Instantiates the children once per value; the copies are unioned. Ranges are inclusive: [0:3] is 0,1,2,3; [0:0.5:2] steps by 0.5. Iterate a list of points for hole patterns. Use intersection_for to intersect instead.",
+  "arguments": [
+   "range [start:end] or [start:step:end]",
+   "or any list (points, strings, mixed)"
+  ],
+  "examples": [
+   "for (p = [[-25, 0], [25, 0]]) translate([p[0], p[1], -1]) cylinder(h=8, d=4.5, $fn=32);  // two clearance holes",
+   "for (i = [0:5]) rotate(i * 60) translate([20, 0, 0]) cylinder(h=4, d=3, $fn=24);  // bolt circle"
+  ],
+  "topics": [
+   "Control"
+  ],
+  "see_also": [
+   "intersection_for",
+   "list comprehension",
+   "grid_copies / zrot_copies (BOSL2)"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "if",
+  "kind": "statement",
+  "synopsis": "Conditional instantiation.",
+  "usage": [
+   "if (cond) ...; else ...;"
+  ],
+  "description": "Instantiates children when the condition holds. Conditions use ==, !=, <, <=, >, >=, &&, ||, !. undef and 0 are false-ish in boolean context (0 == false is true).",
+  "arguments": [],
+  "examples": [
+   "if (with_lanyard_hole) translate([90, 0, -1]) cylinder(h=8, d=4, $fn=32);"
+  ],
+  "topics": [
+   "Control"
+  ],
+  "see_also": [
+   "? : ternary"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "let",
+  "kind": "statement",
+  "synopsis": "Local named values (statement and expression forms).",
+  "usage": [
+   "let (a = expr, b = expr) ...;",
+   "let (a = expr) expression  // inside expressions",
+   "[for (i = list) let (v = f(i)) v*2]"
+  ],
+  "description": "Binds names for the following children or expression. Variables in OpenSCAD cannot be reassigned; let is how you compute intermediates (derived dimensions, points) locally. Later bindings can use earlier ones.",
+  "arguments": [],
+  "examples": [
+   "let (ri = neck_d/2 + clearance, ro = ri + wall) rotate_extrude($fn=128) polygon([[ri,0],[ro,0],[ro,6],[ri,6]]);\nneck_d = 43; clearance = 0.25; wall = 4;"
+  ],
+  "topics": [
+   "Control"
+  ],
+  "see_also": [
+   "function"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "echo",
+  "kind": "module",
+  "synopsis": "Print values to the console (compile output).",
+  "usage": [
+   "echo(\"label\", value, ...);",
+   "echo(name=value);"
+  ],
+  "description": "Prints to the console; in Kintsugi the compile output shows it, so echo the derived dimensions you care about (bore diameter with clearance, wall thickness) and compare them with the check table. echo() as an expression also exists: echo(x) x.",
+  "arguments": [],
+  "examples": [
+   "echo(bore=neck_d + clearance, wall=(ring_od - neck_d - clearance)/2);\nneck_d=43; clearance=0.25; ring_od=54;"
+  ],
+  "topics": [
+   "Debugging"
+  ],
+  "see_also": [
+   "assert"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "assert",
+  "kind": "module",
+  "synopsis": "Stop with a message when a condition fails.",
+  "usage": [
+   "assert(cond, \"message\");",
+   "assert(cond) expression  // expression form"
+  ],
+  "description": "Aborts the compile (an error in the output) when the condition is false. Put the spec's hard constraints in asserts at the top of part.scad so an impossible parameter combination fails loudly instead of producing a silently wrong part.",
+  "arguments": [
+   "condition",
+   "message = shown on failure"
+  ],
+  "examples": [
+   "assert(loop_inner_w >= 40, \"two fingers need 40 mm\");\nloop_inner_w = 42;"
+  ],
+  "topics": [
+   "Debugging"
+  ],
+  "see_also": [
+   "echo"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "children",
+  "kind": "module",
+  "synopsis": "Instantiate a module's child objects.",
+  "usage": [
+   "children();",
+   "children(i);",
+   "children([a:b]);"
+  ],
+  "description": "Inside a module, children() places the objects the caller passed in braces; $children is their count. This is how wrapper modules (both(), bed_chamfer(), pattern()) apply transforms to arbitrary geometry.",
+  "arguments": [
+   "index or range (optional)"
+  ],
+  "examples": [
+   "module ring_array(n, r) { for (i=[0:n-1]) rotate(i*360/n) translate([r,0,0]) children(); }\nring_array(6, 20) cylinder(h=4, d=3, $fn=24);"
+  ],
+  "topics": [
+   "Modules"
+  ],
+  "see_also": [
+   "module",
+   "$children"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "module",
+  "kind": "statement",
+  "synopsis": "Define a reusable geometry block with parameters.",
+  "usage": [
+   "module name(a, b=default) { ...children()... }"
+  ],
+  "description": "Modules produce geometry; call them like primitives. Parameters have defaults; named arguments are allowed (`name(b=2)`). Modules see file-level variables. Keep Kintsugi's required modules: part(), coupon(), assembly().",
+  "arguments": [],
+  "examples": [
+   "module boss(d, h, hole) { difference() { cylinder(h=h, d=d, $fn=64); translate([0,0,-1]) cylinder(h=h+2, d=hole, $fn=48); } }\nboss(10, 8, 4.5);"
+  ],
+  "topics": [
+   "Modules"
+  ],
+  "see_also": [
+   "function",
+   "children"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "function",
+  "kind": "statement",
+  "synopsis": "Define an expression with parameters (recursion allowed).",
+  "usage": [
+   "function name(a, b=1) = expr;",
+   "f = function(x) x * 2;  // function literal (2021.01)"
+  ],
+  "description": "Functions return values (numbers, lists, strings, booleans, function literals) and can recurse (ternary as the base case). Use them for profile points, derived dimensions and unit helpers. Function literals can be stored in variables and passed as arguments.",
+  "arguments": [],
+  "examples": [
+   "function tooth(i, n, r) = [r*cos(i*360/n), r*sin(i*360/n)];\npoly = [for (i=[0:11]) tooth(i, 12, 10)];\nlinear_extrude(3) polygon(poly);"
+  ],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [
+   "module",
+   "let",
+   "list comprehension"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "list comprehension",
+  "kind": "statement",
+  "synopsis": "Build lists with for/if/let/each.",
+  "usage": [
+   "[for (i = range) expr]",
+   "[for (i = list) if (cond) expr]",
+   "[for (i = list) let (v = ...) expr]",
+   "[for (i = a) each [i, i+1]]  // flatten one level",
+   "[for (i=[0:2], j=[0:2]) [i, j]]"
+  ],
+  "description": "The way to compute point lists, hole positions and derived tables. each splices a list into the result (2019.05+). Ranges are inclusive. Conditions filter; let computes intermediates. Nested fors with a comma iterate all combinations.",
+  "arguments": [],
+  "examples": [
+   "arc = [for (a = [0:5:90]) [20*cos(a), 20*sin(a)]];\nlinear_extrude(2) polygon(concat([[0,0]], arc));",
+   "holes = [for (x=[-30,30], y=[-15,15]) [x, y]];\ndifference() { cube([80,40,4], center=true); for (p=holes) translate([p[0],p[1],-3]) cylinder(h=8, d=3.4, $fn=24); }"
+  ],
+  "topics": [
+   "Functions",
+   "Lists"
+  ],
+  "see_also": [
+   "for",
+   "each",
+   "concat"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "variables",
+  "kind": "statement",
+  "synopsis": "Immutable, file-scoped, last assignment wins.",
+  "usage": [
+   "name = expr;  // top level",
+   "name = expr;  // inside a module: local to that module"
+  ],
+  "description": "Variables are set once per scope, evaluated before the geometry, and cannot be reassigned in loops or conditionally; a repeated assignment at the same level makes the LAST one win for the whole scope (with a warning) — which is how -D overrides and the customizer work. Compute per-iteration values with let(), functions and list comprehensions. Order of statements does not matter for variables at the same level; undefined names are undef (a warning), not an error.",
+  "arguments": [],
+  "examples": [
+   "wall = 1.6;\nring_od = neck_d + clearance + 2*wall;\nneck_d = 43; clearance = 0.25;  // order does not matter"
+  ],
+  "topics": [
+   "Language"
+  ],
+  "see_also": [
+   "let",
+   "special variables"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "special variables",
+  "kind": "variable",
+  "synopsis": "$fn, $fa, $fs, $preview, $children, $t.",
+  "usage": [
+   "$fn = 96;  // exact facet count for circles/spheres/cylinders",
+   "$fa = 2; $fs = 0.5;  // min angle / min segment when $fn = 0",
+   "cylinder(..., $fn=128);  // per-primitive"
+  ],
+  "description": "$-variables are dynamically scoped: setting one in a call ($fn=128) applies to that primitive and its children; setting it at the top applies everywhere. $fn overrides $fa/$fs. $preview is true in F5 preview and false in headless export (Kintsugi always exports, so $preview is false). $children is the child count in a module. $t is the animation time (unused).",
+  "arguments": [],
+  "examples": [
+   "$fn = 96;\ncylinder(h=6, d=43.25, $fn=160);  // this bore gets more facets"
+  ],
+  "topics": [
+   "Language"
+  ],
+  "see_also": [
+   "circle",
+   "cylinder"
+  ],
+  "notes": "Facet cost: CGAL time grows with facet count; 96 for bodies and 128–160 for measured bores is a good budget in 2021.01."
+ },
+ {
+  "name": "modifier characters",
+  "kind": "statement",
+  "synopsis": "* disable, ! root, # debug, % background.",
+  "usage": [
+   "*cube(1);   // ignored",
+   "!cube(1);   // only this",
+   "#cube(1);   // highlighted in preview, still exported",
+   "%cube(1);   // preview only: NOT exported"
+  ],
+  "description": "Prefix modifiers. `%` (background) shows an object translucently in preview and excludes it from the exported mesh — Kintsugi's assembly() uses it to ghost the context proxies. `#` highlights a cutter for debugging (it is still part of the result). `!` renders only that subtree; `*` disables one.",
+  "arguments": [],
+  "examples": [
+   "difference() { cube(20); #translate([5,5,-1]) cylinder(h=22, d=6, $fn=32); }"
+  ],
+  "topics": [
+   "Language",
+   "Preview"
+  ],
+  "see_also": [
+   "color"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "include",
+  "kind": "statement",
+  "synopsis": "include <file> vs use <file>.",
+  "usage": [
+   "include <BOSL2/std.scad>",
+   "use <lib.scad>"
+  ],
+  "description": "include pastes the file (its variables and top-level geometry become part of yours); use imports only its modules/functions. BOSL2 must be include'd (it needs its variables). The BOSL2 library is on OPENSCADPATH in every Kintsugi compile.",
+  "arguments": [],
+  "examples": [
+   "include <BOSL2/std.scad>\ncuboid([30, 20, 6], rounding=2, edges=\"Z\");"
+  ],
+  "topics": [
+   "Language"
+  ],
+  "see_also": [
+   "bosl2 guide"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "ternary and operators",
+  "kind": "statement",
+  "synopsis": "cond ? a : b, arithmetic, ^ power, vector ops.",
+  "usage": [
+   "x = cond ? a : b;",
+   "y = 2 ^ 3;  // 8 (2021.01)",
+   "v = [1,2,3] * 2;  v2 = [1,2] + [3,4];  d = [1,2,3] * [4,5,6];  // dot product",
+   "m = [[1,0],[0,1]] * [3,4];  // matrix × vector"
+  ],
+  "description": "The ternary is the only conditional expression; nest it for multi-way choices or use lookup(). Vectors add/subtract elementwise, scale by numbers, and `*` between vectors is the dot product (matrix products work too). Strings concatenate with str(). Integer division is float division; use floor(). `%` is modulo.",
+  "arguments": [],
+  "examples": [
+   "fit = clearance > 0.3 ? \"loose\" : \"sliding\"; echo(fit);\nclearance = 0.25;"
+  ],
+  "topics": [
+   "Language"
+  ],
+  "see_also": [
+   "lookup",
+   "str"
+  ],
+  "notes": ""
+ },
+ {
+  "name": "abs",
+  "kind": "function",
+  "synopsis": "Absolute value.",
+  "usage": [
+   "abs(x)"
+  ],
+  "description": "Absolute value.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "sign",
+  "kind": "function",
+  "synopsis": "-1, 0 or 1.",
+  "usage": [
+   "sign(x)"
+  ],
+  "description": "-1, 0 or 1.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "sin",
+  "kind": "function",
+  "synopsis": "Sine of degrees.",
+  "usage": [
+   "sin(deg)"
+  ],
+  "description": "All trig functions take and return DEGREES.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "cos",
+  "kind": "function",
+  "synopsis": "Cosine of degrees.",
+  "usage": [
+   "cos(deg)"
+  ],
+  "description": "Degrees.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "tan",
+  "kind": "function",
+  "synopsis": "Tangent of degrees.",
+  "usage": [
+   "tan(deg)"
+  ],
+  "description": "Degrees.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "asin",
+  "kind": "function",
+  "synopsis": "Arcsine in degrees.",
+  "usage": [
+   "asin(x)"
+  ],
+  "description": "Arcsine in degrees.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "acos",
+  "kind": "function",
+  "synopsis": "Arccosine in degrees.",
+  "usage": [
+   "acos(x)"
+  ],
+  "description": "Arccosine in degrees.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "atan",
+  "kind": "function",
+  "synopsis": "Arctangent in degrees.",
+  "usage": [
+   "atan(x)"
+  ],
+  "description": "Arctangent in degrees.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "atan2",
+  "kind": "function",
+  "synopsis": "Two-argument arctangent in degrees.",
+  "usage": [
+   "atan2(y, x)"
+  ],
+  "description": "Angle of the vector [x, y] from the X axis; safe when x = 0.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "floor",
+  "kind": "function",
+  "synopsis": "Round down.",
+  "usage": [
+   "floor(x)"
+  ],
+  "description": "Round down.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "ceil",
+  "kind": "function",
+  "synopsis": "Round up.",
+  "usage": [
+   "ceil(x)"
+  ],
+  "description": "Round up.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "round",
+  "kind": "function",
+  "synopsis": "Round to nearest (half away from zero).",
+  "usage": [
+   "round(x)"
+  ],
+  "description": "Round to nearest (half away from zero).",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "sqrt",
+  "kind": "function",
+  "synopsis": "Square root.",
+  "usage": [
+   "sqrt(x)"
+  ],
+  "description": "Square root.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "pow",
+  "kind": "function",
+  "synopsis": "Power.",
+  "usage": [
+   "pow(base, exp)",
+   "base ^ exp"
+  ],
+  "description": "The ^ operator exists from 2021.01.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "exp",
+  "kind": "function",
+  "synopsis": "e^x.",
+  "usage": [
+   "exp(x)"
+  ],
+  "description": "e^x.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "ln",
+  "kind": "function",
+  "synopsis": "Natural log.",
+  "usage": [
+   "ln(x)"
+  ],
+  "description": "Natural log.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "log",
+  "kind": "function",
+  "synopsis": "Log base 10, or base b.",
+  "usage": [
+   "log(x)",
+   "log(b, x)"
+  ],
+  "description": "Log base 10, or base b.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "min",
+  "kind": "function",
+  "synopsis": "Smallest of arguments or of a list.",
+  "usage": [
+   "min(a, b, ...)",
+   "min(list)"
+  ],
+  "description": "Smallest of arguments or of a list.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "max",
+  "kind": "function",
+  "synopsis": "Largest of arguments or of a list.",
+  "usage": [
+   "max(a, b, ...)",
+   "max(list)"
+  ],
+  "description": "Largest of arguments or of a list.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "norm",
+  "kind": "function",
+  "synopsis": "Euclidean length of a vector.",
+  "usage": [
+   "norm(v)"
+  ],
+  "description": "Euclidean length of a vector.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "cross",
+  "kind": "function",
+  "synopsis": "Cross product of 3-vectors.",
+  "usage": [
+   "cross(a, b)"
+  ],
+  "description": "Cross product of 3-vectors.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "len",
+  "kind": "function",
+  "synopsis": "Length of a list or string.",
+  "usage": [
+   "len(x)"
+  ],
+  "description": "undef for numbers.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "concat",
+  "kind": "function",
+  "synopsis": "Join lists.",
+  "usage": [
+   "concat(a, b, ...)"
+  ],
+  "description": "Lists only; to append an element wrap it: concat(list, [x]).",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "str",
+  "kind": "function",
+  "synopsis": "Concatenate values into a string.",
+  "usage": [
+   "str(a, b, ...)"
+  ],
+  "description": "Numbers are formatted compactly (43.25 → \"43.25\").",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "chr",
+  "kind": "function",
+  "synopsis": "Character from code point(s).",
+  "usage": [
+   "chr(65)"
+  ],
+  "description": "Character from code point(s).",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "ord",
+  "kind": "function",
+  "synopsis": "Code point of a character.",
+  "usage": [
+   "ord(\"A\")"
+  ],
+  "description": "Code point of a character.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "search",
+  "kind": "function",
+  "synopsis": "Find values in a list/string.",
+  "usage": [
+   "search(match, table, num_returns_per_match=1, index_col_num=0)"
+  ],
+  "description": "Returns indices; quirky — prefer a list comprehension with if for clarity.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "lookup",
+  "kind": "function",
+  "synopsis": "Piecewise-linear interpolation in a table.",
+  "usage": [
+   "lookup(key, [[k0, v0], [k1, v1], ...])"
+  ],
+  "description": "Interpolates between the surrounding keys; clamps outside the table. Good for fit clearance by diameter or wall count by load.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "rands",
+  "kind": "function",
+  "synopsis": "Random numbers.",
+  "usage": [
+   "rands(min, max, count, seed)"
+  ],
+  "description": "Give a seed for repeatable geometry (textures, knurls).",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "is_undef",
+  "kind": "function",
+  "synopsis": "Type test.",
+  "usage": [
+   "is_undef(x)"
+  ],
+  "description": "Also is_list, is_num, is_string, is_bool, is_function (2021.01).",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "version",
+  "kind": "function",
+  "synopsis": "OpenSCAD version.",
+  "usage": [
+   "version()  // [2021, 1, 0]",
+   "version_num()  // 20210100"
+  ],
+  "description": "Kintsugi runs 2021.01.",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Functions"
+  ],
+  "see_also": [],
+  "notes": ""
+ },
+ {
+  "name": "not available in 2021.01",
+  "kind": "statement",
+  "synopsis": "Features you may remember that do not exist here.",
+  "usage": [
+   "roof()  → unknown module (2023 nightly only)",
+   "textmetrics() / fontmetrics() → undef",
+   "manifold backend / --backend=manifold → CGAL only",
+   "import() of files → disallowed in sessions",
+   "lazy-union / --enable features → off"
+  ],
+  "description": "OpenSCAD 2021.01 is the stable release Kintsugi ships. Anything from later development snapshots (roof, textmetrics, Manifold, `--enable=` experimental features, object literals) is not available. Vanilla features available: function literals, ^, is_function, each, let, assert, echo expressions, offset chamfer, rotate_extrude angle, text, projection cut, $preview. The vendored BOSL2 (2.0.759) works on 2021.01 as tested here (threads, screws, attachments, sweeps, masks, hinges, gears).",
+  "arguments": [],
+  "examples": [],
+  "topics": [
+   "Language"
+  ],
+  "see_also": [
+   "essentials guide"
+  ],
+  "notes": ""
+ }
+]
