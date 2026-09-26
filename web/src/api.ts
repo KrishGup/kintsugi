@@ -1,6 +1,10 @@
 import type {
   AnswerBody,
+  CaptureRound,
+  EvidenceGraph,
   ExampleSpec,
+  GraphShape,
+  GraphTrace,
   ExportResult,
   Health,
   IntakeResult,
@@ -8,6 +12,7 @@ import type {
   KinEvent,
   MeasureResult,
   Photo,
+  Readiness,
   SessionDetail,
   SessionMeta,
   SettingsBody,
@@ -91,8 +96,15 @@ export const kin = {
   sessions: () => api.get<SessionMeta[]>("/api/sessions"),
   createSession: (body: { name?: string; spec_yaml?: string; scad?: string; intake?: boolean }) => api.post<SessionDetail>("/api/sessions", body),
   setStage: (sid: string, stage: string) => api.post<{ ok: boolean; stage: string }>(`${S(sid)}/stage`, { stage }),
-  answers: (sid: string, answers: AnswerBody[]) =>
-    api.post<{ ok: boolean; applied: unknown[]; unconfirmed: string[]; spec_yaml: string }>(`${S(sid)}/answers`, { answers }),
+  answers: (sid: string, answers: AnswerBody[], advance = true) =>
+    api.post<{ ok: boolean; applied: unknown[]; unconfirmed: string[]; spec_yaml: string; readiness?: Readiness }>(`${S(sid)}/answers`, { answers, advance }),
+  followup: (sid: string) =>
+    api.post<{ evidence: EvidenceGraph; applied: unknown[]; round: CaptureRound | null; ready: boolean; readiness: Readiness; note?: string }>(`${S(sid)}/followup`),
+  evidence: (sid: string) => api.get<EvidenceGraph>(`${S(sid)}/evidence`),
+  graphs: (sid: string, iteration?: number) =>
+    api.get<{ intake?: GraphTrace; iteration?: GraphTrace; export?: GraphTrace; shapes: Record<string, GraphShape> }>(
+      `${S(sid)}/graphs${iteration ? `?iteration=${iteration}` : ""}`,
+    ),
   eventsOnce: (sid: string, since = 0) => api.get<{ since: number; next: number; events: KinEvent[] }>(`${S(sid)}/events?once=true&since=${since}`),
   session: (sid: string) => api.get<SessionDetail>(S(sid)),
   deleteSession: (sid: string) => api.del<{ ok: boolean }>(S(sid)),

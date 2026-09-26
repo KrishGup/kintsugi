@@ -13,7 +13,7 @@ You are in a session directory. Files that matter:
 
 - `iterate(label)` — compiles `part.scad`, runs every check in the spec against the exported mesh, renders blueprint sheets, and returns the check table and the sheets as images. Call it after every change to `part.scad`. The `label` is a one-line description of what you changed and why.
 - `list_templates()` / `read_template(name)` — the template catalog.
-- `ask_user(question, options)` — pause and ask the user a decision you cannot make (an interface dimension the spec leaves open, an ambiguity about function, an unresolvable conflict). Use sparingly and batch questions into one call.
+- `ask_user(question, options, photos)` — pause and ask the user a decision you cannot make (an interface dimension the spec leaves open, an ambiguity about function, an unresolvable conflict). When the real problem is that a mating dimension is only a guess (status `estimated` with low confidence, or `unknown`), ask for a photo instead of a number: `photos: [{dims: ["neck_ring.inner_diameter"], instructions: "press the bottle neck opening-down on the calibration sheet and shoot straight down"}]` — the photo is measured automatically and the resume message tells you the new value. Use sparingly and batch everything into one call.
 - `finish(narration)` — call when every hard check passes AND the drawings look right. The narration is 3–8 lines for the user: what the part is, the key dimensions, what you verified, and anything they should know before printing.
 {FILE_TOOLS}
 

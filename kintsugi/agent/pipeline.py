@@ -9,10 +9,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from kintsugi.checks.run import CheckReport, run_checks
-from kintsugi.render.blueprint import BlueprintResult, make_blueprint
-from kintsugi.scad.compile import CompileResult, compile_scad
-from kintsugi.scad.customizer import parse_customizer
+from kintsugi.checks.run import CheckReport
+from kintsugi.render.blueprint import BlueprintResult
+from kintsugi.scad.compile import CompileResult
 from kintsugi.session.workspace import Session
 from kintsugi.spec.model import PartSpec
 
@@ -80,36 +79,36 @@ def run_iteration(session: Session, *, scad_text: str | None = None, spec: PartS
     it_dir = session.iteration_dir(n)
     shutil.copy(session.scad_path, it_dir / "part.scad")
 
-    # compile
-    comp = compile_scad(session.scad_path, it_dir / "part.stl", {"render_target": "part"} if _has_render_target(session.scad_path) else None,
-                        timeout_s=240)
-    (it_dir / "compile.json").write_text(json.dumps(comp.to_dict(), indent=2))
-    checks = None
-    bp = None
+    # the iteration graph: params ∥ compile → [checks ∥ views ∥ ghost] → sheets (see kintsugi/graph/pipelines.py)
+    from kintsugi.graph.core import run_sync
+    from kintsugi.graph.pipelines import iteration_graph
+
+    state: dict[str, Any] = {"scad_path": str(session.scad_path), "it_dir": str(it_dir), "iteration": n, "spec": spec,
+                             "render_target": _has_render_target(session.scad_path)}
+    trace = run_sync(iteration_graph(wall_samples=wall_samples), state, emit=lambda kind, **d: session.emit(kind, iteration=n, **d))
+    (it_dir / "graph.json").write_text(json.dumps(trace.to_dict(), indent=2))
+    comp: CompileResult = state["compile"]
+    checks: CheckReport | None = state.get("checks")
+    bp: BlueprintResult | None = state.get("blueprint")
     signals: list[str] = []
     if comp.ok:
         shutil.copy(it_dir / "part.stl", session.stl_path)
-        try:
-            checks = run_checks(it_dir / "part.stl", spec, iteration=n, wall_samples=wall_samples)
-            checks.save(it_dir / "checks.json")
+        if checks is not None:
             shutil.copy(it_dir / "checks.json", session.dir / "checks.json")
-        except Exception as e:
-            signals.append(f"checks failed to run: {e}")
-        try:
-            bp = make_blueprint(it_dir / "part.stl", spec, checks, it_dir / "sheets", n)
+        elif trace.nodes["checks"].error:
+            signals.append(f"checks failed to run: {trace.nodes['checks'].error}")
+        if bp is not None:
             for src in (bp.sheet_path, bp.sections_path):
                 if src:
                     shutil.copy(src, session.dir / "sheets" / src.name)
-        except Exception as e:
-            signals.append(f"blueprint failed to render: {e}")
-        try:
-            params = [p.to_dict() for p in parse_customizer(session.scad_path.read_text())]
+        elif trace.nodes["compose"].error:
+            signals.append(f"blueprint failed to render: {trace.nodes['compose'].error}")
+        params = state.get("params")
+        if params is not None:
             (it_dir / "params.json").write_text(json.dumps(params, indent=2))
             (session.dir / "params.json").write_text(json.dumps(params, indent=2))
             if not params:
                 signals.append("no customizer parameters found: put user-facing dimensions in a parameter block with // [min:step:max] annotations")
-        except Exception:
-            pass
     # policy: history-based signals
     hist = _load_history(session)
     entry = {"iteration": n, "ok": bool(comp.ok and checks and checks.all_hard_pass), "compile_ok": comp.ok,
@@ -134,7 +133,9 @@ def run_iteration(session: Session, *, scad_text: str | None = None, spec: PartS
     session.commit(f"iteration {n}: {'pass' if res.ok else 'fail'}" + (f" — {label}" if label else ""))
     session.emit("iteration", iteration=n, ok=res.ok, compile_ok=comp.ok, failures=entry["failures"], label=label,
                  sheet=str(bp.sheet_path) if bp else None, sections=str(bp.sections_path) if bp and bp.sections_path else None,
-                 duration_s=round(res.duration_s, 1))
+                 duration_s=round(res.duration_s, 1),
+                 graph={"wall_s": round(trace.wall_s, 2), "serial_s": round(trace.serial_s, 2), "critical_path": trace.critical_path,
+                        "speedup": round(trace.serial_s / trace.wall_s, 2) if trace.wall_s > 0 else None})
     return res
 
 

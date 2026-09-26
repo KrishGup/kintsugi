@@ -38,6 +38,16 @@ def _session(sid: str) -> Session:
     return Session.open(d)
 
 
+def _readiness(spec: PartSpec) -> dict[str, Any]:
+    try:
+        from kintsugi.spec.evidence import missing, readiness
+        rd = readiness(spec)
+        rd["missing"] = [m.to_dict() for m in missing(spec)]
+        return rd
+    except Exception as e:  # noqa: BLE001
+        return {"ready": True, "error": str(e)}
+
+
 def _safe_path(session: Session, rel: str) -> Path:
     p = (session.dir / rel).resolve()
     if session.dir.resolve() not in p.parents and p != session.dir.resolve():
@@ -202,6 +212,7 @@ class Answer(BaseModel):
 
 class AnswersReq(BaseModel):
     answers: list[Answer]
+    advance: bool = True  # move to the spec stage after applying (false while a capture round is still open)
 
 
 @app.post("/api/sessions/{sid}/answers")
@@ -213,7 +224,7 @@ def answer_questions(sid: str, body: AnswersReq):
     for a in body.answers:
         if a.value is None or a.value == "":
             continue
-        if a.kind == "number" and a.dim:
+        if a.kind in ("number", "measure") and a.dim:
             try:
                 v = float(a.value)
             except (TypeError, ValueError):
@@ -228,10 +239,13 @@ def answer_questions(sid: str, body: AnswersReq):
             spec.part.design_intent = (spec.part.design_intent + f"; {a.value}").strip("; ") if spec.part.design_intent else str(a.value)
         applied.append({"note": note})
     spec.save(s.spec_path)
-    s.update_meta(stage="spec")
     s.commit("answers applied to spec")
     s.emit("answers", applied=applied)
-    return {"ok": True, "applied": applied, "unconfirmed": spec.unconfirmed_interface_dims(), "spec_yaml": spec.to_yaml()}
+    from kintsugi.spec.evidence import readiness
+    rd = readiness(spec)
+    if body.advance or rd["ready"]:
+        s.update_meta(stage="spec")
+    return {"ok": True, "applied": applied, "unconfirmed": spec.unconfirmed_interface_dims(), "spec_yaml": spec.to_yaml(), "readiness": rd}
 
 
 @app.get("/api/sessions")
@@ -276,10 +290,16 @@ def session_detail(sid: str):
         except json.JSONDecodeError:
             pass
     photos = []
+    by_photo: dict[str, list[dict[str, Any]]] = {}
+    for qual, dim, _ in spec.all_dims():
+        for e in dim.estimates:
+            if e.photo:
+                by_photo.setdefault(str(e.photo), []).append({"dim": qual, "value": e.value, "conf": e.conf, "photo": e.photo, "status": dim.status})
     for p in sorted((s.dir / "photos").iterdir()) if (s.dir / "photos").exists() else []:
         if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp") and not p.name.endswith(".grade.json"):
             g = p.with_suffix(p.suffix + ".grade.json")
-            photos.append({"file": f"photos/{p.name}", "grade": json.loads(g.read_text()) if g.exists() else None})
+            photos.append({"file": f"photos/{p.name}", "grade": json.loads(g.read_text()) if g.exists() else None,
+                           "estimates": by_photo.get(f"photos/{p.name}", [])})
     return {
         "meta": meta, "spec": spec.model_dump(mode="json", exclude_none=True), "spec_yaml": spec.to_yaml(),
         "params": params, "checks": checks, "iterations": iterations, "critic": critic, "photos": photos,
@@ -288,6 +308,7 @@ def session_detail(sid: str):
         "export": sorted(p.name for p in (s.dir / "export").iterdir()) if (s.dir / "export").exists() else [],
         "unconfirmed": spec.unconfirmed_interface_dims(),
         "intake": json.loads((s.dir / "intake.json").read_text()) if (s.dir / "intake.json").exists() else None,
+        "readiness": _readiness(spec),
         "stage": meta.get("stage") or ("review" if meta.get("status") == "done" else ("design" if hist else "spec")),
         "llm": get_llm().status(),
     }
@@ -355,9 +376,20 @@ async def upload_photos(sid: str, files: list[UploadFile] = File(...), expect_sh
             dest.with_suffix(dest.suffix + ".grade.json").write_text(json.dumps(grade, default=lambda o: float(o) if hasattr(o, "__float__") else str(o)))
         except Exception as e:
             grade = {"error": str(e)}
-        out.append({"file": f"photos/{dest.name}", "grade": grade})
+        out.append({"file": f"photos/{dest.name}", "grade": grade, "path": dest})
         s.emit("photo", file=f"photos/{dest.name}", ok=bool(grade and grade.get("ok")))
     s.commit("photos uploaded")
+    # measure what the new photos can show (sheet photos -> circle diameters on the spec's planar dimensions)
+    estimates: list[dict[str, Any]] = []
+    try:
+        from kintsugi.agent.capture import auto_measure
+        loop = asyncio.get_running_loop()
+        estimates = await loop.run_in_executor(None, lambda: auto_measure(s, None, [o["path"] for o in out]))
+    except Exception as e:  # noqa: BLE001
+        s.emit("error", message=f"auto-measure failed: {type(e).__name__}: {e}")
+    for o in out:
+        o.pop("path", None)
+        o["estimates"] = [x for x in estimates if x.get("photo") == o["file"]]
     return out
 
 
@@ -444,6 +476,42 @@ async def intake(sid: str, body: IntakeReq):
     return res
 
 
+@app.post("/api/sessions/{sid}/followup")
+async def followup(sid: str):
+    """Measure the photos, rebuild the evidence graph, and write the next capture round (or declare the spec ready)."""
+    s = _session(sid)
+    from kintsugi.agent.capture import run_capture_round
+    return await run_capture_round(s)
+
+
+@app.get("/api/sessions/{sid}/evidence")
+def evidence(sid: str):
+    s = _session(sid)
+    from kintsugi.agent.capture import evidence_snapshot
+    return evidence_snapshot(s)
+
+
+@app.get("/api/sessions/{sid}/graphs")
+def graphs(sid: str, iteration: int | None = None):
+    """Graph traces: the intake run, the latest (or given) iteration, the export."""
+    s = _session(sid)
+    out: dict[str, Any] = {}
+    p = s.dir / "intake_graph.json"
+    if p.exists():
+        out["intake"] = json.loads(p.read_text())
+    n = iteration or int(s.meta.get("iteration", 0))
+    if n:
+        q = s.dir / "iterations" / f"iter_{n:02d}" / "graph.json"
+        if q.exists():
+            out["iteration"] = {"iteration": n, **json.loads(q.read_text())}
+    e = s.dir / "export" / "export_graph.json"
+    if e.exists():
+        out["export"] = json.loads(e.read_text())
+    from kintsugi.graph.pipelines import export_graph, iteration_graph
+    out["shapes"] = {"iteration": iteration_graph().describe(), "export": export_graph().describe()}
+    return out
+
+
 # ---- runs -------------------------------------------------------------------------------------------
 
 class RunReq(BaseModel):
@@ -467,8 +535,20 @@ async def start_run(sid: str, body: RunReq):
     s.update_meta(stage="design")
     resume = None
     if body.answer:
-        q = s.meta.get("question")
-        resume = f"The user answered your question{(' (' + q['question'] + ')') if q else ''}: {body.answer}\nContinue the design accordingly."
+        q = s.meta.get("question") or {}
+        resume = f"The user answered your question{(' (' + q['question'] + ')') if q.get('question') else ''}: {body.answer}\n"
+        if q.get("photos"):
+            spec_now = s.spec()
+            lines = []
+            for pr in q["photos"]:
+                for dname in pr.get("dims") or []:
+                    d = spec_now.get_dim(dname)
+                    if d is not None:
+                        lines.append(f"- {dname}: now {d.describe()} (status {d.status}; latest evidence: "
+                                     + (", ".join(f"{e.value:g} mm from {e.source}" for e in d.estimates[-2:]) or "none") + ")")
+            if lines:
+                resume += "The photos you asked for were taken and measured; the spec now says:\n" + "\n".join(lines) + "\n"
+        resume += "Continue the design accordingly."
         s.update_meta(question=None)
         s.emit("answer", text=body.answer)
     photos = sorted(p for p in (s.dir / "photos").glob("*") if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"))

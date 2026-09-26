@@ -51,31 +51,28 @@ def context_ghost(spec: PartSpec) -> trimesh.Trimesh | None:
     return trimesh.util.concatenate(meshes)
 
 
-def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | None, out_dir: str | Path, iteration: int,
-                   *, part_name: str | None = None, target_px: float = 560.0) -> BlueprintResult:
+@dataclass
+class BaseViews:
+    """Phase 1 of a blueprint: the geometry-only renders (no check report needed), so they can run alongside the checks."""
+    scale: float
+    view_imgs: dict[str, raster.ViewImage]
+    view_paths: dict[str, Path]
+
+
+def render_base_views(mesh_path: str | Path, out_dir: str | Path, iteration: int, *, target_px: float = 560.0,
+                      mesh: trimesh.Trimesh | None = None) -> BaseViews:
     out_dir = Path(out_dir)
     views_dir = out_dir / "views"
     views_dir.mkdir(parents=True, exist_ok=True)
-    mesh = G.load_mesh(mesh_path)
-    name = part_name or spec.part.name or "part"
+    mesh = mesh if mesh is not None else G.load_mesh(mesh_path)
     scale = pick_scale(mesh, target_px)
-    ghost = context_ghost(spec)
-
-
-    # ---- orthographic + iso views
     view_imgs: dict[str, raster.ViewImage] = {}
     for v in MAIN_VIEWS:
         vi = render_view(mesh, v, scale, margin_px=96)
         if v in ("top", "front", "right"):
             annotate_overall(vi, mesh)
-        _draw_extent_annotations(vi, mesh, report, v)
-        draw_axes_and_label(vi, VIEW_LABELS[v])
         view_imgs[v] = vi
-    view_paths = {}
-    for v, vi in view_imgs.items():
-        p = views_dir / f"iter_{iteration:02d}_{v}.png"
-        cv2.imwrite(str(p), vi.img)
-        view_paths[v] = p
+    view_paths: dict[str, Path] = {}
     # high-resolution detail views for the critic (small features such as scallops, fillets, holes)
     detail_scale = min(14.0, max(scale * 2.5, 1400.0 / max(float(mesh.extents.max()), 1e-6)))
     for v in ("top", "front"):
@@ -87,13 +84,22 @@ def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | 
             view_paths[f"{v}_detail"] = p
         except Exception:
             pass
+    return BaseViews(scale, view_imgs, view_paths)
 
-    # ---- sections
+
+def render_sections(mesh_path: str | Path, report: CheckReport | None, base: BaseViews, out_dir: str | Path, iteration: int,
+                    *, mesh: trimesh.Trimesh | None = None) -> dict:
+    """Phase 2a: cut and annotate the section views (needs the check report for the planes and the measured dimensions)."""
+    out_dir = Path(out_dir)
+    views_dir = out_dir / "views"
+    views_dir.mkdir(parents=True, exist_ok=True)
+    mesh = mesh if mesh is not None else G.load_mesh(mesh_path)
     section_panels: list[Panel] = []
     section_paths: dict[str, Path] = {}
     planes = (report.sections if report else []) or [{"plane_axis": "z", "at": float(np.mean(mesh.bounds[:, 2])), "dims": []}]
-    sec_scale = min(10.0, scale * 1.4)
+    sec_scale = min(10.0, base.scale * 1.4)
     letters = "ABCDEFGH"
+    marks: list[tuple[str, float, str]] = []
     for i, pl in enumerate(planes):
         ax, at = pl["plane_axis"], float(pl["at"])
         anns = _section_annotations(mesh, report, ax, at)
@@ -101,31 +107,59 @@ def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | 
         label = f"SECTION {letters[i % 8]}-{letters[i % 8]}  ({ax} = {at:g} mm, viewed from +{ax.upper()})" if ax != "y" else \
             f"SECTION {letters[i % 8]}-{letters[i % 8]}  (y = {at:g} mm, viewed from −Y)"
         draw_axes_and_label(vi, label)
-        _mark_cutting_plane(view_imgs, ax, at, letters[i % 8])
+        marks.append((ax, at, letters[i % 8]))
         p = views_dir / f"iter_{iteration:02d}_section_{letters[i % 8]}.png"
         cv2.imwrite(str(p), vi.img)
         section_paths[f"{letters[i % 8]}"] = p
         section_panels.append(Panel(label, vi.img))
+    return {"panels": section_panels, "paths": section_paths, "marks": marks, "scale": sec_scale}
 
-    # re-save views after cutting-plane marks
-    for v, vi in view_imgs.items():
-        cv2.imwrite(str(view_paths[v]), vi.img)
 
-    # ---- assembly (part with ghosted context)
+def render_assembly(mesh_path: str | Path, ghost: trimesh.Trimesh | None, base: BaseViews, out_dir: str | Path, iteration: int,
+                    *, mesh: trimesh.Trimesh | None = None) -> dict:
+    """Phase 2b: the part with the ghosted context proxies (independent of the checks)."""
+    out_dir = Path(out_dir)
+    views_dir = out_dir / "views"
+    views_dir.mkdir(parents=True, exist_ok=True)
     assembly_paths: dict[str, Path] = {}
     assembly_panels: list[Panel] = []
-    if ghost is not None:
-        for v in ("top", "front", "iso"):
-            vi = render_view(mesh, v, scale, margin_px=60, ghost=ghost)
-            draw_axes_and_label(vi, f"ASSEMBLY {VIEW_LABELS[v]} — context ghosted")
-            p = views_dir / f"iter_{iteration:02d}_assembly_{v}.png"
-            cv2.imwrite(str(p), vi.img)
-            assembly_paths[v] = p
-            assembly_panels.append(Panel(f"ASSEMBLY — {VIEW_LABELS[v]} (context in light grey)", vi.img))
+    if ghost is None:
+        return {"panels": assembly_panels, "paths": assembly_paths}
+    mesh = mesh if mesh is not None else G.load_mesh(mesh_path)
+    for v in ("top", "front", "iso"):
+        vi = render_view(mesh, v, base.scale, margin_px=60, ghost=ghost)
+        draw_axes_and_label(vi, f"ASSEMBLY {VIEW_LABELS[v]} — context ghosted")
+        p = views_dir / f"iter_{iteration:02d}_assembly_{v}.png"
+        cv2.imwrite(str(p), vi.img)
+        assembly_paths[v] = p
+        assembly_panels.append(Panel(f"ASSEMBLY — {VIEW_LABELS[v]} (context in light grey)", vi.img))
+    return {"panels": assembly_panels, "paths": assembly_paths}
 
-    # ---- tables
+
+def compose_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | None, base: BaseViews, sections: dict, assembly: dict,
+                      out_dir: str | Path, iteration: int, *, part_name: str | None = None, mesh: trimesh.Trimesh | None = None) -> BlueprintResult:
+    """Phase 3: dimension the views, mark the cutting planes, build the tables and compose both sheets."""
+    out_dir = Path(out_dir)
+    views_dir = out_dir / "views"
+    views_dir.mkdir(parents=True, exist_ok=True)
+    mesh = mesh if mesh is not None else G.load_mesh(mesh_path)
+    name = part_name or spec.part.name or "part"
+    scale = base.scale
+    view_imgs = base.view_imgs
+    view_paths = dict(base.view_paths)
+    for v, vi in view_imgs.items():
+        _draw_extent_annotations(vi, mesh, report, v)
+        draw_axes_and_label(vi, VIEW_LABELS[v])
+    for ax, at, letter in sections.get("marks", []):
+        _mark_cutting_plane(view_imgs, ax, at, letter)
+    for v, vi in view_imgs.items():
+        p = views_dir / f"iter_{iteration:02d}_{v}.png"
+        cv2.imwrite(str(p), vi.img)
+        view_paths[v] = p
+
     table, status = _key_dims_table(report)
     notes = _notes(report)
+    sec_scale = sections.get("scale", min(10.0, scale * 1.4))
     subtitle = f"{name} · iteration {iteration} · units mm · scale {scale:.2f} px/mm (sections {sec_scale:.2f}) · third-angle · dimensions measured from the exported mesh"
 
     panels = [Panel(VIEW_LABELS[v], view_imgs[v].img) for v in ("top", "iso", "front", "right", "bottom", "left", "back")]
@@ -133,6 +167,8 @@ def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | 
     sheet_path = out_dir / f"iter_{iteration:02d}_sheet.png"
     sheet.save(sheet_path)
 
+    section_panels = sections.get("panels", [])
+    assembly_panels = assembly.get("panels", [])
     sections_path = None
     if section_panels or assembly_panels:
         sheet2 = compose_sheet(section_panels + assembly_panels, columns=2 if len(section_panels + assembly_panels) > 1 else 1,
@@ -140,9 +176,29 @@ def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | 
         sections_path = out_dir / f"iter_{iteration:02d}_sections.png"
         sheet2.save(sections_path)
 
-    res = BlueprintResult(sheet_path, sections_path, view_paths, section_paths, assembly_paths, scale)
+    res = BlueprintResult(sheet_path, sections_path, view_paths, sections.get("paths", {}), assembly.get("paths", {}), scale)
     (out_dir / f"iter_{iteration:02d}_blueprint.json").write_text(json.dumps(res.to_dict(), indent=2))
     return res
+
+
+def finish_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | None, base: BaseViews, out_dir: str | Path,
+                     iteration: int, *, part_name: str | None = None, ghost: trimesh.Trimesh | None = None,
+                     mesh: trimesh.Trimesh | None = None) -> BlueprintResult:
+    """Phases 2a, 2b and 3 in sequence."""
+    mesh = mesh if mesh is not None else G.load_mesh(mesh_path)
+    if ghost is None:
+        ghost = context_ghost(spec)
+    sections = render_sections(mesh_path, report, base, out_dir, iteration, mesh=mesh)
+    assembly = render_assembly(mesh_path, ghost, base, out_dir, iteration, mesh=mesh)
+    return compose_blueprint(mesh_path, spec, report, base, sections, assembly, out_dir, iteration, part_name=part_name, mesh=mesh)
+
+
+def make_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport | None, out_dir: str | Path, iteration: int,
+                   *, part_name: str | None = None, target_px: float = 560.0) -> BlueprintResult:
+    """Both phases in sequence (the CLI and tests); the iteration graph runs phase 1 alongside the checks."""
+    mesh = G.load_mesh(mesh_path)
+    base = render_base_views(mesh_path, out_dir, iteration, target_px=target_px, mesh=mesh)
+    return finish_blueprint(mesh_path, spec, report, base, out_dir, iteration, part_name=part_name, mesh=mesh)
 
 
 # ---- helpers ----------------------------------------------------------------------------------------

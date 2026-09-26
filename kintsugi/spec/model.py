@@ -286,6 +286,17 @@ class PartSpec(BaseModel):
 
 # ---- fusion ----------------------------------------------------------------------------------------
 
+def source_trust(source: str) -> int:
+    """Trust of an evidence source; `standard:<id>` (a catalogue value for a recognised standard part) ranks between a
+    vision guess and a reference-object measurement."""
+    t = SOURCE_TRUST.get(source)
+    if t is not None:
+        return t
+    if source.startswith("standard:"):
+        return 25
+    return 10
+
+
 def fuse_estimates(estimates: list[Estimate]) -> tuple[float, float, str] | None:
     """Pick a value from the evidence.
 
@@ -295,7 +306,7 @@ def fuse_estimates(estimates: list[Estimate]) -> tuple[float, float, str] | None
     """
     if not estimates:
         return None
-    ranked = sorted(estimates, key=lambda e: (SOURCE_TRUST.get(e.source, 10), e.conf), reverse=True)
+    ranked = sorted(estimates, key=lambda e: (source_trust(e.source), e.conf), reverse=True)
     best = ranked[0]
     value, conf = best.value, best.conf
     reason = f"from {best.source}"
@@ -315,7 +326,7 @@ def fuse_estimates(estimates: list[Estimate]) -> tuple[float, float, str] | None
 
 def disagreement(estimates: list[Estimate], tol: float) -> list[tuple[Estimate, Estimate]] | None:
     """Pairs of high-trust estimates that disagree beyond tolerance (these become measurement request cards)."""
-    strong = [e for e in estimates if SOURCE_TRUST.get(e.source, 10) >= 40]
+    strong = [e for e in estimates if source_trust(e.source) >= 40]
     bad = []
     for i in range(len(strong)):
         for j in range(i + 1, len(strong)):

@@ -312,7 +312,7 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
       return (
         <div className="card-sys">
           <span>
-            estimate {String(ev.dim)} = {fmtNum(ev.value)} mm ({String(ev.source)}, conf {fmtNum(ev.conf)})
+            {ev.auto ? "measured" : "estimate"} {String(ev.dim)} = {fmtNum(ev.value)} mm ({String(ev.source).replace("rectified_sheet", "calibration sheet")}, conf {fmtNum(ev.conf)})
           </span>
         </div>
       );
@@ -385,7 +385,53 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
         </div>
       );
     case "step":
+    case "graph_node":
       return null;
+    case "graph_run": {
+      const cp = Array.isArray(ev.critical_path) ? (ev.critical_path as string[]).join(" → ") : "";
+      const wall = typeof ev.wall_s === "number" ? ev.wall_s : 0;
+      const serial = typeof ev.serial_s === "number" ? ev.serial_s : 0;
+      return (
+        <div className="card-sys">
+          <span title={cp ? `critical path: ${cp}` : undefined}>
+            {String(ev.graph)} graph {String(ev.status)}
+            {wall ? ` · ${wall.toFixed(1)} s wall` : ""}
+            {serial > wall * 1.05 ? ` (${(serial / wall).toFixed(1)}× parallel)` : ""}
+            {ev.waiting_on ? ` · waiting on ${String(ev.waiting_on)}` : ""}
+          </span>
+        </div>
+      );
+    }
+    case "capture_round": {
+      const reqs = (ev.requests as Array<{ kind: string; title: string }>) || [];
+      return (
+        <div className="card">
+          <div className="card-head">
+            <span>Capture round {String(ev.n ?? "")}</span>
+            <span className="t">{t}</span>
+          </div>
+          {ev.note ? <div className="small">{String(ev.note)}</div> : null}
+          <ul className="md">
+            {reqs.map((r, i) => (
+              <li key={i}>
+                <span className="mono small">{r.kind}</span> {r.title}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+    case "capture_ready": {
+      const rd = (ev.readiness as { confirmed?: number; interface_dims?: number; advice?: string }) || {};
+      return (
+        <div className="card-sys">
+          <span>
+            {ev.ready ? "fit dimensions ready" : "capture rounds exhausted"} · {rd.confirmed ?? "?"}/{rd.interface_dims ?? "?"} confirmed
+            {typeof ev.rounds === "number" ? ` · ${ev.rounds} round${ev.rounds === 1 ? "" : "s"}` : ""}
+          </span>
+        </div>
+      );
+    }
     case "usage": {
       const cost = typeof ev.cost_usd === "number" ? ev.cost_usd : 0;
       return (

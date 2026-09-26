@@ -148,23 +148,29 @@ def sanitize_spec_data(data: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-async def run_intake(session: Session, text: str, photos: list[Path], model: str | None = None, llm=None) -> dict[str, Any]:
-    """Photos + a sentence -> what broke, a draft spec, a capture plan, batched questions (one vision call)."""
-    from kintsugi.agent.llm import get_llm, image_part, text_part
+async def intake_call(llm, text: str, photos: list[Path], hints: str = "", model: str | None = None) -> dict[str, Any]:
+    """The one vision call: photos + sentence (+ known-standard hints) -> intake JSON (parsed, spec sanitized, not saved)."""
+    from kintsugi.agent.llm import image_part, text_part
 
-    llm = llm or get_llm()
     model = model or llm.models["vision"]
-    parts: list[dict[str, Any]] = [text_part(f"USER SAYS: {text or '(no description)'}\n\nPHOTOS FOLLOW.")]
+    head = f"USER SAYS: {text or '(no description)'}"
+    if hints:
+        head += "\n\n" + hints
+    parts: list[dict[str, Any]] = [text_part(head + "\n\nPHOTOS FOLLOW.")]
     for p in photos[:6]:
         img = image_part(p, max_side=1400)
         if img:
             parts.append(text_part(f"photo: {p.name}"))
             parts.append(img)
     parts.append(text_part("Produce the JSON now."))
-    t0 = time.time()
     raw = await llm.complete(system=INTAKE_PROMPT, parts=parts, model=model, json_mode=True, role="vision")
     data = parse_intake(raw)
-    spec_data = sanitize_spec_data(data.get("spec") or {})
+    data["spec_data"] = sanitize_spec_data(data.get("spec") or {})
+    return data
+
+
+def spec_from_intake(data: dict[str, Any], fallback_name: str = "part") -> PartSpec:
+    spec_data = data.get("spec_data") or sanitize_spec_data(data.get("spec") or {})
     try:
         spec = PartSpec.model_validate(spec_data)
     except Exception as e:
@@ -174,17 +180,138 @@ async def run_intake(session: Session, text: str, photos: list[Path], model: str
         except Exception:
             spec = PartSpec()
     if not spec.part.name or spec.part.name == "part":
-        words = re.sub(r"[^a-z0-9 ]+", " ", str(data.get("object") or session.meta.get("name") or "part").lower()).split()
+        words = re.sub(r"[^a-z0-9 ]+", " ", str(data.get("object") or fallback_name or "part").lower()).split()
         spec.part.name = "_".join(words[:3]) or "part"
-    spec.save(session.spec_path)
-    (session.dir / "intake.json").write_text(json.dumps(data, indent=2))
-    # keep a user-given session name; only fill in the default one
-    cur = str(session.meta.get("name") or "")
-    new_name = cur if cur and cur not in ("part", "session") and not cur.startswith("part_") else spec.part.name
-    session.update_meta(status="intake_done", name=new_name, stage="capture")
-    session.commit("intake: draft spec")
-    session.emit("intake", object=data.get("object"), part_role=data.get("part_role"), damage=data.get("damage"),
-                 questions=data.get("questions", []), capture_plan=data.get("capture_plan", []), duration_s=round(time.time() - t0, 1))
+    return spec
+
+
+def attach_standard_estimates(spec: PartSpec, standards: list[Any]) -> list[dict[str, Any]]:
+    """Catalogue values for recognised standards become medium-confidence estimates on the matching mating dimensions."""
+    from kintsugi.spec.model import Estimate
+
+    applied = []
+    for std in standards:
+        for role, value in std.dims.items():
+            spec_name = std.roles.get(role)
+            if not spec_name:
+                continue
+            for q, d, is_itf in spec.all_dims():
+                if not is_itf or q.split(".")[-1] != spec_name or d.status == "confirmed":
+                    continue
+                if any(e.source == f"standard:{std.id}" for e in d.estimates):
+                    continue
+                if d.target is not None and abs(d.target - value) / max(abs(value), 1.0) > 0.15:
+                    continue  # the photos say something quite different; do not muddy the evidence
+                spec.add_estimate(q, Estimate(value=float(value), source=f"standard:{std.id}", conf=std.conf, note=std.name))
+                applied.append({"dim": q, "value": float(value), "standard": std.id})
+    return applied
+
+
+async def run_intake(session: Session, text: str, photos: list[Path], model: str | None = None, llm=None) -> dict[str, Any]:
+    """Photos + a sentence -> draft spec, capture plan, questions; then measure, evidence, and the first capture round.
+
+    Runs as the intake graph: grade ∥ standards → vision → standards on the object → auto-measure → evidence → follow-up → capture.
+    """
+    from kintsugi.agent import capture as C
+    from kintsugi.agent.llm import get_llm
+    from kintsugi.graph.core import Graph, Node
+    from kintsugi.spec.standards import hints_for_model, match_standards
+
+    llm = llm or get_llm()
+    model = model or llm.models["vision"]
+    t0 = time.time()
+
+    def n_grade(s):
+        from kintsugi.measure.grade import grade_capture
+        import cv2
+        import numpy as np
+        graded = 0
+        for p in s["photos"]:
+            g = p.with_suffix(p.suffix + ".grade.json")
+            if g.exists():
+                continue
+            img = cv2.imread(str(p))
+            if img is None:
+                continue
+            try:
+                gr = grade_capture(img, expect_sheet=True)
+                d = {k: (float(v) if isinstance(v, np.floating) else v) for k, v in gr.__dict__.items() if not k.startswith("_")}
+                g.write_text(json.dumps(d, default=lambda o: float(o) if hasattr(o, "__float__") else str(o)))
+                graded += 1
+            except Exception:
+                continue
+        return {"graded": graded}
+
+    def n_standards_pre(s):
+        matches = match_standards(s["text"] + " " + str(session.meta.get("name") or ""))
+        return {"hints": hints_for_model(matches), "standards_pre": matches}
+
+    async def n_vision(s):
+        data = await intake_call(llm, s["text"], s["photos"], s.get("hints", ""), model)
+        return {"intake": data}
+
+    def n_spec(s):
+        data = s["intake"]
+        spec = spec_from_intake(data, str(session.meta.get("name") or "part"))
+        matches = list(s.get("standards_pre") or [])
+        for m in match_standards(" ".join(str(data.get(k) or "") for k in ("object", "part_role", "interfaces_reasoning"))):
+            if m.id not in {x.id for x in matches}:
+                matches.append(m)
+        std_applied = attach_standard_estimates(spec, matches)
+        spec.save(session.spec_path)
+        data["standards"] = [m.to_dict() for m in matches]
+        data["standard_estimates"] = std_applied
+        data.pop("spec_data", None)
+        C.save_intake(session, data)
+        cur = str(session.meta.get("name") or "")
+        new_name = cur if cur and cur not in ("part", "session") and not cur.startswith("part_") else spec.part.name
+        session.update_meta(status="intake_done", name=new_name, stage="capture")
+        session.commit("intake: draft spec")
+        session.emit("intake", object=data.get("object"), part_role=data.get("part_role"), damage=data.get("damage"),
+                     questions=data.get("questions", []), capture_plan=data.get("capture_plan", []),
+                     standards=[m.id for m in matches], duration_s=round(time.time() - t0, 1))
+        return {"spec": spec, "standards": matches}
+
+    def n_measure(s):
+        return {"measured": C.auto_measure(session, s["spec"])}
+
+    def n_evidence(s):
+        snap = C.evidence_snapshot(session, s["spec"])
+        return {"evidence": snap, "ready": snap["ready"]}
+
+    async def n_followup(s):
+        res = await C.run_capture_round(session, llm, measure=False)
+        return {"round": res.get("round") or {}, "capture": res}
+
+    def ask(s):
+        rnd = s.get("round") or {}
+        return {"requests": rnd.get("requests", []), "note": rnd.get("note", ""), "round": rnd.get("n")}
+
+    g = Graph("intake", [
+        Node("grade", n_grade, ("photos",), ("graded",), label="grade photos", est_s=1.0, optional=True),
+        Node("standards", n_standards_pre, ("text",), ("hints", "standards_pre"), label="known standards", est_s=0.01, optional=True),
+        Node("vision", n_vision, ("text", "photos"), ("intake",), kind="agent", label="intake (vision model)", est_s=40.0, blocking=False, after=("standards", "grade")),
+        Node("spec", n_spec, ("intake",), ("spec", "standards"), label="draft spec + standards", est_s=0.2),
+        Node("measure", n_measure, ("spec",), ("measured",), label="auto-measure sheet photos", est_s=2.0, optional=True),
+        Node("evidence", n_evidence, ("spec",), ("evidence", "ready"), label="evidence graph", est_s=0.05, after=("measure",)),
+        Node("followup", n_followup, ("evidence",), ("round",), kind="agent", label="follow-up round", est_s=20.0, blocking=False,
+             when=lambda s: not s.get("ready")),
+        Node("capture", None, ("round",), ("captured",), kind="human", label="user takes photos / reads ruler", ask=ask),
+    ])
+    state: dict[str, Any] = {"text": text, "photos": list(photos)}
+    trace = await g.run(state, emit=lambda kind, **d: session.emit(kind, **d))
+    (session.dir / "intake_graph.json").write_text(json.dumps(trace.to_dict(), indent=2))
+    if "intake" not in state:
+        err = trace.nodes["vision"].error or "intake failed"
+        raise RuntimeError(err)
+    data = dict(state["intake"])
+    spec = state["spec"]
+    if state.get("ready"):
+        session.update_meta(stage="spec")
     data["spec_yaml"] = spec.to_yaml()
     data["spec"] = spec.model_dump(mode="json", exclude_none=True)
+    data["evidence"] = state.get("evidence")
+    data["round"] = state.get("round")
+    data["measured"] = state.get("measured", [])
+    data["graph"] = trace.to_dict()
     return data

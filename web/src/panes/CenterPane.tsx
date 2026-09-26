@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { fileUrl, kin } from "../api";
+import EvidenceMap from "../components/EvidenceMap";
 import ImageZoom from "../components/ImageZoom";
 import StlViewer from "../components/StlViewer";
 import { useLocal } from "../hooks";
 import { iterPath, useSession } from "../pages/session-context";
 import { useToast } from "../toast";
+import type { EvidenceGraph } from "../types";
 import { Pill, Spinner } from "../ui";
 
-type Tab = "3d" | "views" | "sections" | "view";
+type Tab = "3d" | "views" | "sections" | "view" | "evidence";
 
 export default function CenterPane() {
   const s = useSession();
@@ -16,6 +18,19 @@ export default function CenterPane() {
   const [tab, setTab] = useLocal<Tab>("kin.center.tab", "3d");
   const [view, setView] = useState<string>("");
   const [branching, setBranching] = useState(false);
+  const [ev, setEv] = useState<EvidenceGraph | null>(null);
+  const evKey = `${d.spec_yaml.length}:${d.photos.length}:${d.meta.iteration}`;
+  useEffect(() => {
+    if (tab !== "evidence") return;
+    let alive = true;
+    kin
+      .evidence(s.sid)
+      .then((g) => alive && setEv(g))
+      .catch(() => alive && setEv(null));
+    return () => {
+      alive = false;
+    };
+  }, [tab, s.sid, evKey]);
 
   const it = s.selectedIter;
   const isLatest = !it || !s.latestIter || it.iteration === s.latestIter.iteration;
@@ -80,6 +95,9 @@ export default function CenterPane() {
           >
             Sections
           </button>
+          <button role="tab" aria-selected={tab === "evidence"} className={`tab${tab === "evidence" ? " active" : ""}`} onClick={() => setTab("evidence")} title="what each dimension is known from">
+            Evidence
+          </button>
         </div>
         <div className="view-picker">
           {n !== undefined && (
@@ -126,6 +144,22 @@ export default function CenterPane() {
           <ImageZoom src={sectionsUrl} alt={`Sections sheet, iteration ${n ?? ""}`} placeholder="Sections through each measured plane, with the assembly ghost, appear here after the first iteration." />
         )}
         {tab === "view" && <ImageZoom src={viewUrl} alt={`View ${view}`} placeholder="Pick a single view from the menu above." />}
+        {tab === "evidence" && (
+          <div className="evidence-full">
+            {ev ? (
+              <>
+                <EvidenceMap graph={ev} />
+                <div className="small dim" style={{ padding: "6px 10px" }}>
+                  Sources on the left (photos, ruler readings, recognised standards, open requests) → the estimates they produced → the spec's
+                  dimensions → the checks that verify them on the designed mesh. Green = confirmed / passing, amber = estimated, red = unknown or
+                  failing; thicker lines are more trusted sources, dashed lines are requests still open.
+                </div>
+              </>
+            ) : (
+              <div className="small dim" style={{ padding: 20 }}>Loading the evidence graph…</div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="center-foot">

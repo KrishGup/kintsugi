@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiError, fileUrl, kin, sheetPdfUrl } from "../api";
+import EvidenceMap from "../components/EvidenceMap";
 import { useLlm } from "../llm";
 import { useSession } from "../pages/session-context";
 import { fmtElapsed, useRunProgress } from "../progress";
 import { useToast } from "../toast";
-import type { AnswerBody, CaptureShot, Dim, IntakeQuestion, Photo, Stage } from "../types";
+import type { AnswerBody, CaptureShot, Dim, EvidenceGraph, IntakeQuestion, Photo, Stage } from "../types";
 import { Markdown, Pill, Spinner, fmtNum, type Tone } from "../ui";
+import { CameraIcon as ReqCameraIcon, ReadinessBar, RequestCard, photosFor } from "./CaptureRound";
 
 export const STAGES: Array<{ id: Stage; label: string; short: string }> = [
   { id: "intake", label: "What broke", short: "Intake" },
@@ -184,6 +186,16 @@ function IntakeStage() {
             </div>
           )}
           {intake.interfaces_reasoning && <div className="small dim mt">{intake.interfaces_reasoning}</div>}
+          {intake.standards && intake.standards.length > 0 && (
+            <div className="row-wrap mt">
+              {intake.standards.map((st) => (
+                <Pill key={st.id} tone="blue" title={`${Object.entries(st.dims).map(([k, v]) => `${k} ${v} mm`).join(", ")}${st.note ? ` — ${st.note}` : ""}`}>
+                  📖 {st.name}
+                </Pill>
+              ))}
+              <span className="small dim">recognised standard sizes — used as estimates until a photo confirms them</span>
+            </div>
+          )}
           {intake.spec_error && <div className="banner banner-fail mt">Draft spec had a problem: {intake.spec_error}</div>}
         </div>
       )}
@@ -249,17 +261,29 @@ function IntakeStage() {
 
 function CaptureStage() {
   const s = useSession();
+  const llm = useLlm();
   const { toast, error } = useToast();
   const d = s.detail!;
-  const plan = d.intake?.capture_plan || [];
-  const questions = d.intake?.questions || [];
+  const intake = d.intake;
+  const rounds = intake?.rounds || [];
+  const round = rounds.length ? rounds[rounds.length - 1] : null;
+  const plan = intake?.capture_plan || [];
+  const questions = intake?.questions || [];
+  const legacy = !round; // sessions from before capture rounds: the intake's own plan and questions
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState<"" | "check" | "skip">("");
+  const readiness = d.readiness;
 
-  const answered = questions.filter((q) => (answers[q.id || q.text || ""] || "").trim() !== "").length;
-
-  const submit = async () => {
+  const collect = (): AnswerBody[] => {
     const body: AnswerBody[] = [];
+    if (round) {
+      for (const r of round.requests) {
+        const v = (answers[r.id] || "").trim();
+        if (!v) continue;
+        if (r.kind === "measure") body.push({ id: r.id, dim: r.dims[0], kind: "measure", value: Number(v), question: r.title });
+        else if (r.kind === "choice") body.push({ id: r.id, dim: r.dims[0] || null, kind: "choice", value: v, question: r.title });
+      }
+    }
     for (const q of questions) {
       const key = q.id || q.text || "";
       const v = (answers[key] || "").trim();
@@ -267,21 +291,43 @@ function CaptureStage() {
       const kind = (q.kind === "number" || q.kind === "choice" ? q.kind : "text") as AnswerBody["kind"];
       body.push({ id: q.id, dim: q.dim, kind, value: kind === "number" ? Number(v) : v, question: q.text });
     }
-    setSaving(true);
+    return body;
+  };
+
+  const check = async () => {
+    setBusy("check");
     try {
-      if (body.length) {
-        const r = await kin.answers(s.sid, body);
-        toast(`${r.applied.length} answer${r.applied.length === 1 ? "" : "s"} applied to the spec`, "pass");
-      } else await kin.setStage(s.sid, "spec");
+      const body = collect();
+      if (body.length) await kin.answers(s.sid, body, false);
+      const fu = await kin.followup(s.sid);
+      setAnswers({});
+      if (fu.ready) toast("Every fit dimension is known well enough — on to the design", "pass");
+      else if (fu.round) toast(`Round ${fu.round.n}: ${fu.round.requests.length} more request${fu.round.requests.length === 1 ? "" : "s"}`, "info");
+      else toast(fu.note || "No more capture rounds", "warn");
       await s.refresh();
     } catch (e) {
-      error(e, "Could not save answers");
+      if (e instanceof ApiError && e.status === 412) llm.openSettings();
+      error(e, "Could not check what is missing");
     } finally {
-      setSaving(false);
+      setBusy("");
     }
   };
 
-  if (!d.intake) {
+  const skip = async () => {
+    setBusy("skip");
+    try {
+      const body = collect();
+      if (body.length) await kin.answers(s.sid, body, true);
+      else await kin.setStage(s.sid, "spec");
+      await s.refresh();
+    } catch (e) {
+      error(e, "Could not continue");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  if (!intake) {
     return (
       <div className="stack">
         <div className="small dim">Intake has not run for this session. Upload photos in the Photos tab, or go straight to the spec.</div>
@@ -292,12 +338,31 @@ function CaptureStage() {
     );
   }
 
+  const answered = collect().length;
   return (
     <div className="stack">
-      {plan.length > 0 && (
+      {readiness && <ReadinessBar r={readiness} />}
+      {round && (
+        <div>
+          <div className="row-wrap mb">
+            <span className="label">Round {round.n}</span>
+            {rounds.length > 1 && <span className="small dim">{rounds.length - 1} earlier round{rounds.length === 2 ? "" : "s"}</span>}
+          </div>
+          {round.note && <div className="small mb">{round.note}</div>}
+          {round.requests.length === 0 ? (
+            <div className="small dim">Nothing more to capture.</div>
+          ) : (
+            <div className="stack">
+              {round.requests.map((r) => (
+                <RequestCard key={r.id} req={r} value={answers[r.id] || ""} onChange={(v) => setAnswers((a) => ({ ...a, [r.id]: v }))} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {legacy && plan.length > 0 && (
         <div>
           <div className="label">Capture plan</div>
-          <div className="small dim mb">Each shot pins down one dimension. Shoot straight down on the calibration sheet; blurry or tilted shots are flagged on upload.</div>
           <div className="stack">
             {plan.map((c, i) => (
               <ShotSlot key={i} shot={c} index={i} photos={d.photos} />
@@ -305,10 +370,9 @@ function CaptureStage() {
           </div>
         </div>
       )}
-      {questions.length > 0 && (
+      {legacy && questions.length > 0 && (
         <div>
           <div className="label">Questions for you</div>
-          <div className="small dim mb">Numbers become confirmed dimensions; choices become design intent. Skip what you don't know.</div>
           <div className="stack">
             {questions.map((q, i) => (
               <QuestionField key={q.id || i} q={q} value={answers[q.id || q.text || ""] || ""} onChange={(v) => setAnswers((a) => ({ ...a, [q.id || q.text || ""]: v }))} />
@@ -316,12 +380,17 @@ function CaptureStage() {
           </div>
         </div>
       )}
-      {plan.length === 0 && questions.length === 0 && <div className="small dim">Intake had no further questions.</div>}
-      <div className="row">
-        <button className="btn btn-primary" onClick={submit} disabled={saving}>
-          {saving ? <Spinner size={12} /> : null} {answered ? `Save ${answered} answer${answered === 1 ? "" : "s"} & continue` : "Continue"} →
+      <div className="row-wrap">
+        <button className="btn btn-primary" onClick={check} disabled={busy !== ""}>
+          {busy === "check" ? <Spinner size={12} /> : null} {answered ? `Save ${answered} reading${answered === 1 ? "" : "s"} & ` : ""}Check what's still missing
         </button>
-        <span className="small dim">Next: confirm the fit dimensions.</span>
+        <button className="btn btn-ghost btn-sm" onClick={skip} disabled={busy !== ""} title="Design with the estimates; confirm the fit with the coupon afterwards">
+          {busy === "skip" ? <Spinner size={11} /> : null} Design anyway →
+        </button>
+      </div>
+      <div className="small dim">
+        Photos taken for a request are measured on the calibration sheet automatically; ruler readings become confirmed dimensions. The next
+        round only asks for what is still missing.
       </div>
     </div>
   );
@@ -447,6 +516,19 @@ function SpecStage() {
   const d = s.detail!;
   const [budget, setBudget] = useState(8);
   const [starting, setStarting] = useState(false);
+  const [ev, setEv] = useState<EvidenceGraph | null>(null);
+  const [showMap, setShowMap] = useState(true);
+  const evKey = `${d.spec_yaml.length}:${d.photos.length}:${d.meta.iteration}`;
+  useEffect(() => {
+    let alive = true;
+    kin
+      .evidence(s.sid)
+      .then((g) => alive && setEv(g))
+      .catch(() => alive && setEv(null));
+    return () => {
+      alive = false;
+    };
+  }, [s.sid, evKey]);
 
   const dims = useMemo(() => {
     const out: Array<{ key: string; itf: string; name: string; dim: Dim; mates?: string; fit?: string }> = [];
@@ -471,6 +553,23 @@ function SpecStage() {
   const hasRun = d.iterations.length > 0;
   return (
     <div className="stack">
+      {d.readiness && <ReadinessBar r={d.readiness} />}
+      {ev && ev.nodes.some((n) => n.type === "estimate" || n.type === "photo") && (
+        <div>
+          <button className="btn btn-ghost btn-xs" onClick={() => setShowMap((v) => !v)}>
+            {showMap ? "▾" : "▸"} Evidence map
+          </button>
+          {showMap && (
+            <div className="gcard" style={{ padding: 6 }}>
+              <EvidenceMap graph={ev} compact />
+              <div className="small dim" style={{ padding: "0 4px" }}>
+                photos, readings and standards on the left → the estimates they gave → the dimensions they support; thicker lines are more trusted
+                sources, dashed lines are requests still open.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <div className="small dim">
         These are the dimensions the part must match on the real object. Confirmed ones drive the design; estimated ones are the model's guess from the
         photos — type the measured value to lock them.
@@ -664,6 +763,9 @@ function DesignStage() {
   }
 
   if (waiting && q) {
+    const photoReqs = q.photos || [];
+    const taken = photoReqs.map((pr) => photosFor(pr.label, d.photos).find((p) => p.grade?.ok));
+    const allTaken = photoReqs.length > 0 && taken.every(Boolean);
     return (
       <div className="stack">
         <div className="gcard card-question stack">
@@ -673,6 +775,21 @@ function DesignStage() {
             </Pill>
           </div>
           <Markdown text={q.question} />
+          {photoReqs.length > 0 && (
+            <div className="stack">
+              {photoReqs.map((pr, i) => (
+                <RequestCard
+                  key={pr.label}
+                  req={{ id: pr.label, kind: "photo", dims: pr.dims, title: `Photo ${i + 1}: ${pr.dims.map((x) => x.split(".").pop()).join(", ")}`, instructions: pr.instructions, label: pr.label, priority: 0 }}
+                  value=""
+                  onChange={() => {}}
+                />
+              ))}
+              <button className="btn btn-primary" onClick={() => reply(allTaken ? "Photos added and measured; the spec has the new values." : "Continue with the current spec.")} disabled={sending}>
+                {sending ? <Spinner size={11} /> : <ReqCameraIcon />} {allTaken ? "Resume with these photos" : "Resume without photos"}
+              </button>
+            </div>
+          )}
           {q.options && q.options.length > 0 && (
             <div className="choices">
               {q.options.map((o) => (

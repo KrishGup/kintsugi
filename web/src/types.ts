@@ -46,7 +46,7 @@ export interface SessionMeta {
   critic_rounds?: number;
   model?: string;
   last_ok?: boolean;
-  question?: { question: string; options: string[] } | null;
+  question?: { question: string; options: string[]; photos?: Array<{ label: string; dims: string[]; instructions: string }> } | null;
   narration?: string;
   cost_usd?: number;
   exported_iteration?: number;
@@ -222,6 +222,7 @@ export interface PhotoGrade {
 export interface Photo {
   file: string;
   grade: PhotoGrade | null;
+  estimates?: Array<{ dim: string; value: number; conf: number; photo: string; status?: string }>;
 }
 
 export interface SessionDetail {
@@ -241,6 +242,124 @@ export interface SessionDetail {
   intake: IntakeResult | null;
   stage: Stage | string;
   llm?: LlmStatus;
+  readiness?: Readiness;
+}
+
+export interface CaptureRequest {
+  id: string;
+  kind: "photo" | "measure" | "choice" | "coupon" | string;
+  dims: string[];
+  title: string;
+  instructions: string;
+  why?: string;
+  priority?: number;
+  feature?: string | null;
+  label?: string | null;
+  options?: string[];
+}
+
+export interface CaptureRound {
+  n: number;
+  t?: number;
+  requests: CaptureRequest[];
+  note?: string;
+  missing?: MissingDim[];
+}
+
+export interface MissingDim {
+  dim: string;
+  importance: "interface" | "requirement" | string;
+  status: string;
+  conf: number;
+  reason: "unknown" | "low_confidence" | "conflict" | "estimated" | string;
+  recipe?: string | null;
+  feature?: string | null;
+  interface?: string | null;
+  mates_with?: string | null;
+  fit?: string | null;
+  target?: number | null;
+}
+
+export interface Readiness {
+  ready: boolean;
+  blocking: string[];
+  unconfirmed: string[];
+  confirmed: number;
+  interface_dims: number;
+  score: number;
+  advice: string;
+  missing?: MissingDim[];
+}
+
+export interface EvidenceNode {
+  id: string;
+  type: "dim" | "estimate" | "photo" | "shot" | "request" | "question" | "standard" | "check" | string;
+  label?: string;
+  status?: string;
+  conf?: number;
+  target?: number | null;
+  importance?: string;
+  source?: string;
+  trust?: number;
+  value?: number;
+  ok?: boolean;
+  passed?: boolean | null;
+  kind?: string;
+  file?: string;
+  round?: number;
+  [k: string]: unknown;
+}
+
+export interface EvidenceEdge {
+  from: string;
+  to: string;
+  rel: string;
+  weight?: number;
+}
+
+export interface EvidenceGraph {
+  nodes: EvidenceNode[];
+  edges: EvidenceEdge[];
+  missing: MissingDim[];
+  ready: boolean;
+  readiness: Readiness;
+}
+
+export interface GraphNodeRun {
+  name: string;
+  kind: "algorithm" | "agent" | "human" | "io" | string;
+  label: string;
+  status: "pending" | "running" | "done" | "failed" | "skipped" | "waiting" | string;
+  wave: number | null;
+  duration_s: number | null;
+  est_s: number;
+  error?: string | null;
+  note?: string;
+}
+
+export interface GraphTrace {
+  graph: string;
+  status: string;
+  waiting_on?: string | null;
+  request?: Record<string, unknown> | null;
+  nodes: GraphNodeRun[];
+  edges: Array<{ from: string; to: string; key: string }>;
+  critical_path: string[];
+  critical_s: number;
+  wall_s: number;
+  serial_s: number;
+  speedup?: number | null;
+  waves?: number;
+  started?: number;
+  iteration?: number;
+}
+
+export interface GraphShape {
+  graph: string;
+  nodes: Array<{ name: string; kind: string; label: string; inputs: string[]; outputs: string[]; est_s: number; optional: boolean }>;
+  edges: Array<{ from: string; to: string; key: string }>;
+  critical_path: string[];
+  critical_s: number;
 }
 
 export interface IntakeQuestion {
@@ -262,7 +381,7 @@ export interface CaptureShot {
 export interface AnswerBody {
   id?: string;
   dim?: string | null;
-  kind: "number" | "choice" | "text";
+  kind: "number" | "choice" | "text" | "measure";
   value: string | number;
   question?: string;
 }
@@ -283,6 +402,14 @@ export interface IntakeResult {
   questions?: IntakeQuestion[];
   confidence?: number;
   spec_yaml?: string;
+  rounds?: CaptureRound[];
+  standards?: Array<{ id: string; name: string; dims: Record<string, number>; note?: string; conf?: number }>;
+  standard_estimates?: Array<{ dim: string; value: number; standard: string }>;
+  designer_requests?: Array<{ label: string; dims: string[]; instructions: string }>;
+  capture_done?: boolean;
+  round?: CaptureRound | null;
+  evidence?: EvidenceGraph;
+  graph?: GraphTrace;
 }
 
 export interface MeasureResult {

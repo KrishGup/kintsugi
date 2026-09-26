@@ -2239,3 +2239,233 @@ input[type="file"] {
 .banner > span {
   flex: 1 1 auto;
 }
+
+/* ==========================================================================
+   Graphs: pipeline view, evidence map, capture requests
+   ========================================================================== */
+
+.gv {
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  padding: 6px;
+}
+.gv-title {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 4px 4px;
+}
+.gv-svg {
+  display: block;
+  max-height: 520px;
+}
+.gv-node rect {
+  fill: var(--paper);
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+.gv-node .gv-label {
+  font: 600 11px var(--font-body);
+  fill: var(--ink);
+}
+.gv-node .gv-sub {
+  font: 10px var(--font-mono);
+  fill: var(--ink-3);
+}
+.gv-kind-agent rect {
+  stroke-dasharray: none;
+  fill: var(--blue-soft);
+}
+.gv-kind-human rect {
+  fill: var(--warn-soft);
+}
+.gv-done rect {
+  stroke: var(--pass);
+}
+.gv-done .gv-sub {
+  fill: var(--pass);
+}
+.gv-running rect {
+  stroke: var(--blue);
+  stroke-width: 2;
+  animation: gvpulse 1.2s ease-in-out infinite;
+}
+.gv-failed rect {
+  stroke: var(--fail);
+  fill: var(--fail-soft);
+}
+.gv-skipped rect {
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+.gv-skipped text {
+  opacity: 0.6;
+}
+.gv-waiting rect {
+  stroke: var(--warn);
+  stroke-width: 2;
+}
+.gv-pending rect {
+  opacity: 0.75;
+}
+.gv-crit rect {
+  stroke-width: 2;
+}
+.gv-foot {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 4px 0;
+}
+@keyframes gvpulse {
+  0%,
+  100% {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.35;
+  }
+}
+
+.em-svg {
+  display: block;
+  max-height: 320px;
+}
+.em-node rect {
+  fill: var(--sheet);
+  stroke: var(--rule);
+}
+.em-node .em-label {
+  font: 10.5px var(--font-mono);
+  fill: var(--ink);
+}
+.em-dim rect {
+  stroke-width: 1.4;
+}
+.em-node.ok rect {
+  stroke: var(--pass);
+}
+.em-node.mid rect {
+  stroke: var(--warn);
+}
+.em-node.low rect {
+  stroke: var(--warn);
+  stroke-dasharray: 3 2;
+}
+.em-node.bad rect {
+  stroke: var(--fail);
+}
+.em-node.bound rect {
+  stroke: var(--rule);
+  stroke-dasharray: 4 2;
+}
+.em-node .em-dot {
+  fill: var(--rule);
+}
+.em-node.ok .em-dot {
+  fill: var(--pass);
+}
+.em-node.mid .em-dot,
+.em-node.low .em-dot {
+  fill: var(--warn);
+}
+.em-node.bad .em-dot {
+  fill: var(--fail);
+}
+.em-estimate rect,
+.em-photo rect,
+.em-standard rect,
+.em-question rect,
+.em-shot rect,
+.em-request rect {
+  fill: var(--paper);
+}
+.em-check rect {
+  fill: var(--pass-soft);
+}
+
+/* readiness */
+.ready {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--sheet);
+}
+
+/* capture request cards */
+.req {
+  border: 1px solid var(--rule-2);
+  border-left: 3px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  background: var(--sheet);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.req-ok {
+  border-left-color: var(--warn);
+}
+.req-retake {
+  border-left-color: var(--fail);
+}
+.req-done {
+  border-left-color: var(--pass);
+}
+.req-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.req-pri {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--rule-2);
+  color: var(--ink-2);
+  flex: none;
+}
+.req-pri.pri-0 {
+  background: var(--fail-soft);
+  color: var(--fail);
+}
+.req-pri.pri-1 {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.req-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.req-thumb {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--rule-2);
+}
+
+.evidence-full {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 10px;
+  background: var(--viewer-bg);
+}
+.evidence-full .em-svg {
+  max-height: none;
+  max-width: 1100px;
+  margin: 0 auto;
+}

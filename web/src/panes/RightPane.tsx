@@ -4,9 +4,10 @@ import ChecksTab from "./ChecksTab";
 import CodeTab from "./CodeTab";
 import ParamsTab from "./ParamsTab";
 import PhotosTab from "./PhotosTab";
+import PipelineTab from "./PipelineTab";
 import SpecTab from "./SpecTab";
 
-type Tab = "checks" | "params" | "code" | "spec" | "photos";
+type Tab = "checks" | "params" | "code" | "spec" | "photos" | "graph";
 
 export default function RightPane() {
   const s = useSession();
@@ -26,6 +27,7 @@ export default function RightPane() {
     { id: "code", label: "Code" },
     { id: "spec", label: "Spec", count: d.unconfirmed.length || undefined, tone: d.unconfirmed.length ? "fail" : undefined, title: d.unconfirmed.length ? `${d.unconfirmed.length} interface dims unconfirmed` : undefined },
     { id: "photos", label: "Photos", count: d.photos.length || undefined },
+    { id: "graph", label: "Graph", title: "the dataflow graphs behind the session" },
   ];
 
   return (
@@ -67,6 +69,11 @@ export default function RightPane() {
       {tab === "photos" && (
         <div className="pane-body">
           <PhotosTab />
+        </div>
+      )}
+      {tab === "graph" && (
+        <div className="pane-body">
+          <PipelineTab />
         </div>
       )}
     </div>

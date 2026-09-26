@@ -28,6 +28,10 @@ export const EVENT_KINDS = [
   "usage",
   "stage",
   "answers",
+  "graph_node",
+  "graph_run",
+  "capture_round",
+  "capture_ready",
   "event",
 ];
 
@@ -53,6 +57,9 @@ export const REFRESH_KINDS = new Set([
   "stage",
   "answers",
   "usage",
+  "capture_round",
+  "capture_ready",
+  "graph_run",
 ]);
 
 export interface EventStream {

@@ -222,11 +222,28 @@ def make_kin_tools(session: Session, state: Any, spec: PartSpec, budget: int, em
         return ToolResult(p.read_text(encoding="utf-8"))
 
     async def ask_user(args: dict[str, Any]) -> ToolResult:
-        q = {"question": str(args.get("question", "")), "options": [str(o) for o in (args.get("options") or [])]}
+        q: dict[str, Any] = {"question": str(args.get("question", "")), "options": [str(o) for o in (args.get("options") or [])]}
+        photos = []
+        valid = {qn for qn, _, _ in spec.all_dims()}
+        for i, pr in enumerate(args.get("photos") or []):
+            if not isinstance(pr, dict):
+                continue
+            dims = [str(d) for d in (pr.get("dims") or []) if str(d) in valid]
+            if not dims:
+                continue
+            photos.append({"label": f"q{int(session.meta.get('iteration', 0))}_{i + 1}", "dims": dims, "instructions": str(pr.get("instructions") or "")})
+        if photos:
+            q["photos"] = photos
+            # register the labels so uploads for this question are measured against the right dimensions
+            from kintsugi.agent.capture import load_intake, save_intake
+            data = load_intake(session)
+            data.setdefault("designer_requests", []).extend(photos)
+            save_intake(session, data)
         state.question = q
         session.update_meta(status="waiting_user", question=q)
         emit("question", **q)
-        return ToolResult("Question recorded. Stop now; the run resumes when the user answers.")
+        return ToolResult("Question recorded. Stop now; the run resumes when the user answers"
+                          + (" (photos they add are measured and reported back to you)." if photos else "."))
 
     async def finish(args: dict[str, Any]) -> ToolResult:
         if not (state.last_result and state.last_result.ok):
@@ -242,8 +259,15 @@ def make_kin_tools(session: Session, state: Any, spec: PartSpec, budget: int, em
         ToolDef("list_templates", "List the vetted parametric templates (name and one-line description).", {"type": "object", "properties": {}}, list_templates),
         ToolDef("read_template", "Read the full source of a template by name (without .scad).",
                 {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}, read_template),
-        ToolDef("ask_user", "Pause and ask the user one batched question you cannot decide (an open interface dimension, an ambiguity about function).",
-                {"type": "object", "properties": {"question": {"type": "string"}, "options": {"type": "array", "items": {"type": "string"}}}, "required": ["question"]}, ask_user),
+        ToolDef("ask_user", "Pause and ask the user one batched question you cannot decide (an open interface dimension, an ambiguity about "
+                "function). To get a dimension measured rather than guessed, add `photos`: each entry names the spec dimensions a photo "
+                "should pin down and how to take it (the mating feature pressed flat on the calibration sheet, shot straight down); the "
+                "photo is measured automatically and the result is in the resume message.",
+                {"type": "object", "properties": {"question": {"type": "string"}, "options": {"type": "array", "items": {"type": "string"}},
+                                                  "photos": {"type": "array", "items": {"type": "object", "properties": {
+                                                      "dims": {"type": "array", "items": {"type": "string"}}, "instructions": {"type": "string"}},
+                                                      "required": ["dims", "instructions"]}}},
+                 "required": ["question"]}, ask_user),
         ToolDef("finish", "Declare the part done: all hard checks pass and the drawings look right. Give the user a 3-8 line narration.",
                 {"type": "object", "properties": {"narration": {"type": "string"}}, "required": ["narration"]}, finish),
     ]
