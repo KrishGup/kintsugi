@@ -82,6 +82,12 @@ export default function TopBar() {
               · critic <b>{d.meta.critic_rounds}</b>
             </>
           ) : null}
+          {typeof d.meta.cost_usd === "number" && d.meta.cost_usd > 0 ? (
+            <>
+              {" "}
+              · <b title="model spend so far, from the API's token counts">${d.meta.cost_usd.toFixed(2)}</b>
+            </>
+          ) : null}
         </span>
         <Pill tone={statusTone(status, s.running)} dot={s.running} title={`status: ${d.meta.status}`}>
           {statusLabel(status, s.running)}
