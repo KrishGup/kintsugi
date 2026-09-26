@@ -16,6 +16,22 @@ export interface Health {
   openscad?: string | null;
   sessions_dir?: string;
   llm?: LlmStatus;
+  auth?: "none" | "token" | "easyauth" | string;
+  settings_locked?: boolean;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  provider: string;
+  admin: boolean;
+}
+
+export interface AuthInfo {
+  mode: "none" | "token" | "easyauth" | string;
+  user: AuthUser | null;
+  login_url?: string;
+  logout_url?: string;
 }
 
 export interface SettingsInfo {
@@ -23,6 +39,8 @@ export interface SettingsInfo {
   openai_key_masked: string;
   defaults: Record<string, Record<string, string>>;
   providers: string[];
+  locked?: boolean;
+  env_file?: string;
 }
 
 export interface SettingsBody {
@@ -51,6 +69,9 @@ export interface SessionMeta {
   cost_usd?: number;
   exported_iteration?: number;
   exported_at?: number;
+  owner?: string;
+  owner_name?: string;
+  imported_from?: { id?: string | null; exported_at?: number; app_version?: string } | null;
 }
 
 export interface Estimate {

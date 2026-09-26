@@ -1,5 +1,6 @@
 import type {
   AnswerBody,
+  AuthInfo,
   CaptureRound,
   CustomizerModel,
   EvidenceGraph,
@@ -62,6 +63,7 @@ async function request<T>(method: string, path: string, body?: unknown, init?: R
   } catch (e) {
     throw new ApiError(0, `Network error: ${(e as Error).message}`);
   }
+  if (res.status === 401 && !path.startsWith("/api/auth/")) window.dispatchEvent(new CustomEvent("kin:unauthorized"));
   if (!res.ok) throw await parseError(res);
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) return (await res.json()) as T;
@@ -85,8 +87,18 @@ export function fileUrl(sid: string, rel: string, v?: string | number): string {
 
 export const sheetPdfUrl = "/api/sheet.pdf";
 
+export const archiveUrl = (sid: string) => `${S(sid)}/archive`;
+
 export const kin = {
   health: () => api.get<Health>("/api/health"),
+  authMe: () => api.get<AuthInfo>("/api/auth/me"),
+  login: (token: string) => api.post<{ ok: boolean }>("/api/auth/login", { token }),
+  logout: () => api.post<{ ok: boolean }>("/api/auth/logout"),
+  importSession: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    return api.post<SessionDetail>("/api/sessions/import", fd);
+  },
   settings: () => api.get<SettingsInfo>("/api/settings"),
   setSettings: (body: SettingsBody) =>
     api.post<{ ok: boolean; changed: string[]; llm: SettingsInfo["llm"]; probe?: { checked: boolean; ok: boolean | null; message?: string; model?: string } | null }>(

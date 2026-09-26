@@ -70,18 +70,27 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 
 ## Known rough edges
 
-- The designer's shell is confined to its session directory and a blocklist (no package installs, no network tools), but it is still a shell; keep sessions on a machine you trust and do not expose the server (no authentication).
+- The designer's shell is confined to its session directory and a blocklist (no package installs, no network tools), but it is still a shell; keep sessions on a machine you trust. Anything reachable from the internet should run with `KIN_AUTH=token` or `easyauth` (see *Deploying* below) — `none` is for a laptop or a LAN.
 - OpenSCAD 2021.01 is slow on BOSL2-heavy models (CGAL). A Manifold-enabled nightly (`KIN_OPENSCAD_BIN`) is 10–50× faster; the templates avoid post-2021 syntax.
 - Section recipes need a height where the feature exists (`at_z`); a spec written at the wrong height reads "no hole found". The intake prompt knows this but check the draft.
 - The intake prompt has only been exercised on rendered scenes and the scripted provider here (no real photos in the build environment). Shiny or transparent objects will need the neck-on-sheet trick and a manual confirmation; expect to correct a number or two in step 3.
 - The critic occasionally asks for changes the spec does not justify; the designer is told it may push back in its narration.
 - Reconstruction from many photos and the printed 3D jig (approaches C/D in the design doc) are not built; the sheet + reference-object paths are.
 
+## Deploying (Azure, Docker)
+
+- `docs/DEPLOY-AZURE.md` is the whole story: the service stack (Container Apps · Azure Files · Container Registry · Key Vault · Log Analytics · Easy Auth), every environment variable per piece, costs, operations, troubleshooting. `deploy/azure/deploy.sh -g <rg> --auth easyauth --admin <you>` does it end to end from a laptop with `az`; `deploy/azure/main.bicep` + `app.bicep` are the declarative form; `.github/workflows/azure.yml` ships every push to `main`; `deploy/azure/appservice.sh` is the ≈ $55/month App Service variant; `deploy/docker-compose.yml` runs the same image anywhere.
+- Auth (`kintsugi/server/auth.py`): `KIN_AUTH=none|token|easyauth`. Token mode = `KIN_ACCESS_TOKEN` + an HMAC cookie; easyauth reads the `X-MS-CLIENT-PRINCIPAL-*` headers Azure sets and scopes sessions to their `owner` (`KIN_ADMIN_USERS` see all). `KIN_SETTINGS_LOCK=1` makes `/api/settings` read-only. The UI gate lives in `web/src/auth.tsx`.
+- Data: `KIN_DATA_DIR` (container: `/data`) holds `sessions/` and the settings `.env`; `KIN_SESSION_GIT=0` drops the per-session git history for slow shares.
+- Archives (`kintsugi/session/archive.py`): `GET /api/sessions/{id}/archive` ↔ `POST /api/sessions/import`, `kin archive` / `kin import`, manifest + file hashes, zip-slip and size checks; schemas in `docs/schemas/` (regenerate with `kin schema … -o`), served at `/api/schemas/…`. This is also the backup/migration path.
+- Not done here: a real deployment (no Azure subscription in the build environment). The Bicep compiles cleanly with the Bicep CLI and the scripts are syntax-checked; the first `deploy.sh` run is the test.
+
 ## Where things are
 
-- Session workspaces: `sessions/<id>/` (spec.yaml, part.scad, intake.json, iterations/, sheets/, checks.json, critic/, export/, events.jsonl, history.json, a git repo).
+- Session workspaces: `<KIN_DATA_DIR>/sessions/<id>/` (spec.yaml, part.scad, part.json, intake.json, iterations/, sheets/, checks.json, critic/, export/, events.jsonl, history.json, a git repo).
 - Prompts: `kintsugi/agent/prompts/{designer,critic,intake}.md`. Provider facade: `kintsugi/agent/llm.py`; tools: `kintsugi/agent/tools.py`; scripted provider: `kintsugi/agent/fake.py`.
 - Recipes the checker understands: `kintsugi/spec/model.py` (MeasureRecipe docstring).
 - Templates: `templates/*.scad`, their specs `eval/specs/*.yaml`.
 - A/B evaluation: `eval/ab_eval.py`, report `eval/reports/ab_templates.md`.
-- Web UI: `web/src` (guide: `panes/GuidePane.tsx`, settings: `llm.tsx`); `npm run build` writes `web/dist`, which the API serves.
+- Web UI: `web/src` (guide: `panes/GuidePane.tsx`, settings: `llm.tsx`, sign-in gate: `auth.tsx`); `npm run build` writes `web/dist`, which the API serves.
+- Deployment: `deploy/azure/` (bicep, scripts), `docs/DEPLOY-AZURE.md`, `.github/workflows/azure.yml`, `Dockerfile`, `.env.example` (every variable).

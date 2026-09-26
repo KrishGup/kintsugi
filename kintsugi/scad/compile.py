@@ -94,14 +94,24 @@ def openscad_binary() -> str:
     return "openscad"
 
 
+_VERSION_CACHE: dict[str, str | None] = {}
+
+
 def openscad_version() -> str | None:
+    """The installed OpenSCAD's version, probed once per binary (the health probe asks every few seconds)."""
+    binary = openscad_binary()
+    if binary in _VERSION_CACHE:
+        return _VERSION_CACHE[binary]
     try:
-        out = subprocess.run([openscad_binary(), "--version"], capture_output=True, text=True, timeout=30)
+        out = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=30)
         text = (out.stdout + out.stderr).strip()
         m = re.search(r"version\s+([\w.\-]+)", text)
-        return m.group(1) if m else text
+        found = m.group(1) if m else text
     except Exception:
-        return None
+        found = None
+    if found:                      # a missing binary is re-probed (it may get installed later)
+        _VERSION_CACHE[binary] = found
+    return found
 
 
 def format_define(value: Any) -> str:

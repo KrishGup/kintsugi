@@ -95,6 +95,11 @@ export const Download = (p: P) => (
     <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" />
   </Svg>
 );
+export const Upload = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 15V3m0 0 4 4m-4-4-4 4M4 17v3h16v-3" />
+  </Svg>
+);
 export const Gear = (p: P) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="3" />

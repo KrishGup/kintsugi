@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kintsugi.dev/schemas/session-archive.schema.json",
+  "title": "Kintsugi session archive manifest",
+  "description": "manifest.json at the root of a kintsugi-session-<id>.zip. The zip also holds session.json, spec.yaml, part.scad and the session's folders; every file is listed here with its size and sha256.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "app_version",
+    "exported_at",
+    "session",
+    "files"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "kind": {
+      "type": "string",
+      "const": "kintsugi-session"
+    },
+    "app_version": {
+      "type": "string",
+      "description": "the Kintsugi version that wrote the archive"
+    },
+    "exported_at": {
+      "type": "number",
+      "description": "unix seconds"
+    },
+    "session": {
+      "type": "object",
+      "description": "session.json at export time, minus the owner",
+      "required": [
+        "id",
+        "name",
+        "created"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "created": {
+          "type": "number"
+        },
+        "updated": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "new",
+            "intake_done",
+            "iterating",
+            "running",
+            "waiting_user",
+            "done",
+            "stopped",
+            "error"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "enum": [
+            "intake",
+            "capture",
+            "spec",
+            "design",
+            "review",
+            "export"
+          ]
+        },
+        "iteration": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "critic_rounds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "model": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "cost_usd": {
+          "type": "number"
+        },
+        "narration": {
+          "type": "string"
+        },
+        "exported_iteration": {
+          "type": "integer"
+        },
+        "exported_at": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "bytes",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "relative, forward slashes, no '..'"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "total_bytes": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

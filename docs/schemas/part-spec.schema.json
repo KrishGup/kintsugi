@@ -1,0 +1,616 @@
+{
+  "$defs": {
+    "ContextShape": {
+      "description": "Crude proxy of the object the part mates with. Used for interference checks and assembly views.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "shape": {
+          "default": "cylinder",
+          "enum": [
+            "cylinder",
+            "cone",
+            "box",
+            "sphere",
+            "tube"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "d": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "D"
+        },
+        "d1": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "D1"
+        },
+        "d2": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "D2"
+        },
+        "di": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Di"
+        },
+        "h": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "H"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size"
+        },
+        "at": {
+          "items": {
+            "type": "number"
+          },
+          "title": "At",
+          "type": "array"
+        },
+        "axis": {
+          "default": "z",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ],
+          "title": "Axis",
+          "type": "string"
+        },
+        "allow_contact": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "default": false,
+          "title": "Allow Contact"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ContextShape",
+      "type": "object"
+    },
+    "Dim": {
+      "properties": {
+        "target": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "tol": {
+          "default": 0.3,
+          "title": "Tol",
+          "type": "number"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "status": {
+          "default": "unknown",
+          "enum": [
+            "unknown",
+            "estimated",
+            "confirmed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "estimates": {
+          "items": {
+            "$ref": "#/$defs/Estimate"
+          },
+          "title": "Estimates",
+          "type": "array"
+        },
+        "measure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MeasureRecipe"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "unit": {
+          "default": "mm",
+          "title": "Unit",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "Dim",
+      "type": "object"
+    },
+    "Estimate": {
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "number"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "conf": {
+          "default": 0.5,
+          "title": "Conf",
+          "type": "number"
+        },
+        "photo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Photo"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "value",
+        "source"
+      ],
+      "title": "Estimate",
+      "type": "object"
+    },
+    "Interface": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "default": "custom",
+          "title": "Type",
+          "type": "string"
+        },
+        "mates_with": {
+          "default": "",
+          "title": "Mates With",
+          "type": "string"
+        },
+        "fit": {
+          "default": "sliding",
+          "enum": [
+            "press",
+            "sliding",
+            "loose",
+            "snap",
+            "none"
+          ],
+          "title": "Fit",
+          "type": "string"
+        },
+        "clearance": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clearance"
+        },
+        "side": {
+          "anyOf": [
+            {
+              "enum": [
+                "male",
+                "female"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Side"
+        },
+        "dims": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Dim"
+          },
+          "title": "Dims",
+          "type": "object"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Interface",
+      "type": "object"
+    },
+    "MeasureRecipe": {
+      "description": "How the checker measures a dimension on the mesh.\n\nrecipe:\n  circle_fit_inner   least-squares circle on the hole of the section at `at_z` (nearest `near` if several)\n  circle_fit_outer   least-squares circle on the outer boundary of the section at `at_z`\n  extent             max - min of mesh vertices along `axis`, optionally within `region` [[x0,y0,z0],[x1,y1,z1]]\n  hole_extent        width of the (largest / nearest) hole of the section at `at_z` along `axis`\n  section_extent     width of the section polygon at `at_z` along `axis`\n  hole_positions     centroids + diameters of every hole in the section at `at_z`; compared to `expect`\n  wall_min           minimum wall thickness within `region` (falls back to global)\n  bbox               overall extents [x, y, z]\n  notch_circle       circle fitted to an open-sided hole (a clip's jaws) in the section at `at_z`, nearest `near`\n  notch_mouth        width of that notch's opening (the gap the object snaps through)\n  gap                free distance across empty space along `axis` through `near`, in the section at `at_z`\n                     (a slot width between jaw faces, a bore depth along its axis, a channel opening)",
+      "properties": {
+        "recipe": {
+          "default": "none",
+          "enum": [
+            "circle_fit_inner",
+            "circle_fit_outer",
+            "extent",
+            "hole_extent",
+            "section_extent",
+            "hole_positions",
+            "wall_min",
+            "bbox",
+            "notch_circle",
+            "notch_mouth",
+            "gap",
+            "none"
+          ],
+          "title": "Recipe",
+          "type": "string"
+        },
+        "at_z": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At Z"
+        },
+        "axis": {
+          "default": "z",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ],
+          "title": "Axis",
+          "type": "string"
+        },
+        "plane_axis": {
+          "default": "z",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ],
+          "title": "Plane Axis",
+          "type": "string"
+        },
+        "near": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Near"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "expect": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expect"
+        },
+        "feature": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Feature"
+        }
+      },
+      "title": "MeasureRecipe",
+      "type": "object"
+    },
+    "PartInfo": {
+      "properties": {
+        "name": {
+          "default": "part",
+          "title": "Name",
+          "type": "string"
+        },
+        "role": {
+          "default": "",
+          "title": "Role",
+          "type": "string"
+        },
+        "object": {
+          "default": "",
+          "title": "Object",
+          "type": "string"
+        },
+        "design_intent": {
+          "default": "",
+          "title": "Design Intent",
+          "type": "string"
+        },
+        "notes": {
+          "default": "",
+          "title": "Notes",
+          "type": "string"
+        }
+      },
+      "title": "PartInfo",
+      "type": "object"
+    },
+    "PrintSettings": {
+      "properties": {
+        "material": {
+          "default": "PETG",
+          "title": "Material",
+          "type": "string"
+        },
+        "nozzle": {
+          "default": 0.4,
+          "title": "Nozzle",
+          "type": "number"
+        },
+        "layer_height": {
+          "default": 0.2,
+          "title": "Layer Height",
+          "type": "number"
+        },
+        "min_wall": {
+          "default": 1.6,
+          "title": "Min Wall",
+          "type": "number"
+        },
+        "orientation_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Orientation Hint"
+        },
+        "supports_ok": {
+          "default": false,
+          "title": "Supports Ok",
+          "type": "boolean"
+        }
+      },
+      "title": "PrintSettings",
+      "type": "object"
+    },
+    "Requirement": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "derived": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Dim"
+          },
+          "title": "Derived",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ],
+      "title": "Requirement",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "part": {
+      "$ref": "#/$defs/PartInfo"
+    },
+    "interfaces": {
+      "items": {
+        "$ref": "#/$defs/Interface"
+      },
+      "title": "Interfaces",
+      "type": "array"
+    },
+    "requirements": {
+      "items": {
+        "$ref": "#/$defs/Requirement"
+      },
+      "title": "Requirements",
+      "type": "array"
+    },
+    "context": {
+      "items": {
+        "$ref": "#/$defs/ContextShape"
+      },
+      "title": "Context",
+      "type": "array"
+    },
+    "print": {
+      "$ref": "#/$defs/PrintSettings"
+    },
+    "open_questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Questions",
+      "type": "array"
+    }
+  },
+  "title": "Kintsugi Part Spec (spec.yaml)",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kintsugi.dev/schemas/part-spec.schema.json",
+  "description": "The contract between the person, the designer and the checker: the part, its interfaces (mating features with dimensions, estimates and measure recipes), requirements, context proxies, print settings."
+}

@@ -11,7 +11,10 @@
     kin sheet -o calibration_sheet.pdf                                    -> printable ArUco calibration sheet
     kin docs tube wall | kin docs --name cuboid                        -> the OpenSCAD/BOSL2 reference the designer uses
     kin guide [essentials|shapes|bosl2|fdm|kintsugi|patterns|errors]     -> curated guides (every example compiles)
-    kin serve [--host 0.0.0.0 --port 8000]
+    kin archive SESSION_DIR [-o kintsugi-session-<id>.zip]                -> portable session archive (manifest + every file)
+    kin import ARCHIVE.zip [--sessions DIR] [--new-id]                   -> recreate a session from an archive
+    kin schema session-archive|part-spec [-o file.json]                  -> the JSON Schemas the archive and spec.yaml follow
+    kin serve [--host 0.0.0.0 --port 8000] [--no-proxy-headers]
 """
 
 from __future__ import annotations
@@ -90,6 +93,23 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--host", default=os.environ.get("KIN_HOST", "0.0.0.0"))
     p.add_argument("--port", type=int, default=int(os.environ.get("KIN_PORT", "8000")))
     p.add_argument("--reload", action="store_true")
+    p.add_argument("--no-proxy-headers", action="store_true",
+                   help="ignore X-Forwarded-* (default: trust them, as behind Azure/nginx/Caddy; KIN_PROXY_HEADERS=0 does the same)")
+    p.add_argument("--workers", type=int, default=int(os.environ.get("KIN_WORKERS", "1")),
+                   help="uvicorn workers; keep 1 — runs and previews live in the process (default 1)")
+
+    p = sub.add_parser("archive", help="write a portable session archive (.zip)")
+    p.add_argument("session")
+    p.add_argument("-o", "--out", help="output path (default: kintsugi-session-<id>.zip in the current directory)")
+
+    p = sub.add_parser("import", help="recreate a session from an archive (.zip)")
+    p.add_argument("archive")
+    p.add_argument("--sessions", help="sessions directory (default: KIN_SESSIONS_DIR or <KIN_DATA_DIR>/sessions)")
+    p.add_argument("--new-id", action="store_true", help="always mint a fresh session id (default: keep the original when free)")
+
+    p = sub.add_parser("schema", help="print a JSON Schema: session-archive (manifest.json) or part-spec (spec.yaml)")
+    p.add_argument("name", choices=["session-archive", "part-spec"])
+    p.add_argument("-o", "--out")
 
     p = sub.add_parser("docs", help="search the OpenSCAD + BOSL2 reference the designer uses")
     p.add_argument("query", nargs="*")
@@ -159,7 +179,6 @@ def _dispatch(args) -> int:
         return 0 if res.ok else 1
 
     if args.cmd == "design":
-        import os
         from kintsugi.agent.designer import run_designer
         from kintsugi.agent.llm import get_llm
         from kintsugi.session.workspace import Session
@@ -239,9 +258,14 @@ def _dispatch(args) -> int:
                 lan = sk.getsockname()[0]
         except OSError:
             pass
-        print(f"Kintsugi {__version__} · provider {st['provider']} ({'ready' if st['ready'] else 'not ready: ' + st['reason']})", file=sys.stderr)
+        from kintsugi.server import auth
+        print(f"Kintsugi {__version__} · provider {st['provider']} ({'ready' if st['ready'] else 'not ready: ' + st['reason']}) · auth {auth.mode()}", file=sys.stderr)
         print(f"  open http://localhost:{args.port}" + (f"  (phone on the same network: http://{lan}:{args.port})" if lan and args.host == "0.0.0.0" else ""), file=sys.stderr)
-        uvicorn.run("kintsugi.server.app:app", host=args.host, port=args.port, reload=args.reload)
+        proxy = not args.no_proxy_headers and os.environ.get("KIN_PROXY_HEADERS", "1").lower() not in ("0", "false", "no")
+        uvicorn.run("kintsugi.server.app:app", host=args.host, port=args.port, reload=args.reload,
+                    workers=None if args.reload else max(1, args.workers),
+                    proxy_headers=proxy, forwarded_allow_ips="*" if proxy else None,
+                    timeout_keep_alive=int(os.environ.get("KIN_KEEPALIVE_S", "75")))
         return 0
 
     if args.cmd == "export":
@@ -249,6 +273,44 @@ def _dispatch(args) -> int:
         from kintsugi.session.workspace import Session
         s = Session.open(args.session)
         print(json.dumps(export_bundle(s), indent=2, default=str))
+        return 0
+
+    if args.cmd == "archive":
+        from kintsugi.session.archive import export_archive
+        from kintsugi.session.workspace import Session
+        s = Session.open(args.session)
+        out = Path(args.out) if args.out else Path.cwd() / f"kintsugi-session-{s.id}.zip"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        export_archive(s, out)
+        print(out)
+        return 0
+
+    if args.cmd == "import":
+        import zipfile
+
+        from kintsugi.session.archive import ArchiveError, import_archive
+        from kintsugi.session.workspace import DEFAULT_SESSIONS_DIR
+        data = Path(args.archive).read_bytes()
+        try:
+            s = import_archive(data, Path(args.sessions) if args.sessions else DEFAULT_SESSIONS_DIR, keep_id=not args.new_id)
+        except zipfile.BadZipFile:
+            print(f"cannot import: {args.archive} is not a zip archive", file=sys.stderr)
+            return 2
+        except ArchiveError as e:
+            print(f"cannot import: {e}", file=sys.stderr)
+            return 2
+        print(s.dir)
+        return 0
+
+    if args.cmd == "schema":
+        from kintsugi.session.archive import manifest_schema, part_spec_schema
+        doc = manifest_schema() if args.name == "session-archive" else part_spec_schema()
+        text = json.dumps(doc, indent=2)
+        if args.out:
+            Path(args.out).write_text(text + "\n", encoding="utf-8")
+            print(args.out)
+        else:
+            print(text)
         return 0
 
     return 2

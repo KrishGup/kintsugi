@@ -422,7 +422,8 @@ textarea {
 .btn:active:not(:disabled) {
   background: color-mix(in srgb, var(--blue-soft) 70%, var(--pale));
 }
-.btn:disabled {
+.btn:disabled,
+.btn.disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -1112,6 +1113,84 @@ input[type="file"] {
   flex: 1;
 }
 
+/* who is signed in (token / platform sign-in only) */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--rule);
+  min-width: 0;
+}
+.user-name {
+  font-size: 12px;
+  color: var(--ink-2);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .user-chip {
+    padding-left: 8px;
+  }
+  .user-name {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   The gate: sign-in, an unreachable server, the first paint before /api/auth/me answers
+   ========================================================================== */
+
+.gate {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--paper);
+}
+.gate-card {
+  width: min(100%, 400px);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  padding: 26px 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gate-card .brand {
+  margin-bottom: 2px;
+}
+.gate-title {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+.gate-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.gate-card .btn-primary {
+  align-self: flex-start;
+}
+.gate-card form .btn-primary {
+  align-self: stretch;
+  justify-content: center;
+  height: 36px;
+}
+
 .home {
   max-width: 1200px;
   margin: 0 auto;
@@ -1263,11 +1342,17 @@ input[type="file"] {
 }
 .session-meta {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 2px 6px;
   font-size: 11.5px;
   color: var(--ink-3);
   white-space: nowrap;
   overflow: hidden;
+}
+.session-meta > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .session-delete {
   opacity: 0;
@@ -2293,6 +2378,15 @@ input[type="file"] {
   font-family: var(--font-mono);
   font-size: 12px;
 }
+.popover-foot {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
 
 .coupon-choices {
   display: flex;
@@ -2333,6 +2427,10 @@ input[type="file"] {
 .topbar-provider {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+.topbar-provider .user-chip {
+  padding-left: 10px;
 }
 .topbar-progress {
   font-size: 12px;

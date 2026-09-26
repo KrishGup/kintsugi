@@ -1,9 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { fileUrl, kin } from "../api";
+import { archiveUrl, fileUrl, kin } from "../api";
+import { UserChip } from "../auth";
+import { Mark } from "../brand";
 import { useDismiss } from "../hooks";
+import { Download, Play, Stop } from "../icons";
 import { ProviderPill, useLlm } from "../llm";
-import { Mark } from "../pages/Home";
 import { useSession } from "../pages/session-context";
 import { fmtElapsed, useRunProgress } from "../progress";
 import { useToast } from "../toast";
@@ -108,6 +110,7 @@ export default function TopBar() {
 
       <div className="topbar-provider">
         <ProviderPill />
+        <UserChip />
       </div>
 
       <div className="topbar-actions">
@@ -119,7 +122,7 @@ export default function TopBar() {
             aria-expanded={pop === "run"}
             title={s.running ? "A run is in progress" : "Start the designer agent"}
           >
-            <PlayIcon /> Run designer
+            <Play size={11} /> Run designer
           </button>
           {pop === "run" && (
             <div className="popover" role="dialog" aria-label="Run designer">
@@ -166,7 +169,7 @@ export default function TopBar() {
           )}
         </div>
         <button className="btn btn-sm" onClick={s.stopRun} disabled={!s.running} title="Cancel the running designer">
-          <StopIcon /> Stop
+          <Stop size={11} /> Stop
         </button>
         <span className="topbar-sep" />
         <div className="popover-anchor">
@@ -327,24 +330,29 @@ function ExportPopover({ onExport }: { onExport: () => Promise<unknown> }) {
       ) : (
         <div className="small dim">STL / 3MF, customizer-ready .scad, blueprint PDF, print card, spec and session log — zipped.</div>
       )}
+      <div className="popover-foot">
+        <div className="label">Session archive</div>
+        <div className="small dim">
+          The whole session — photos, spec, every iteration, checks, sheets and exports — as one .zip with a manifest. Import it on any
+          Kintsugi from the home page.
+        </div>
+        <a
+          className={`btn btn-sm${s.running ? " disabled" : ""}`}
+          href={s.running ? undefined : archiveUrl(s.sid)}
+          download={`kintsugi-session-${s.sid}.zip`}
+          aria-disabled={s.running}
+          title={s.running ? "Wait for the run to finish" : "Download the session archive (.zip)"}
+          onClick={(e) => {
+            if (s.running) e.preventDefault();
+          }}
+        >
+          <Download size={12} /> Download session archive
+        </a>
+      </div>
     </div>
   );
 }
 
-function PlayIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M6 4l14 8-14 8z" />
-    </svg>
-  );
-}
-function StopIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-      <rect x="5" y="5" width="14" height="14" rx="1" />
-    </svg>
-  );
-}
 function CouponIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

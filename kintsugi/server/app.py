@@ -5,18 +5,21 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import shutil
 import time
+import zipfile
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from kintsugi import REPO_DIR, TEMPLATES_DIR, __version__
+from kintsugi import ENV_FILE, REPO_DIR, TEMPLATES_DIR, __version__
 from kintsugi.agent.export import export_bundle
 from kintsugi.agent.llm import DEFAULT_MODELS, get_llm
 from kintsugi.agent.pipeline import run_iteration
@@ -24,20 +27,34 @@ from kintsugi.scad.compile import compile_scad, openscad_version
 from kintsugi.scad.customizer import (bind_params, current_values, customizer_model, parse_customizer, parse_header_bindings,
                                       presets_from_openscad, presets_to_openscad, set_param_values)
 from kintsugi.scad.preview import DRAFT_FN, ENGINE
+from kintsugi.server import auth
+from kintsugi.session.archive import ArchiveError, export_archive, import_archive, manifest_schema, part_spec_schema
 from kintsugi.session.workspace import DEFAULT_SESSIONS_DIR, Session
 from kintsugi.spec.model import Estimate, PartSpec
 
 app = FastAPI(title="Kintsugi", version=__version__)
+app.middleware("http")(auth.middleware)
 SESSIONS_DIR = Path(os.environ.get("KIN_SESSIONS_DIR", DEFAULT_SESSIONS_DIR)).resolve()
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 RUNS: dict[str, asyncio.Task] = {}
+MAX_IMPORT_MB = int(os.environ.get("KIN_MAX_IMPORT_MB", "500"))
+
+
+def _settings_locked() -> bool:
+    """A deployment sets the key and models itself (Key Vault, app settings); the UI then shows them read-only."""
+    return os.environ.get("KIN_SETTINGS_LOCK", "").lower() in ("1", "true", "yes")
 
 
 def _session(sid: str) -> Session:
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,120}", sid) or sid.startswith("."):
+        raise HTTPException(404, f"session {sid} not found")
     d = SESSIONS_DIR / sid
     if not (d / "session.json").exists():
         raise HTTPException(404, f"session {sid} not found")
-    return Session.open(d)
+    s = Session.open(d)
+    if not auth.can_see(s.meta):
+        raise HTTPException(404, f"session {sid} not found")
+    return s
 
 
 def _readiness(spec: PartSpec) -> dict[str, Any]:
@@ -64,7 +81,38 @@ def _safe_path(session: Session, rel: str) -> Path:
 @app.get("/api/health")
 def health():
     llm = get_llm()
-    return {"ok": True, "version": __version__, "openscad": openscad_version(), "sessions_dir": str(SESSIONS_DIR), "llm": llm.status()}
+    return {"ok": True, "version": __version__, "openscad": openscad_version(), "sessions_dir": str(SESSIONS_DIR), "llm": llm.status(),
+            "auth": auth.mode(), "settings_locked": _settings_locked()}
+
+
+# ---- who is asking ----------------------------------------------------------------------------------
+
+class LoginReq(BaseModel):
+    token: str
+
+
+@app.get("/api/auth/me")
+def auth_me(request: Request):
+    return auth.describe(request)
+
+
+@app.post("/api/auth/login")
+def auth_login(body: LoginReq, request: Request):
+    """Token mode: trade the shared access code for a signed cookie. Other modes have nothing to log into here."""
+    if auth.mode() != "token":
+        raise HTTPException(400, f"sign-in is handled by the platform in {auth.mode()} mode")
+    if not auth.check_token(body.token):
+        raise HTTPException(401, "that access code is not right")
+    resp = JSONResponse({"ok": True, "user": auth.SHARED.to_dict()})
+    resp.set_cookie(auth.COOKIE, auth.cookie_value(), max_age=auth.COOKIE_MAX_AGE, httponly=True, samesite="lax", secure=auth.secure_cookie(request), path="/")
+    return resp
+
+
+@app.post("/api/auth/logout")
+def auth_logout():
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(auth.COOKIE, path="/")
+    return resp
 
 
 class Settings(BaseModel):
@@ -82,7 +130,8 @@ def get_settings():
     llm = get_llm()
     key = os.environ.get("OPENAI_API_KEY", "")
     return {"llm": llm.status(), "openai_key_masked": (key[:7] + "…" + key[-4:]) if len(key) > 12 else ("set" if key else ""),
-            "defaults": DEFAULT_MODELS, "providers": ["openai", "agent", "fake"]}
+            "defaults": DEFAULT_MODELS, "providers": ["openai", "agent", "fake"], "locked": _settings_locked(),
+            "env_file": str(ENV_FILE)}
 
 
 async def _probe_openai(model: str) -> dict[str, Any]:
@@ -114,6 +163,10 @@ async def test_settings():
 
 @app.post("/api/settings")
 async def set_settings(body: Settings):
+    if _settings_locked():
+        raise HTTPException(403, "model settings are managed by the server on this deployment (KIN_SETTINGS_LOCK)")
+    if auth.mode() == "easyauth" and not auth.current_user().admin:
+        raise HTTPException(403, "only an admin (KIN_ADMIN_USERS) can change the model settings on a shared server")
     changed = {}
     if body.openai_api_key is not None and body.openai_api_key.strip():
         os.environ["OPENAI_API_KEY"] = body.openai_api_key.strip()
@@ -129,7 +182,8 @@ async def set_settings(body: Settings):
             os.environ[k] = v
             changed[k] = v
     if body.persist and changed:
-        env_path = Path(".env")
+        env_path = ENV_FILE
+        env_path.parent.mkdir(parents=True, exist_ok=True)
         lines = env_path.read_text().splitlines() if env_path.exists() else []
         for k, v in changed.items():
             val = os.environ[k]
@@ -272,7 +326,7 @@ def answer_questions(sid: str, body: AnswersReq):
 
 @app.get("/api/sessions")
 def list_sessions():
-    return Session.list_all(SESSIONS_DIR)
+    return [m for m in Session.list_all(SESSIONS_DIR) if auth.can_see(m)]
 
 
 @app.post("/api/sessions")
@@ -282,11 +336,48 @@ def create_session(body: NewSession):
     if not spec.part.name or spec.part.name == "part":
         spec.part.name = name.replace(" ", "_")
     s = Session.create(name, spec, sessions_dir=SESSIONS_DIR)
-    s.update_meta(stage="intake" if body.intake else "spec")
+    s.update_meta(stage="intake" if body.intake else "spec", **auth.owner_fields())
     if body.scad:
         s.scad_path.write_text(body.scad, encoding="utf-8")
         s.commit("initial part.scad")
     return session_detail(s.id)
+
+
+# ---- portable state: one zip per session, in and out --------------------------------------------------
+
+@app.get("/api/sessions/{sid}/archive")
+def session_archive(sid: str):
+    """Everything the session is (spec, part, iterations, photos, sheets, presets, timeline) as one zip with a manifest."""
+    s = _session(sid)
+    if sid in RUNS and not RUNS[sid].done():
+        raise HTTPException(409, "the designer is running; export the archive when the run ends")
+    out = export_archive(s)
+    name = f"kintsugi-session-{sid}.zip"
+    return FileResponse(out, media_type="application/zip", filename=name, background=BackgroundTask(lambda: out.unlink(missing_ok=True)))
+
+
+@app.post("/api/sessions/import", status_code=201)
+async def session_import(file: UploadFile = File(...)):
+    data = await file.read()
+    if len(data) > MAX_IMPORT_MB << 20:
+        raise HTTPException(413, f"archive is larger than {MAX_IMPORT_MB} MB")
+    try:
+        s = import_archive(data, SESSIONS_DIR, max_bytes=MAX_IMPORT_MB << 20, owner=auth.owner_fields())
+    except ArchiveError as e:
+        raise HTTPException(422, str(e))
+    except zipfile.BadZipFile:
+        raise HTTPException(422, "that file is not a zip archive")
+    return session_detail(s.id)
+
+
+@app.get("/api/schemas/{name}")
+def schema(name: str):
+    """The JSON Schemas of what travels: the archive manifest and the Part Spec (spec.yaml)."""
+    if name in ("session-archive", "session-archive.schema.json"):
+        return manifest_schema()
+    if name in ("part-spec", "part-spec.schema.json"):
+        return part_spec_schema()
+    raise HTTPException(404, "schemas: session-archive, part-spec")
 
 
 @app.get("/api/sessions/{sid}")

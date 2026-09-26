@@ -70,6 +70,21 @@ kin serve                                    # then http://localhost:8000 → Se
 
 `xvfb` is not needed on Windows or macOS. Git Bash is picked up automatically for the designer's shell tool when present; otherwise it uses the platform shell.
 
+## Deploy it
+
+One container holds the API, the built UI and the OpenSCAD toolchain; everything it writes goes under `/data`.
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d --build      # any Docker host; /data on a volume
+deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth easyauth --admin you@example.com   # Azure, end to end
+```
+
+**Azure** — `docs/DEPLOY-AZURE.md` is the full stack (Container Apps, Azure Files, Container Registry, Key Vault, Log Analytics, Easy Auth) with every environment variable per piece, the Bicep in `deploy/azure/`, a GitHub Actions workflow that ships each push, an App Service budget variant, costs and troubleshooting.
+
+**Sign-in** — `KIN_AUTH=none` (a personal box), `token` (one shared access code, asked once, signed cookie), or `easyauth` (Microsoft / GitHub / Google through the platform; sessions belong to the person who made them, `KIN_ADMIN_USERS` see all). `KIN_SETTINGS_LOCK=1` makes the Settings dialog read-only so a deployment's key never lands in a file.
+
+**Portable state** — every session exports as one `.zip` (Export → *Download session archive*, `GET /api/sessions/{id}/archive`, `kin archive`) with a manifest, and imports on any other Kintsugi (Home → *Import*, `POST /api/sessions/import`, `kin import`). The schemas of the manifest and of `spec.yaml` are in `docs/schemas/` and served at `/api/schemas/{session-archive,part-spec}`.
+
 ## The flow
 
 1. **Intake** — photos + one sentence → object, broken part, its interfaces, a draft spec; recognised standard sizes become first estimates.
@@ -116,7 +131,7 @@ Every iteration is a git commit in the session directory. The UI panels are view
 
 ## Evaluation
 
-- `tests/` — 60 tests that need no model: toolchain accuracy on known geometry (circle fits within 0.05 mm, wall thickness, interference volumes within 3%), measurement accuracy on synthetic photos, every template against its spec, the session pipeline and export, the agent runtime with a scripted provider, the OpenAI wire format through the real SDK against a mock transport, and the web API end to end.
+- `tests/` — 108 tests that need no model: toolchain accuracy on known geometry (circle fits within 0.05 mm, wall thickness, interference volumes within 3%), measurement accuracy on synthetic photos, every template against its spec, the session pipeline and export, the agent runtime with a scripted provider, the OpenAI wire format through the real SDK against a mock transport, the web API end to end, and the deployment surfaces (the three auth modes, per-user scoping, the settings lock, archive export/import with zip-slip refusal).
 - `eval/ab_eval.py` — the A/B study: five human‑designed OpenSCAD repair parts from public repositories, a spec written from each one's own mating dimensions, the designer builds from the spec alone, both measured by the same checker and judged blind. Report in `eval/reports/`.
 
 ## Repository layout
@@ -128,7 +143,8 @@ eval/                specs, references manifest, A/B runner, reports
 tests/               pytest suite (no model required)
 web/                 React + Vite UI (built into web/dist, served by the API)
 vendor/BOSL2/        the BOSL2 library (BSD‑2), on OPENSCADPATH for every compile
-docs/                design document
+deploy/              Dockerfile companions: docker-compose, Azure Bicep + scripts
+docs/                design document, DEPLOY-AZURE.md, the JSON Schemas, submission material
 ```
 
 ## Disclosure

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, kin, sheetPdfUrl } from "../api";
+import { UserChip, useAuth } from "../auth";
+import { Mark } from "../brand";
 import { useBusy } from "../hooks";
-import { Check, ChevronDown, ChevronRight, Close, Dot } from "../icons";
+import { Camera, Check, ChevronDown, ChevronRight, Close, Dot, Download, Gear, Plus, Upload } from "../icons";
 import { ProviderPill, providerLabel, useLlm } from "../llm";
 import { useToast } from "../toast";
 import type { ExampleSpec, IntakeResult, SessionMeta } from "../types";
@@ -14,6 +16,7 @@ export default function Home() {
   const nav = useNavigate();
   const { toast, error } = useToast();
   const llm = useLlm();
+  const auth = useAuth();
   const [sessions, setSessions] = useState<SessionMeta[] | null>(null);
   const [examples, setExamples] = useState<ExampleSpec[]>([]);
   const [mode, setMode] = useState<Mode>("photos");
@@ -38,6 +41,10 @@ export default function Home() {
   const [over, setOver] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  // session archives (.zip) coming back in
+  const archiveInput = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -164,6 +171,22 @@ export default function Home() {
     }
   };
 
+  const onImport = async (file: File | null | undefined) => {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const d = await kin.importSession(file);
+      toast(`Imported “${d.meta.name}”`, "pass");
+      nav(`/s/${d.meta.id}`);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 413) toast("That archive is larger than this server accepts", "fail");
+      else if (e instanceof ApiError && e.status === 422) error(e, "Not a Kintsugi session archive");
+      else error(e, "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const sorted = useMemo(() => (sessions ? [...sessions].sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0)) : []), [sessions]);
 
   return (
@@ -179,11 +202,12 @@ export default function Home() {
         <span className="header-spacer" />
         <ProviderPill />
         <a className="btn btn-sm btn-icon-sm" href={sheetPdfUrl} target="_blank" rel="noreferrer" title="Printable ArUco calibration sheet (letter, 100 mm bar)" aria-label="Calibration sheet (PDF)">
-          <DownloadIcon /> <span className="btn-text">Calibration sheet</span>
+          <Download size={13} /> <span className="btn-text">Calibration sheet</span>
         </a>
         <button className="btn btn-sm btn-icon-sm" onClick={llm.openSettings} title="Model provider, API key, models" aria-label="Settings">
-          <GearIcon /> <span className="btn-text">Settings</span>
+          <Gear size={13} /> <span className="btn-text">Settings</span>
         </button>
+        <UserChip />
       </header>
 
       <main className="home">
@@ -209,12 +233,21 @@ export default function Home() {
         </ol>
         {llm.status && !llm.ready && (
           <div className="banner banner-warn mb">
-            <span>
-              <b>No model yet.</b> Add your OpenAI API key to design parts, or switch to demo mode for a scripted walkthrough.
-            </span>
-            <button className="btn btn-sm btn-primary" onClick={llm.openSettings}>
-              Open settings
-            </button>
+            {llm.locked ? (
+              <span>
+                <b>No model configured on this server.</b> Its settings are managed by the deployment — ask whoever runs it to set the OpenAI key
+                (or demo mode).
+              </span>
+            ) : (
+              <span>
+                <b>No model yet.</b> Add your OpenAI API key to design parts, or switch to demo mode for a scripted walkthrough.
+              </span>
+            )}
+            {!llm.locked && (
+              <button className="btn btn-sm btn-primary" onClick={llm.openSettings}>
+                Open settings
+              </button>
+            )}
           </div>
         )}
 
@@ -317,7 +350,7 @@ export default function Home() {
                   </label>
                   <div className="row">
                     <button className="btn btn-primary" onClick={onAnalyze} disabled={intakeStep > 0 && intakeStep < 4}>
-                      {intakeStep > 0 && intakeStep < 4 ? <Spinner size={12} /> : <CameraIcon />}
+                      {intakeStep > 0 && intakeStep < 4 ? <Spinner size={12} /> : <Camera size={13} />}
                       Analyze photos
                     </button>
                     {intakeStep > 0 && (
@@ -378,7 +411,7 @@ export default function Home() {
                   )}
                   <div className="row">
                     <button className="btn btn-primary" onClick={onCreate} disabled={creating}>
-                      {creating ? <Spinner size={12} /> : <PlusIcon />}
+                      {creating ? <Spinner size={12} /> : <Plus size={13} />}
                       Create session
                     </button>
                     <span className="field-hint">You can run the designer, edit params or code from the workspace.</span>
@@ -400,6 +433,25 @@ export default function Home() {
             <div className="panel-head">
               <h2>Your parts</h2>
               <span className="grow" />
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => archiveInput.current?.click()}
+                disabled={importing}
+                title="Bring back a session archive (.zip) exported from any Kintsugi"
+              >
+                {importing ? <Spinner size={11} /> : <Upload size={12} />} Import
+              </button>
+              <input
+                ref={archiveInput}
+                type="file"
+                accept=".zip,application/zip"
+                hidden
+                aria-label="Session archive (.zip)"
+                onChange={(e) => {
+                  onImport(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
               <button className="btn btn-ghost btn-sm" onClick={loadSessions} title="Refresh the list">
                 Refresh
               </button>
@@ -410,13 +462,13 @@ export default function Home() {
               </div>
             ) : sorted.length === 0 ? (
               <div className="panel-body">
-                <Empty title="No parts yet" icon={<CameraIcon size={30} />}>
+                <Empty title="No parts yet" icon={<Camera size={30} stroke={1.4} />}>
                   Print the{" "}
                   <a href={sheetPdfUrl} target="_blank" rel="noreferrer">
                     calibration sheet
                   </a>
                   , put the broken object on it, take two or three photos and describe what broke. Each part becomes a session with its photos,
-                  spec, iterations and exports.
+                  spec, iterations and exports — or import an archive from another Kintsugi.
                 </Empty>
               </div>
             ) : (
@@ -431,6 +483,18 @@ export default function Home() {
                         <span className="num">{s.iteration ? `${s.iteration} iteration${s.iteration === 1 ? "" : "s"}` : "no iterations yet"}</span>
                         <span aria-hidden="true">·</span>
                         <span>{relTime(s.updated || s.created)}</span>
+                        {s.imported_from && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span title={`imported from ${s.imported_from.id || "an archive"}${s.imported_from.app_version ? ` (Kintsugi ${s.imported_from.app_version})` : ""}`}>imported</span>
+                          </>
+                        )}
+                        {auth.info?.mode === "easyauth" && s.owner && s.owner !== auth.info.user?.id && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span title={s.owner}>{s.owner_name || s.owner}</span>
+                          </>
+                        )}
                       </span>
                     </div>
                     <Pill tone={statusTone(s.status)} dot={s.status === "running"}>
@@ -542,47 +606,5 @@ function IntakeCard({ data }: { data: IntakeResult }) {
         </div>
       )}
     </div>
-  );
-}
-
-export function Mark() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round">
-      <path d="M4 19 10 5l4 8 6-9" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
-function CameraIcon({ size = 13 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={size > 20 ? 1.4 : 2} strokeLinejoin="round">
-      <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
-      <circle cx="12" cy="13" r="3.2" />
-    </svg>
-  );
-}
-
-function GearIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-    </svg>
   );
 }

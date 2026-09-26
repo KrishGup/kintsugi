@@ -5,3 +5,12 @@ eval/references/src
 web/node_modules
 web/dist
 **/__pycache__
+docs
+deploy
+tests
+scripts
+.github
+.impeccable
+.agent
+web/tsconfig.tsbuildinfo
+*.pptx

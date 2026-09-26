@@ -12,9 +12,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from kintsugi import DATA_DIR
 from kintsugi.spec.model import PartSpec
 
-DEFAULT_SESSIONS_DIR = Path(os.environ.get("KIN_SESSIONS_DIR", "sessions")).resolve()
+DEFAULT_SESSIONS_DIR = Path(os.environ.get("KIN_SESSIONS_DIR") or (DATA_DIR / "sessions")).resolve()
+
+
+def git_enabled() -> bool:
+    """Per-iteration git history is on by default; KIN_SESSION_GIT=0 turns it off (slow network volumes)."""
+    return os.environ.get("KIN_SESSION_GIT", "1").lower() not in ("0", "false", "no") and shutil.which("git") is not None
 
 
 @dataclass
@@ -34,9 +40,10 @@ class Session:
         s = cls(d)
         if spec is not None:
             spec.save(d / "spec.yaml")
-        s._git(["init", "-q"])
-        s._git(["config", "user.email", "kintsugi@local"])
-        s._git(["config", "user.name", "kintsugi"])
+        if git_enabled():
+            s._git(["init", "-q"])
+            s._git(["config", "user.email", "kintsugi@local"])
+            s._git(["config", "user.name", "kintsugi"])
         (d / ".gitignore").write_text("*.stl\n*.3mf\n__pycache__/\n")
         s.commit("session created")
         return s
@@ -108,10 +115,11 @@ class Session:
 
     # ---- git -------------------------------------------------------------------------------------
     def _git(self, args: list[str]) -> subprocess.CompletedProcess:
-        return subprocess.run(["git", "-C", str(self.dir)] + args, capture_output=True, text=True)
+        # safe.directory: a session on a mounted volume is often owned by another uid; git would refuse it otherwise
+        return subprocess.run(["git", "-c", "safe.directory=*", "-C", str(self.dir)] + args, capture_output=True, text=True)
 
     def commit(self, message: str) -> str | None:
-        if shutil.which("git") is None:
+        if not git_enabled() or not (self.dir / ".git").exists():
             return None
         self._git(["add", "-A"])
         r = self._git(["commit", "-q", "-m", message, "--allow-empty"])
@@ -121,6 +129,8 @@ class Session:
         return h.stdout.strip() or None
 
     def history(self) -> list[dict[str, str]]:
+        if not git_enabled() or not (self.dir / ".git").exists():
+            return []
         r = self._git(["log", "--pretty=format:%h|%s|%ct"])
         out = []
         for line in r.stdout.splitlines():

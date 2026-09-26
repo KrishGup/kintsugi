@@ -11,11 +11,13 @@ interface LlmApi {
   version: string | null;
   openscad: string | null | undefined;
   ready: boolean;
+  /** the deployment sets provider, key and models; the Settings dialog is read-only */
+  locked: boolean;
   refresh: () => Promise<void>;
   openSettings: () => void;
 }
 
-const Ctx = createContext<LlmApi>({ status: null, version: null, openscad: undefined, ready: false, refresh: async () => {}, openSettings: () => {} });
+const Ctx = createContext<LlmApi>({ status: null, version: null, openscad: undefined, ready: false, locked: false, refresh: async () => {}, openSettings: () => {} });
 
 export function useLlm(): LlmApi {
   return useContext(Ctx);
@@ -26,6 +28,7 @@ export function LlmProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<LlmStatus | null>(null);
   const [version, setVersion] = useState<string | null>(null);
   const [openscad, setOpenscad] = useState<string | null | undefined>(undefined);
+  const [locked, setLocked] = useState(false);
   const [open, setOpen] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -34,6 +37,7 @@ export function LlmProvider({ children }: { children: ReactNode }) {
       setStatus(h.llm || null);
       setVersion(h.version);
       setOpenscad(h.openscad);
+      setLocked(!!h.settings_locked);
     } catch {
       /* the header shows "server unreachable" through a null status */
     }
@@ -44,8 +48,8 @@ export function LlmProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const value = useMemo<LlmApi>(
-    () => ({ status, version, openscad, ready: !!status?.ready, refresh, openSettings: () => setOpen(true) }),
-    [status, version, openscad, refresh],
+    () => ({ status, version, openscad, locked, ready: !!status?.ready, refresh, openSettings: () => setOpen(true) }),
+    [status, version, openscad, locked, refresh],
   );
 
   return (
@@ -80,8 +84,8 @@ export function ProviderPill() {
       </button>
     );
   const tone = !s.ready ? "warn" : s.provider === "fake" ? "neutral" : "pass";
-  const text = !s.ready ? "Add OpenAI API key" : s.provider === "fake" ? "Demo mode" : `${providerLabel(s.provider)} · ${s.models.designer || ""}`;
-  const short = !s.ready ? "No key" : s.provider === "fake" ? "Demo" : providerLabel(s.provider);
+  const text = !s.ready ? (llm.locked ? "No model configured" : "Add OpenAI API key") : s.provider === "fake" ? "Demo mode" : `${providerLabel(s.provider)} · ${s.models.designer || ""}`;
+  const short = !s.ready ? (llm.locked ? "No model" : "No key") : s.provider === "fake" ? "Demo" : providerLabel(s.provider);
   return (
     <button className={`pill pill-${tone} pill-btn`} onClick={llm.openSettings} title={`${s.reason}\nClick to change model settings`}>
       <span className="pill-dot" />
@@ -168,6 +172,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   const hasKey = !!info?.openai_key_masked;
   const openaiReady = provider !== "openai" || hasKey || key.trim().length > 0;
+  const locked = !!info?.locked;
 
   return (
     <div className="modal-back" role="presentation">
@@ -193,6 +198,21 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               <span className="small dim">{info.llm.reason}</span>
             </div>
 
+            {locked && (
+              <div className="banner banner-blue">
+                <span>
+                  <b>Managed by the server.</b> The provider, key and models are set in the deployment's configuration
+                  {info.llm.provider === "openai" && info.llm.models.designer ? (
+                    <>
+                      {" "}
+                      (<span className="num">{info.llm.models.designer}</span>)
+                    </>
+                  ) : null}
+                  ; nothing here can be changed from the browser.
+                </span>
+              </div>
+            )}
+
             <div className="field">
               <span className="field-label">Provider</span>
               <div className="seg" role="radiogroup" aria-label="Provider">
@@ -201,7 +221,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   ["fake", "Demo mode"],
                   ...(info.llm.provider === "agent" || provider === "agent" ? [["agent", "Agent"]] : []),
                 ].map(([v, l]) => (
-                  <button key={v} role="radio" aria-checked={provider === v} className={`seg-btn${provider === v ? " active" : ""}`} onClick={() => setProvider(v)}>
+                  <button
+                    key={v}
+                    role="radio"
+                    aria-checked={provider === v}
+                    className={`seg-btn${provider === v ? " active" : ""}`}
+                    onClick={() => setProvider(v)}
+                    disabled={locked}
+                  >
                     {l}
                   </button>
                 ))}
@@ -215,7 +242,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               </span>
             </div>
 
-            {provider === "openai" && (
+            {provider === "openai" && !locked && (
               <>
                 <label className="field">
                   <span className="field-label">
@@ -270,21 +297,43 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               </>
             )}
 
-            <label className="check">
-              <input type="checkbox" checked={persist} onChange={(e) => setPersist(e.target.checked)} />
-              <span>
-                Remember on this server (<code>.env</code>)
-              </span>
-            </label>
+            {provider === "openai" && locked && (
+              <div className="row-wrap">
+                <span className="label">Key</span>
+                <Pill tone={hasKey ? "pass" : "fail"}>{hasKey ? info.openai_key_masked : "none configured"}</Pill>
+                <span className="label">Models</span>
+                <span className="small num">
+                  {info.llm.models.designer} · {info.llm.models.critic} · {info.llm.models.vision}
+                </span>
+                {info.llm.effort && <Pill tone="neutral">effort {info.llm.effort}</Pill>}
+              </div>
+            )}
+
+            {!locked && (
+              <label className="check">
+                <input type="checkbox" checked={persist} onChange={(e) => setPersist(e.target.checked)} />
+                <span>
+                  Remember on this server (<code>.env</code>)
+                </span>
+              </label>
+            )}
 
             <div className="row">
-              <button className="btn btn-primary" onClick={save} disabled={saving || !openaiReady}>
-                {saving ? <Spinner size={12} /> : null} Save
-              </button>
-              <button className="btn btn-ghost" onClick={onClose}>
-                Cancel
-              </button>
-              {!openaiReady && <span className="small dim">Paste your OpenAI API key to continue.</span>}
+              {locked ? (
+                <button className="btn btn-primary" onClick={onClose}>
+                  Close
+                </button>
+              ) : (
+                <>
+                  <button className="btn btn-primary" onClick={save} disabled={saving || !openaiReady}>
+                    {saving ? <Spinner size={12} /> : null} Save
+                  </button>
+                  <button className="btn btn-ghost" onClick={onClose}>
+                    Cancel
+                  </button>
+                  {!openaiReady && <span className="small dim">Paste your OpenAI API key to continue.</span>}
+                </>
+              )}
             </div>
           </div>
         )}
