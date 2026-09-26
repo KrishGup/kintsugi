@@ -282,6 +282,7 @@ function CaptureStage() {
         if (!v) continue;
         if (r.kind === "measure") body.push({ id: r.id, dim: r.dims[0], kind: "measure", value: Number(v), question: r.title });
         else if (r.kind === "choice") body.push({ id: r.id, dim: r.dims[0] || null, kind: "choice", value: v, question: r.title });
+        else if (r.kind === "text") body.push({ id: r.id, dim: r.dims[0] || null, kind: "text", value: v, question: r.title });
       }
     }
     for (const q of questions) {

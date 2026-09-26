@@ -123,6 +123,9 @@ export function RequestCard({ req, value, onChange }: { req: CaptureRequest; val
           <span className="small dim">mm</span>
         </div>
       )}
+      {req.kind === "text" && (
+        <input className="input" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Your answer (optional)" style={{ marginTop: 6 }} />
+      )}
       {req.kind === "choice" && req.options && req.options.length > 0 && (
         <div className="choices">
           {req.options.map((o) => (

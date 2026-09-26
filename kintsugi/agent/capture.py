@@ -321,7 +321,13 @@ async def run_capture_round(session: Session, llm=None, *, measure: bool = True)
         return result
     missing = E.missing(spec)
     plan = E.plan_round(spec, missing, round_no=round_no)
+    if round_no == 1:
+        plan += intake_questions_as_requests(intake, plan)
     reqs, note = await refine_round_with_model(session, spec, intake, plan, missing, round_no, llm)
+    if round_no == 1:
+        # the agent may drop design-intent questions; keep the ones it did not carry over
+        have = {r.id for r in reqs}
+        reqs += [r for r in intake_questions_as_requests(intake, plan) if r.id not in have and r.kind in ("choice", "text")]
     rnd = {"n": round_no, "t": time.time(), "requests": [r.to_dict() for r in reqs], "note": note,
            "missing": [m.to_dict() for m in missing], "duration_s": round(time.time() - t0, 1)}
     rounds.append(rnd)
@@ -332,6 +338,29 @@ async def run_capture_round(session: Session, llm=None, *, measure: bool = True)
     session.emit("capture_round", n=round_no, requests=rnd["requests"], note=note, missing=[m.dim for m in missing])
     result["round"] = rnd
     return result
+
+
+def intake_questions_as_requests(intake: dict[str, Any], plan: list[E.Request]) -> list[E.Request]:
+    """Intake's own questions that the algorithmic plan does not already cover (design-intent choices, free text)."""
+    covered = {d for r in plan for d in r.dims}
+    out: list[E.Request] = []
+    for i, q in enumerate(intake.get("questions") or []):
+        if not isinstance(q, dict) or not q.get("text"):
+            continue
+        kind = str(q.get("kind") or "text")
+        dim = q.get("dim")
+        if dim and dim in covered:
+            continue  # a photo or ruler request already targets it
+        rid = re.sub(r"[^a-zA-Z0-9_]+", "_", str(q.get("id") or f"q{i + 1}"))
+        if kind == "number" and dim:
+            out.append(E.Request(rid, "measure", [str(dim)], str(q["text"]), "Read it with a ruler or caliper, in mm.", "the intake engineer asked for it", 1))
+        elif kind == "choice":
+            r = E.Request(rid, "choice", [str(dim)] if dim else [], str(q["text"]), "", "shapes the design", 1)
+            r.__dict__["options"] = [str(o) for o in (q.get("options") or [])]
+            out.append(r)
+        else:
+            out.append(E.Request(rid, "text", [str(dim)] if dim else [], str(q["text"]), "", "shapes the design", 2))
+    return out
 
 
 def apply_measure_answers(session: Session, spec: PartSpec, answers: list[dict[str, Any]]) -> list[dict[str, Any]]:

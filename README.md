@@ -22,8 +22,9 @@ Built for OFFGRID (Hack47), September–October 2026.
 | `kintsugi/scad` | headless OpenSCAD compile with structured errors/echoes; customizer annotation parser (sliders) |
 | `kintsugi/checks` | mesh measurements: sections, robust circle fits, hole patterns, notch (clip) fits, wall thickness by ray casting, overhang/bed/orientation scoring, boolean interference against context proxies |
 | `kintsugi/render` | software z‑buffer renderer for 7 orthographic/iso views with hidden lines, hatched sections, mesh‑derived dimension lines, composed blueprint sheets |
-| `kintsugi/spec` | the Part Spec (pydantic): interfaces, requirements, context proxies, print settings, evidence fusion and confirmation gates |
-| `kintsugi/agent` | the designer (a GPT‑6 tool loop on the OpenAI Responses API, sandboxed file tools + `iterate`/`finish`/`ask_user`), the code‑blind critic, photo intake, iteration pipeline with budget/oscillation/strategy‑switch policy, export bundle; a scripted `fake` provider runs the whole loop without a key |
+| `kintsugi/spec` | the Part Spec (pydantic): interfaces, requirements, context proxies, print settings, evidence fusion and confirmation gates; the evidence graph (dimensions ↔ photos ↔ estimates ↔ questions ↔ checks) that decides what is missing and plans the cheapest next round; a knowledge base of standard interfaces (bottle finishes, pipe ODs, shafts, fasteners, batteries, rails…) that seeds estimates from the object's identity |
+| `kintsugi/graph` | the graph runtime: typed dataflow graphs whose nodes are algorithms, model calls or people; event‑driven scheduling with parallel branches, guards, ordering dependencies, human nodes that suspend a run, per‑run traces with the critical path; the iteration and export pipelines and the session flow are defined here |
+| `kintsugi/agent` | the designer (a GPT‑6 tool loop on the OpenAI Responses API, sandboxed file tools + `iterate`/`finish`/`ask_user` with photo requests), the code‑blind critic, photo intake, the capture loop (automatic sheet measurement, evidence‑driven follow‑up rounds written by a capture agent), iteration policy (budget/oscillation/strategy switch), export bundle; a scripted `fake` provider runs the whole loop without a key |
 | `kintsugi/measure` | printable ArUco calibration sheet, marker detection + homography rectification (sub‑0.1 mm on synthetic photos to 35° tilt), circle/outline/rectangle measurement, coin/card reference scale, capture grading, synthetic photo generator |
 | `kintsugi/server` + `web/` | FastAPI API with SSE event stream; React + three.js workspace: a six‑stage guide (intake → capture → confirm → design → review → print), chat/timeline, 3D viewer, blueprint tabs, checks table, parameter sliders, code pane, spec editor, photos/measure, model settings |
 | `templates/` | seven vetted parametric templates (ring‑and‑loop handle, L bracket, snap clip, D‑shaft knob, hook, spacer/gasket, threaded cap), each with a spec it passes |
@@ -70,14 +71,25 @@ kin serve                                    # then http://localhost:8000 → Se
 
 ## The flow
 
-1. **Intake** — photos + one sentence → object, broken part, its interfaces, a draft spec, a capture plan, batched questions.
-2. **Guided capture** — a shot list; each upload is graded (sharpness, exposure, markers, tilt) with a specific retake instruction.
-3. **Measurement** — rectify to a metric top‑down image of the sheet plane; fit circles and outlines; attach estimates to spec dimensions; ask for a ruler/caliper confirmation when confidence is low or sources disagree.
+1. **Intake** — photos + one sentence → object, broken part, its interfaces, a draft spec; recognised standard sizes become first estimates.
+2. **Capture rounds** — the evidence graph lists what is still a guess; the capture agent writes the round: one photo per mating feature on the calibration sheet, a ruler reading for each height, a coupon when only the fit is in doubt. Uploads are graded and measured automatically; the next round asks only for what is still missing. The designer can ask for a photo the same way mid‑run.
+3. **Measurement** — rectify to a metric top‑down image of the sheet plane; fit circles and outlines; attach estimates to spec dimensions with a confidence; independent sources that agree confirm a dimension, sources that disagree trigger a ruler request.
 4. **Spec review** — the editable spec card; interface dimensions must be *confirmed* before the export loses its "fit unconfirmed" label.
 5. **Design loop** — write `part.scad` → compile → checks → blueprint → (critic) → revise, with an iteration budget, oscillation detection and a strategy switch (CSG → template → profile).
 6. **Review** — 3D viewer, sheets, checks, sliders, code, iteration timeline with branching.
 7. **Fit coupon** — the mating feature only, in three clearances; the result locks the clearance.
 8. **Export** — oriented STL and 3MF, customizer‑ready `.scad`, blueprint PDF, print card, spec, session log.
+
+## Graph engineering
+
+Every stage runs as a typed dataflow graph (`kintsugi/graph`): a node declares the state keys it needs and the keys it produces, edges follow from that, and the runtime starts a node the moment its inputs exist. Independent nodes run in parallel (blocking algorithms in threads, model calls as coroutines), `after=` gives ordering without data, guards skip nodes, optional nodes may fail without stopping the run, and a **human node** suspends the run with a request — the graph resumes when the answer is in the state. Each run leaves a trace with per‑node timing, the critical path and the serial‑vs‑wall time, which the UI draws live in the *Graph* tab.
+
+- **Iteration**: `params ∥ compile → mesh → checks ∥ views ∥ context → sections ∥ assembly → compose` — the sheets no longer wait for the checks to finish before rendering; ~1.6–1.7× faster per iteration on two cores, more on a desktop.
+- **Intake & capture**: `grade ∥ standards → vision → spec → auto‑measure → evidence → follow‑up → capture (you)`, repeated per round.
+- **Export**: coupon compile ∥ 3MF ∥ blueprint PDF ∥ print card ∥ session log → zip.
+- **Session flow**: the stages as a state graph with guarded transitions (`kintsugi/graph/flow.py`); the stepper and the "open moves" come from it, and the loops (another capture round, a designer's photo request, a coupon result) are explicit edges.
+
+The **evidence graph** (`kintsugi/spec/evidence.py`) is the data structure the capture loop reasons over: dimension nodes with status and confidence, estimate nodes weighted by source trust, photo/question/standard/request nodes that target dimensions, check nodes that verify them on the mesh. `missing()` ranks what still needs evidence; `plan_round()` batches it into the fewest user actions; `readiness()` decides when designing is safe. The *Evidence* tab draws it.
 
 ## How the agent runs
 

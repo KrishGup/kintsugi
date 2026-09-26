@@ -133,3 +133,25 @@ def test_event_driven_no_wave_barrier():
     assert tr.status == "done" and tr.wall_s < 0.62, tr.wall_s
     assert tr.nodes["d"].started < tr.nodes["b"].ended
     assert tr.critical_path == ["a", "b"] or tr.critical_path == ["a", "c", "d"]
+
+
+def test_session_flow_graph():
+    from kintsugi.graph.flow import CRITICAL_PATH, derive_stage, describe, open_transitions
+
+    fresh = {"meta": {"status": "new"}, "has_spec": False}
+    assert derive_stage(fresh) == "intake"
+    cap = {"meta": {"status": "intake_done"}, "has_spec": True, "has_intake": True, "ready": False}
+    assert derive_stage(cap) == "capture"
+    assert [t["to"] for t in open_transitions("capture", cap) if t["enabled"]] == ["capture", "spec"]
+    ready = {**cap, "ready": True}
+    assert derive_stage(ready) == "spec"
+    labels = [t["label"] for t in open_transitions("capture", ready) if t["enabled"]]
+    assert "fit dimensions ready" in labels and "another round" not in labels
+    running = {**ready, "running": True, "meta": {"status": "running", "stage": "review"}}
+    assert derive_stage(running) == "design"
+    done = {**ready, "meta": {"status": "done"}, "iterations": True, "has_passing_iteration": True}
+    assert derive_stage(done) == "review" and any(t["to"] == "export" and t["enabled"] for t in open_transitions("review", done))
+    asked = {**ready, "meta": {"status": "waiting_user", "question": {"question": "?", "photos": [{"label": "q1_1", "dims": ["a.b"]}]}}}
+    assert any(t["to"] == "capture" and t["enabled"] for t in open_transitions("design", asked))
+    d = describe("spec", ready)
+    assert d["critical_path"] == CRITICAL_PATH and any(n["current"] for n in d["nodes"]) and all("guard" in e for e in d["edges"])

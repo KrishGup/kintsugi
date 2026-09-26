@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { kin } from "../api";
+import FlowView, { type FlowGraph } from "../components/FlowView";
 import GraphView from "../components/GraphView";
 import { useSession } from "../pages/session-context";
 import type { GraphShape, GraphTrace } from "../types";
@@ -9,7 +10,7 @@ import { Pill } from "../ui";
 export default function PipelineTab() {
   const s = useSession();
   const d = s.detail!;
-  const [data, setData] = useState<{ intake?: GraphTrace; iteration?: GraphTrace; export?: GraphTrace; shapes: Record<string, GraphShape> } | null>(null);
+  const [data, setData] = useState<{ intake?: GraphTrace; iteration?: GraphTrace; export?: GraphTrace; shapes: Record<string, GraphShape>; flow?: FlowGraph } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const iterN = d.meta.iteration ?? 0;
   const exportedAt = d.meta.exported_at ?? 0;
@@ -23,7 +24,7 @@ export default function PipelineTab() {
     return () => {
       alive = false;
     };
-  }, [s.sid, iterN, exportedAt, d.intake?.rounds?.length]);
+  }, [s.sid, iterN, exportedAt, d.intake?.rounds?.length, d.stage, d.meta.status]);
 
   // a live view of the iteration graph while it runs: overlay graph_node events on the static shape
   const live = useMemo(() => {
@@ -60,6 +61,16 @@ export default function PipelineTab() {
         Every stage of Kintsugi is a typed dataflow graph: nodes declare their inputs and outputs, independent nodes run in parallel, people are
         nodes too. Rounded nodes are model calls, pills are you; the blue path is the critical path.
       </div>
+      {data.flow && (
+        <section>
+          <div className="row-wrap mb">
+            <span className="label">Session flow</span>
+            <Pill tone="blue">{String(d.stage)}</Pill>
+            <span className="small dim">open moves: {(d.flow?.transitions || []).filter((t) => t.enabled).map((t) => t.label).join(" · ") || "—"}</span>
+          </div>
+          <FlowView flow={{ ...data.flow, stage: d.stage }} />
+        </section>
+      )}
       <section>
         <div className="row-wrap mb">
           <span className="label">Iteration pipeline</span>

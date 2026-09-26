@@ -243,6 +243,7 @@ export interface SessionDetail {
   stage: Stage | string;
   llm?: LlmStatus;
   readiness?: Readiness;
+  flow?: { stage: string; transitions: Array<{ to: string; label: string; enabled: boolean; guard: string }> };
 }
 
 export interface CaptureRequest {

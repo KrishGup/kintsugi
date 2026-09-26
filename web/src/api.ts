@@ -102,7 +102,7 @@ export const kin = {
     api.post<{ evidence: EvidenceGraph; applied: unknown[]; round: CaptureRound | null; ready: boolean; readiness: Readiness; note?: string }>(`${S(sid)}/followup`),
   evidence: (sid: string) => api.get<EvidenceGraph>(`${S(sid)}/evidence`),
   graphs: (sid: string, iteration?: number) =>
-    api.get<{ intake?: GraphTrace; iteration?: GraphTrace; export?: GraphTrace; shapes: Record<string, GraphShape> }>(
+    api.get<{ intake?: GraphTrace; iteration?: GraphTrace; export?: GraphTrace; shapes: Record<string, GraphShape>; flow?: import("./components/FlowView").FlowGraph }>(
       `${S(sid)}/graphs${iteration ? `?iteration=${iteration}` : ""}`,
     ),
   eventsOnce: (sid: string, since = 0) => api.get<{ since: number; next: number; events: KinEvent[] }>(`${S(sid)}/events?once=true&since=${since}`),

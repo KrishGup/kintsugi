@@ -26,6 +26,14 @@
 
 The Timeline tab (left pane) is the full event log; the right pane keeps the engineer's view (checks, params, code, spec, photos).
 
+## The capture loop and the graphs (new)
+
+- After intake the guide shows **Round 1**: photo requests (each with a camera slot; the upload is measured on the calibration sheet and the value attached to the dimension), ruler readings, and choices. "Check what's still missing" saves the readings and asks the capture agent for the next round; when every fit dimension is known well enough the session moves to *Confirm the fit* by itself. "Design anyway" skips ahead (the coupon still confirms the fit later).
+- Mid-design, the designer's `ask_user` can carry `photos` — the question card then has camera slots; the photos are measured and the resume message tells the model the new values.
+- The right pane's **Graph** tab shows the session flow, the live iteration pipeline (nodes light up as they run; the blue path is the critical path; the footer says how much ran in parallel), the intake/capture graph and the export graph. The centre pane's **Evidence** tab draws where every dimension's value comes from.
+- Standards: `kintsugi/spec/standards.py` is a small knowledge base (bottle neck finishes, pipe ODs, shafts, metric fasteners, batteries, extrusions, bearings, bike parts…). Keywords in the sentence or in intake's object description attach a `standard:<id>` estimate (confidence 0.4–0.85, always below a real measurement). Extend it freely; entries are plain data.
+- The runtime is `kintsugi/graph/core.py` (about 300 lines): `Node(name, fn, inputs, outputs, kind, when, optional, after, est_s, ask)`, `Graph(name, nodes).run(state)` → `RunTrace`. Pipelines are in `kintsugi/graph/pipelines.py`, the session flow in `kintsugi/graph/flow.py`. Tests: `tests/test_graph.py`, `tests/test_capture_loop.py`.
+
 ## Model provider
 
 - Default: OpenAI Responses API, `gpt-6-astra` for the designer, critic and intake, reasoning effort `high`. `gpt-6-sol` for the critic/intake is ~5× cheaper and fine on simple parts; set it in Settings → *Models & reasoning effort*.

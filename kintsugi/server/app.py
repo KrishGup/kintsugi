@@ -289,6 +289,13 @@ def session_detail(sid: str):
             critic.append({"file": p.stem, **json.loads(p.read_text())})
         except json.JSONDecodeError:
             pass
+    intake_data = json.loads((s.dir / "intake.json").read_text()) if (s.dir / "intake.json").exists() else None
+    rd = _readiness(spec)
+    from kintsugi.graph.flow import derive_stage, open_transitions
+    flow_state = {"meta": meta, "running": sid in RUNS and not RUNS[sid].done(), "has_intake": intake_data is not None,
+                  "has_spec": bool(spec.interfaces or spec.requirements), "ready": bool(rd.get("ready")), "iterations": bool(hist),
+                  "has_passing_iteration": any(e.get("ok") for e in hist)}
+    stage = derive_stage(flow_state)
     photos = []
     by_photo: dict[str, list[dict[str, Any]]] = {}
     for qual, dim, _ in spec.all_dims():
@@ -307,9 +314,10 @@ def session_detail(sid: str):
         "stl": "part.stl" if s.stl_path.exists() else None, "running": sid in RUNS and not RUNS[sid].done(),
         "export": sorted(p.name for p in (s.dir / "export").iterdir()) if (s.dir / "export").exists() else [],
         "unconfirmed": spec.unconfirmed_interface_dims(),
-        "intake": json.loads((s.dir / "intake.json").read_text()) if (s.dir / "intake.json").exists() else None,
-        "readiness": _readiness(spec),
-        "stage": meta.get("stage") or ("review" if meta.get("status") == "done" else ("design" if hist else "spec")),
+        "intake": intake_data,
+        "readiness": rd,
+        "stage": stage,
+        "flow": {"stage": stage, "transitions": open_transitions(stage, flow_state)},
         "llm": get_llm().status(),
     }
 
@@ -507,8 +515,10 @@ def graphs(sid: str, iteration: int | None = None):
     e = s.dir / "export" / "export_graph.json"
     if e.exists():
         out["export"] = json.loads(e.read_text())
+    from kintsugi.graph.flow import describe as flow_describe
     from kintsugi.graph.pipelines import export_graph, iteration_graph
     out["shapes"] = {"iteration": iteration_graph().describe(), "export": export_graph().describe()}
+    out["flow"] = flow_describe(session_detail(sid)["stage"])
     return out
 
 
