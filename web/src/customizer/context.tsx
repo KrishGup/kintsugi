@@ -165,6 +165,7 @@ export function CustomizerProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [es, dispatch] = useReducer(editReducer, { edits: {}, undo: [], redo: [] });
   const edits = es.edits;
+  const restored = useRef(false);
   const [units, setUnits] = useLocal<UnitSystem>("kin.cz.units", "mm");
   const [quality, setQuality] = useLocal<Quality>("kin.cz.quality", "auto");
   const [fullS, setFullS] = useState<number | null>(null);
@@ -206,13 +207,38 @@ export function CustomizerProvider({ children }: { children: ReactNode }) {
   const verified = useMemo(() => model?.verified?.values || {}, [model]);
   const params = model?.params || [];
 
-  // drop edits that no longer apply once the verified values move (designer iteration, apply, branch)
+  // drop edits that no longer apply once the verified values move (designer iteration, apply, branch); on the first model
+  // of a page load, restore the unapplied edits a reload would otherwise lose (kept per session and verified iteration)
   useEffect(() => {
     if (!model) return;
     const known = new Set(params.map((p) => p.name));
+    if (!restored.current) {
+      restored.current = true;
+      try {
+        const raw = localStorage.getItem(`kin.cz.edits.${sid}`);
+        const saved = raw ? (JSON.parse(raw) as { iteration: number; edits: Record<string, unknown> }) : null;
+        if (saved && saved.iteration === (model.verified?.iteration ?? 0) && saved.edits && Object.keys(saved.edits).length) {
+          const kept: Record<string, unknown> = {};
+          for (const [k, v] of Object.entries(saved.edits)) if (known.has(k) && !same(v, verified[k])) kept[k] = v;
+          if (Object.keys(kept).length) dispatch({ type: "set", edits: kept });
+        }
+      } catch {
+        /* ignore */
+      }
+    }
     dispatch({ type: "prune", keep: (k, v) => known.has(k) && !same(v, verified[k]) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model]);
+
+  useEffect(() => {
+    if (!model) return;
+    try {
+      if (Object.keys(edits).length) localStorage.setItem(`kin.cz.edits.${sid}`, JSON.stringify({ iteration: model.verified?.iteration ?? 0, edits }));
+      else localStorage.removeItem(`kin.cz.edits.${sid}`);
+    } catch {
+      /* ignore */
+    }
+  }, [edits, model, sid]);
 
   const values = useMemo(() => ({ ...verified, ...edits }), [verified, edits]);
   const nChanged = Object.keys(edits).length;
@@ -364,6 +390,9 @@ export function CustomizerProvider({ children }: { children: ReactNode }) {
           }
         } else vals[k] = v;
       }
+      inflight.current?.abort();   // the server compiles the real thing now; a late preview must not overwrite the view
+      seq.current++;
+      window.clearTimeout(timer.current);
       setApplying(true);
       let result: IterationRunResult | null = null;
       await s.runBusy("Applying parameters…", async () => {

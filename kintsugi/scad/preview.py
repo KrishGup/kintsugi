@@ -46,6 +46,15 @@ class PreviewEngine:
     def last(self, sid: str) -> dict[str, Any] | None:
         return self._state(sid).last
 
+    def cancel(self, sid: str) -> None:
+        """Kill whatever preview is compiling for this session (an apply or a code edit is about to compile for real)."""
+        with self._guard:
+            st = self._states.get(sid)
+            if st is not None:
+                st.gen += 1
+                if st.cancel is not None:
+                    st.cancel.set()
+
     def forget(self, sid: str) -> None:
         with self._guard:
             self._states.pop(sid, None)

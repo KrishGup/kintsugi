@@ -32,7 +32,8 @@ def last_passing_iteration(session: Session) -> int | None:
     return n or None
 
 
-def print_card(spec: PartSpec, checks: dict[str, Any] | None, coupon_available: bool) -> str:
+def print_card(spec: PartSpec, checks: dict[str, Any] | None, coupon_available: bool, params: list[dict[str, Any]] | None = None,
+               presets: dict[str, dict[str, Any]] | None = None) -> str:
     p = spec.print
     walls = max(2, math.ceil(p.min_wall / p.nozzle))
     load_bearing = any("load" in r.id.lower() or "carry" in r.text.lower() or "kg" in r.text.lower() for r in spec.requirements)
@@ -68,6 +69,25 @@ def print_card(spec: PartSpec, checks: dict[str, Any] | None, coupon_available: 
                   "Print it flat, try each on the object, and set `clearance` to the one that slides on without force."]
     lines += ["", "## Customizer", "Open `part.scad` in OpenSCAD (Window → Customizer) to adjust any dimension; every user-facing "
               "parameter has a slider. Re-export STL after changes."]
+    shown = [q for q in (params or []) if q.get("name") != "render_target"]
+    if shown:
+        lines += ["", "### Parameters as printed", "", "| parameter | value | spec |", "|---|---|---|"]
+        for q in shown:
+            v = q.get("value")
+            unit = q.get("unit") or ""
+            val = f"{v:g} {unit}".strip() if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v).lower() if isinstance(v, bool) else str(v)
+            b = q.get("binding") or {}
+            spec_col = ""
+            if b:
+                if b.get("target") is not None:
+                    spec_col = f"{b['dim']} = {b['target']:g} ± {b.get('tol') or 0:g} ({b.get('status', 'unknown')})"
+                else:
+                    lim = " ".join(x for x in (f"≥ {b['min']:g}" if b.get("min") is not None else "", f"≤ {b['max']:g}" if b.get("max") is not None else "") if x)
+                    spec_col = f"{b['dim']} {lim}".strip()
+            label = q.get("label") or q["name"]
+            lines.append(f"| {label} (`{q['name']}`) | {val} | {spec_col} |")
+    if presets:
+        lines += ["", f"Presets in `part.json` (OpenSCAD's parameter sets): {', '.join(sorted(presets))}."]
     return "\n".join(lines) + "\n"
 
 
@@ -125,7 +145,19 @@ def write_print_card(session: Session, spec: PartSpec, n: int, dest: Path) -> st
     checks = json.loads((it / "checks.json").read_text()) if (it / "checks.json").exists() else None
     src = (it / "part.scad").read_text(encoding="utf-8")
     coupon_possible = "render_target" in src and "module coupon" in src
-    dest.write_text(print_card(spec, checks, coupon_possible), encoding="utf-8")
+    from kintsugi.scad.customizer import customizer_model, presets_from_openscad
+    try:
+        params = customizer_model(src, spec)["params"]
+    except Exception:  # noqa: BLE001 — the card must never fail on a parsing corner case
+        params = []
+    presets: dict[str, dict[str, Any]] = {}
+    pj = session.dir / "part.json"
+    if pj.exists():
+        try:
+            presets = presets_from_openscad(json.loads(pj.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, AttributeError):
+            presets = {}
+    dest.write_text(print_card(spec, checks, coupon_possible, params, presets), encoding="utf-8")
     return str(dest)
 
 

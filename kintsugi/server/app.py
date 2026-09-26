@@ -682,6 +682,7 @@ def set_params(sid: str, body: ParamsReq):
     if not s.scad_path.exists():
         raise HTTPException(400, "no part.scad yet")
     src = s.scad_path.read_text(encoding="utf-8")
+    ENGINE.cancel(sid)
     spec_changed = _apply_bound_spec_updates(s, src, body.values) if body.update_spec else []
     s.scad_path.write_text(set_param_values(src, body.values), encoding="utf-8")
     res = run_iteration(s, label=body.label or ("parameters: " + ", ".join(f"{k}={v}" for k, v in body.values.items())))
@@ -811,6 +812,7 @@ class CodeReq(BaseModel):
 @app.post("/api/sessions/{sid}/iterate")
 def iterate_code(sid: str, body: CodeReq):
     s = _session(sid)
+    ENGINE.cancel(sid)
     s.scad_path.write_text(body.scad, encoding="utf-8")
     res = run_iteration(s, label=body.label or "manual edit")
     return res.to_dict()
