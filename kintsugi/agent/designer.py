@@ -28,8 +28,9 @@ _PROMPT_TEMPLATE = (PACKAGE_DIR / "agent" / "prompts" / "designer.md").read_text
 FILE_TOOLS_OPENAI = (
     "- File and shell tools: `read_file(path)` (text files come back with line numbers; PNG/JPG paths come back as images, so "
     "read a view from `iterations/iter_NN/sheets/views/` to look closer), `write_file(path, content)`, "
-    "`edit_file(path, old_string, new_string)`, `list_files(path)`, `run_command(command)` (openscad, python3 with numpy/"
-    "trimesh/opencv, no network). Everything is confined to the session directory."
+    "`edit_file(path, old_string, new_string)`, `list_files(path)`, `run_command(command)` (openscad, python with numpy/"
+    "trimesh/opencv, no network; runs in bash when the host has it, otherwise the host's own shell — prefer the file tools "
+    "and `iterate` over shell commands). Everything is confined to the session directory."
 )
 FILE_TOOLS_AGENT = (
     "- Standard file tools (Read, Write, Edit, Glob, Grep, Bash). Use Read on the PNG paths returned by `iterate` to look "

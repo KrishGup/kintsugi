@@ -8,6 +8,7 @@ import asyncio
 import os
 import re
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, Callable
@@ -134,7 +135,11 @@ def make_file_tools(sandbox: Sandbox) -> list[ToolDef]:
         loop = asyncio.get_running_loop()
 
         def _run():
-            return subprocess.run(["bash", "-lc", cmd], cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env)
+            bash = shutil.which("bash") or (r"C:\Program Files\Git\bin\bash.exe" if os.name == "nt" and os.path.exists(r"C:\Program Files\Git\bin\bash.exe") else None)
+            if bash:
+                return subprocess.run([bash, "-lc", cmd], cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env)
+            # no bash (plain Windows): the platform shell
+            return subprocess.run(cmd, shell=True, cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env)
 
         try:
             proc = await loop.run_in_executor(None, _run)

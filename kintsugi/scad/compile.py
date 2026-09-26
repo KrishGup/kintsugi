@@ -73,8 +73,22 @@ class CompileResult:
         }
 
 
+_WINDOWS_OPENSCAD = (r"C:\Program Files\OpenSCAD\openscad.exe", r"C:\Program Files\OpenSCAD (Nightly)\openscad.exe",
+                     r"C:\Program Files (x86)\OpenSCAD\openscad.exe")
+_MAC_OPENSCAD = ("/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD",)
+
+
 def openscad_binary() -> str:
-    return os.environ.get("KIN_OPENSCAD_BIN") or shutil.which("openscad") or "openscad"
+    """KIN_OPENSCAD_BIN, else `openscad` on PATH, else the usual install locations on Windows/macOS."""
+    if os.environ.get("KIN_OPENSCAD_BIN"):
+        return os.environ["KIN_OPENSCAD_BIN"]
+    found = shutil.which("openscad")
+    if found:
+        return found
+    for cand in _WINDOWS_OPENSCAD + _MAC_OPENSCAD:
+        if os.path.exists(cand):
+            return cand
+    return "openscad"
 
 
 def openscad_version() -> str | None:
