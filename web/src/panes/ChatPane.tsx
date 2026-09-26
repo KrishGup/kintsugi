@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Gear } from "../icons";
 import { fileUrl } from "../api";
 import { useSession } from "../pages/session-context";
 import type { Discrepancy, KinEvent } from "../types";
@@ -169,7 +170,7 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
       const arg = input.label || input.name || input.file_path || input.command || input.question || input.pattern || "";
       return (
         <div className="card-tool" title={JSON.stringify(input)}>
-          <span>⚙</span>
+          <Gear size={11} />
           <span className="tool-name">{toolName(String(ev.tool || ""))}</span>
           {arg && <span className="tool-arg">{arg}</span>}
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { Reset } from "../icons";
 import type { Param, ParamBinding } from "../types";
 import { useCustomizer } from "./context";
 import Slider, { type SliderBand, type SliderMark } from "./Slider";
@@ -18,7 +19,7 @@ function Head({ p, right, children }: { p: Param; right?: ReactNode; children?: 
         <span className="cz-name mono">{p.name}</span>
         {changed && (
           <button className="cz-reset" onClick={() => cz.reset(p.name)} title={`Back to the verified value (${fmtValue(p, cz.verified[p.name], cz.units)})`} aria-label={`reset ${p.name}`}>
-            ↺
+            <Reset size={12} />
           </button>
         )}
         {children}

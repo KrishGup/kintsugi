@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } fro
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, kin, sheetPdfUrl } from "../api";
 import { useBusy } from "../hooks";
-import { ProviderPill, useLlm } from "../llm";
+import { Check, ChevronDown, ChevronRight, Close, Dot } from "../icons";
+import { ProviderPill, providerLabel, useLlm } from "../llm";
 import { useToast } from "../toast";
 import type { ExampleSpec, IntakeResult, SessionMeta } from "../types";
 import { Empty, Pill, Spinner, relTime, statusLabel, statusTone } from "../ui";
@@ -177,26 +178,39 @@ export default function Home() {
         <span className="brand-tag">Photograph what broke. Print what fits.</span>
         <span className="header-spacer" />
         <ProviderPill />
-        <a className="btn btn-sm" href={sheetPdfUrl} target="_blank" rel="noreferrer" title="Printable ArUco calibration sheet (letter)">
-          <DownloadIcon /> Calibration sheet
+        <a className="btn btn-sm btn-icon-sm" href={sheetPdfUrl} target="_blank" rel="noreferrer" title="Printable ArUco calibration sheet (letter, 100 mm bar)" aria-label="Calibration sheet (PDF)">
+          <DownloadIcon /> <span className="btn-text">Calibration sheet</span>
         </a>
-        <button className="btn btn-sm" onClick={llm.openSettings} title="Model provider, API key, models">
-          <GearIcon /> Settings
+        <button className="btn btn-sm btn-icon-sm" onClick={llm.openSettings} title="Model provider, API key, models" aria-label="Settings">
+          <GearIcon /> <span className="btn-text">Settings</span>
         </button>
       </header>
 
       <main className="home">
         <div className="hero">
           <h1>Photograph what broke. Print what fits.</h1>
-          <p>
-            Kintsugi turns photos of a broken part into a verified, printable replacement: GPT-6 writes the OpenSCAD, compiles it, measures the
-            mesh against every dimension of the real object, fixes what fails, and a second model reviews the blueprint before you print.
-          </p>
+          <p>Two or three phone photos become a verified, printable replacement: every dimension is measured on the designed mesh before you print.</p>
         </div>
+        <ol className="path" aria-label="How it works">
+          {[
+            ["Photograph", "the broken part on the printed calibration sheet"],
+            ["Answer", "the one or two photos it still needs"],
+            ["Verify", "every dimension measured on the designed mesh"],
+            ["Print", "the fit coupon, then the part"],
+          ].map(([h, t], i) => (
+            <li key={h} className="path-step">
+              <span className="path-tick" aria-hidden="true" />
+              <span className="path-n num">{i + 1}</span>
+              <span className="path-text">
+                <b>{h}</b> {t}
+              </span>
+            </li>
+          ))}
+        </ol>
         {llm.status && !llm.ready && (
           <div className="banner banner-warn mb">
             <span>
-              <b>No model provider yet.</b> Add your OpenAI API key to design parts — or switch to demo mode for a scripted walkthrough.
+              <b>No model yet.</b> Add your OpenAI API key to design parts, or switch to demo mode for a scripted walkthrough.
             </span>
             <button className="btn btn-sm btn-primary" onClick={llm.openSettings}>
               Open settings
@@ -205,76 +219,7 @@ export default function Home() {
         )}
 
         <div className="home-grid">
-          <section className="panel">
-            <div className="panel-head">
-              <h2>Recent sessions</h2>
-              <span className="grow" />
-              <button className="btn btn-ghost btn-sm" onClick={loadSessions} title="Refresh">
-                Refresh
-              </button>
-            </div>
-            {sessions === null ? (
-              <div className="panel-body">
-                <Spinner label="Loading sessions…" />
-              </div>
-            ) : sorted.length === 0 ? (
-              <div className="sessions-empty">
-                <Empty title="No sessions yet">Create your first part on the right. Sessions are stored as folders on the server.</Empty>
-              </div>
-            ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th className="num">Iter.</th>
-                    <th>Updated</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sorted.map((s) => (
-                    <tr key={s.id} className="table-row-link" onClick={() => nav(`/s/${s.id}`)}>
-                      <td>
-                        <Link to={`/s/${s.id}`} onClick={(e) => e.stopPropagation()}>
-                          {s.name || s.id}
-                        </Link>
-                        <span className="sub mono">{s.id}</span>
-                      </td>
-                      <td>
-                        <Pill tone={statusTone(s.status)} dot={s.status === "running"}>
-                          {statusLabel(s.status)}
-                        </Pill>
-                      </td>
-                      <td className="num">{s.iteration ?? 0}</td>
-                      <td className="nowrap dim">{relTime(s.updated || s.created)}</td>
-                      <td className="right">
-                        <button
-                          className="btn btn-ghost btn-xs btn-quiet-danger"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(s);
-                          }}
-                          title="Delete session"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            {llm.version && (
-              <div className="panel-body health">
-                kintsugi v{llm.version}
-                {llm.openscad ? ` · openscad ${llm.openscad}` : " · openscad not found"}
-                {llm.status ? ` · ${llm.status.provider}${llm.status.models.designer ? " " + llm.status.models.designer : ""}` : ""}
-              </div>
-            )}
-          </section>
-
-          <section className="panel">
+          <section className="panel home-new">
             <div className="panel-head">
               <h2>New part</h2>
               <span className="grow" />
@@ -317,7 +262,8 @@ export default function Home() {
                         if (e.key === "Enter" || e.key === " ") fileInput.current?.click();
                       }}
                     >
-                      Drop photos here or click to choose (JPG / PNG / WebP)
+                      <span className="file-drop-main">Drop photos here, or tap to take or choose them</span>
+                      <span className="file-drop-sub">JPG, PNG or WebP · two or three shots: the whole object, the break, the mating feature on the sheet</span>
                       <input
                         ref={fileInput}
                         type="file"
@@ -335,13 +281,8 @@ export default function Home() {
                         {files.map((f, i) => (
                           <span key={`${f.name}-${i}`} className="pill pill-neutral" title={f.name}>
                             <span>{f.name}</span>
-                            <button
-                              className="toast-x"
-                              style={{ fontSize: 12, padding: 0 }}
-                              aria-label={`Remove ${f.name}`}
-                              onClick={() => setFiles((fs) => fs.filter((_, j) => j !== i))}
-                            >
-                              ×
+                            <button className="toast-x" style={{ padding: 0 }} aria-label={`Remove ${f.name}`} onClick={() => setFiles((fs) => fs.filter((_, j) => j !== i))}>
+                              <Close size={11} />
                             </button>
                           </span>
                         ))}
@@ -423,7 +364,7 @@ export default function Home() {
               {mode === "spec" && (
                 <>
                   <button className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setShowScad((v) => !v)}>
-                    {showScad ? "▾" : "▸"} Optional starting part.scad
+                    {showScad ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Optional starting part.scad
                   </button>
                   {showScad && (
                     <textarea
@@ -454,6 +395,70 @@ export default function Home() {
               )}
             </div>
           </section>
+
+          <section className="panel home-sessions">
+            <div className="panel-head">
+              <h2>Your parts</h2>
+              <span className="grow" />
+              <button className="btn btn-ghost btn-sm" onClick={loadSessions} title="Refresh the list">
+                Refresh
+              </button>
+            </div>
+            {sessions === null ? (
+              <div className="panel-body">
+                <Spinner label="Loading sessions…" />
+              </div>
+            ) : sorted.length === 0 ? (
+              <div className="panel-body">
+                <Empty title="No parts yet" icon={<CameraIcon size={30} />}>
+                  Print the{" "}
+                  <a href={sheetPdfUrl} target="_blank" rel="noreferrer">
+                    calibration sheet
+                  </a>
+                  , put the broken object on it, take two or three photos and describe what broke. Each part becomes a session with its photos,
+                  spec, iterations and exports.
+                </Empty>
+              </div>
+            ) : (
+              <ul className="session-list">
+                {sorted.map((s) => (
+                  <li key={s.id} className="session-row" onClick={() => nav(`/s/${s.id}`)}>
+                    <div className="session-main">
+                      <Link to={`/s/${s.id}`} className="session-name" onClick={(e) => e.stopPropagation()}>
+                        {s.name || s.id}
+                      </Link>
+                      <span className="session-meta">
+                        <span className="num">{s.iteration ? `${s.iteration} iteration${s.iteration === 1 ? "" : "s"}` : "no iterations yet"}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{relTime(s.updated || s.created)}</span>
+                      </span>
+                    </div>
+                    <Pill tone={statusTone(s.status)} dot={s.status === "running"}>
+                      {statusLabel(s.status)}
+                    </Pill>
+                    <button
+                      className="btn btn-ghost btn-xs btn-quiet-danger session-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(s);
+                      }}
+                      title={`Delete “${s.name || s.id}”`}
+                      aria-label={`Delete ${s.name || s.id}`}
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {llm.version && (
+              <div className="health">
+                Kintsugi v{llm.version}
+                {llm.openscad ? ` · OpenSCAD ${llm.openscad}` : " · OpenSCAD not found"}
+                {llm.status ? ` · ${providerLabel(llm.status.provider)}${llm.status.provider !== "fake" && llm.status.models.designer ? " " + llm.status.models.designer : ""}` : ""}
+              </div>
+            )}
+          </section>
         </div>
       </main>
     </div>
@@ -464,7 +469,7 @@ function Step({ n, cur, label }: { n: number; cur: number; label: string }) {
   const cls = cur > n ? "done" : cur === n ? "active" : "";
   return (
     <div className={`step ${cls}`}>
-      {cur > n ? <span>✓</span> : cur === n ? <Spinner size={11} /> : <span>·</span>}
+      {cur > n ? <Check size={11} /> : cur === n ? <Spinner size={11} /> : <Dot size={11} />}
       <span>{label}</span>
     </div>
   );
@@ -474,7 +479,6 @@ function IntakeCard({ data }: { data: IntakeResult }) {
   return (
     <div className="intake-card stack">
       <div>
-        <div className="label">Intake</div>
         <h3>{data.object || "Unknown object"}</h3>
         {data.part_role && <div>{data.part_role}</div>}
         {data.damage && (
@@ -543,7 +547,7 @@ function IntakeCard({ data }: { data: IntakeResult }) {
 
 export function Mark() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FAFBFC" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round">
       <path d="M4 19 10 5l4 8 6-9" />
     </svg>
   );
@@ -565,9 +569,9 @@ function PlusIcon() {
   );
 }
 
-function CameraIcon() {
+function CameraIcon({ size = 13 }: { size?: number }) {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={size > 20 ? 1.4 : 2} strokeLinejoin="round">
       <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
       <circle cx="12" cy="13" r="3.2" />
     </svg>

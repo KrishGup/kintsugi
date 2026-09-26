@@ -31,3 +31,10 @@ eval/runs/
 eval/reports/**/views/
 eval/reports/**/*.stl
 web/tsconfig.tsbuildinfo
+
+# Impeccable working files (captures, comps); the tokens (design.json) and config are committed
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
+.impeccable/live/
+.impeccable/config.local.json

@@ -6,6 +6,7 @@ import EvidenceMap from "../components/EvidenceMap";
 import ImageZoom from "../components/ImageZoom";
 import StlViewer from "../components/StlViewer";
 import { useCustomizer } from "../customizer/context";
+import { Sliders } from "../icons";
 import { useLocal } from "../hooks";
 import { iterPath, useSession } from "../pages/session-context";
 import { useToast } from "../toast";
@@ -91,8 +92,8 @@ export default function CenterPane() {
           </button>
         )}
         {!draftShown && cz.nChanged === 0 && d.stl && (
-          <button className="btn btn-xs btn-ghost" onClick={openCustomizer} title="Sliders and switches for every parameter">
-            Customize
+          <button className="btn btn-xs" onClick={openCustomizer} title="Sliders and switches for every parameter">
+            <Sliders size={12} /> Customize
           </button>
         )}
       </div>

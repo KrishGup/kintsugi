@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useCustomizer } from "../customizer/context";
 import { useLocal } from "../hooks";
+import { Check } from "../icons";
 import { useSession } from "../pages/session-context";
 import ChecksTab from "./ChecksTab";
 import CodeTab from "./CodeTab";
@@ -29,11 +30,11 @@ export default function RightPane() {
   }, [setTab]);
 
   const hardFails = d.checks ? d.checks.items.filter((i) => i.kind === "hard" && i.passed === false).length : 0;
-  const tabs: Array<{ id: Tab; label: string; count?: string | number; tone?: "pass" | "fail"; title?: string }> = [
+  const tabs: Array<{ id: Tab; label: string; count?: React.ReactNode; tone?: "pass" | "fail"; title?: string }> = [
     {
       id: "checks",
       label: "Checks",
-      count: d.checks ? (hardFails ? hardFails : "✓") : undefined,
+      count: d.checks ? (hardFails ? hardFails : <Check size={10} />) : undefined,
       tone: d.checks ? (hardFails ? "fail" : "pass") : undefined,
       title: d.checks ? (hardFails ? `${hardFails} hard checks failing` : "all hard checks pass") : "no checks yet",
     },

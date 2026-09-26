@@ -80,7 +80,7 @@ function labelOf(n: EvidenceNode): string {
     case "request":
       return `→ ${String(n.label || "")}`;
     case "check":
-      return `${n.passed === false ? "✗" : "✓"} check${typeof n.measured === "number" ? ` ${Math.round((n.measured as number) * 100) / 100}` : ""}`;
+      return `check ${n.passed === false ? "fails" : "passes"}${typeof n.measured === "number" ? ` · ${Math.round((n.measured as number) * 100) / 100}` : ""}`;
     default:
       return String(n.label || n.id);
   }

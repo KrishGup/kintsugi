@@ -87,7 +87,7 @@ export default function ChecksTab() {
           {c.items.map((it) => (
             <tr key={it.id}>
               <td>
-                <div className="check-id">{it.id}</div>
+                <div className="check-id">{breakable(it.id)}</div>
                 <div className="small dim">{it.label}</div>
                 {it.detail && <div className="check-detail">{it.detail}</div>}
               </td>
@@ -127,4 +127,11 @@ function RulerIcon() {
       <path d="M6 8v3M10 8v4M14 8v3M18 8v4" />
     </svg>
   );
+}
+
+
+/** Long identifiers break at their joints ("neck_ring.ring_outer_diameter"), never mid-token. */
+function breakable(id: string) {
+  const parts = id.split(/([._])/);
+  return parts.map((p, i) => (p === "." || p === "_" ? <span key={i}>{p}<wbr /></span> : <span key={i}>{p}</span>));
 }

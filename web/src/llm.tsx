@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { kin } from "./api";
 import { useDismiss } from "./hooks";
+import { ChevronDown, ChevronRight, Close } from "./icons";
 import { useToast } from "./toast";
 import type { LlmStatus, SettingsInfo } from "./types";
 import { Pill, Spinner } from "./ui";
@@ -79,11 +80,13 @@ export function ProviderPill() {
       </button>
     );
   const tone = !s.ready ? "warn" : s.provider === "fake" ? "neutral" : "pass";
-  const text = !s.ready ? "Add OpenAI API key" : s.provider === "fake" ? "Demo mode (scripted)" : `${providerLabel(s.provider)} · ${s.models.designer || ""}`;
+  const text = !s.ready ? "Add OpenAI API key" : s.provider === "fake" ? "Demo mode" : `${providerLabel(s.provider)} · ${s.models.designer || ""}`;
+  const short = !s.ready ? "No key" : s.provider === "fake" ? "Demo" : providerLabel(s.provider);
   return (
     <button className={`pill pill-${tone} pill-btn`} onClick={llm.openSettings} title={`${s.reason}\nClick to change model settings`}>
       <span className="pill-dot" />
-      {text}
+      <span className="pill-long">{text}</span>
+      <span className="pill-short">{short}</span>
     </button>
   );
 }
@@ -173,7 +176,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           <h2>Model settings</h2>
           <span className="grow" />
           <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close">
-            ×
+            <Close size={14} />
           </button>
         </div>
         {!info ? (
@@ -196,7 +199,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 {[
                   ["openai", "OpenAI (GPT-6)"],
                   ["fake", "Demo mode"],
-                  ["agent", "Agent"],
+                  ...(info.llm.provider === "agent" || provider === "agent" ? [["agent", "Agent"]] : []),
                 ].map(([v, l]) => (
                   <button key={v} role="radio" aria-checked={provider === v} className={`seg-btn${provider === v ? " active" : ""}`} onClick={() => setProvider(v)}>
                     {l}
@@ -244,7 +247,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 </label>
 
                 <button className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setAdvanced((v) => !v)}>
-                  {advanced ? "▾" : "▸"} Models &amp; reasoning effort
+                  {advanced ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Models &amp; reasoning effort
                 </button>
                 {advanced && (
                   <div className="stack settings-adv">

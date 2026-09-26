@@ -27,7 +27,7 @@ export function ReadinessBar({ r }: { r: Readiness }) {
         </span>
       </div>
       <div className="progress" title={`${pct}%`}>
-        <div className="progress-bar" style={{ width: `${Math.max(3, pct)}%`, background: r.ready ? "var(--pass)" : undefined }} />
+        <div className="progress-bar" style={{ width: "100%", transform: `scaleX(${Math.max(0.03, pct / 100)})`, background: r.ready ? "var(--pass)" : undefined }} />
       </div>
       <div className="small dim">{r.advice}</div>
     </div>

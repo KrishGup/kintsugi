@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Check, ChevronDown, ChevronRight, Cross, Gear } from "../icons";
 import { ApiError, fileUrl, kin, sheetPdfUrl } from "../api";
 import EvidenceMap from "../components/EvidenceMap";
 import { useLlm } from "../llm";
@@ -63,7 +64,7 @@ export default function GuidePane() {
         return (
           <section key={st.id} className={`gstep gstep-${state}${open ? " open" : ""}`}>
             <button className="gstep-head" onClick={() => setOpenStage(open && st.id !== cur ? null : st.id)} aria-expanded={open}>
-              <span className="gstep-n">{state === "done" ? "✓" : i + 1}</span>
+              <span className="gstep-n" aria-hidden="true">{state === "done" ? <Check size={11} /> : i + 1}</span>
               <span className="gstep-title">{st.label}</span>
               <span className="grow" />
               <StageSummary stage={st.id} />
@@ -558,7 +559,7 @@ function SpecStage() {
       {ev && ev.nodes.some((n) => n.type === "estimate" || n.type === "photo") && (
         <div>
           <button className="btn btn-ghost btn-xs" onClick={() => setShowMap((v) => !v)}>
-            {showMap ? "▾" : "▸"} Evidence map
+            {showMap ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Evidence map
           </button>
           {showMap && (
             <div className="gcard" style={{ padding: 6 }}>
@@ -718,7 +719,7 @@ function DesignStage() {
             <span className="num small">{fmtElapsed(p.elapsed)}</span>
           </div>
           <div className="progress" title={p.budget ? `${p.iterations} of ${p.budget} iterations` : ""}>
-            <div className="progress-bar" style={{ width: `${Math.max(3, pct)}%` }} />
+            <div className="progress-bar" style={{ width: "100%", transform: `scaleX(${Math.max(0.03, pct / 100)})` }} />
           </div>
           <div className="row-wrap small dim">
             <span>
@@ -738,7 +739,7 @@ function DesignStage() {
           </div>
           {p.tool && (
             <div className="card-tool">
-              <span>⚙</span>
+              <Gear size={11} />
               <span className="tool-name">{p.tool.name}</span>
               {p.tool.arg && <span className="tool-arg">{p.tool.arg}</span>}
             </div>
@@ -941,7 +942,7 @@ function ReviewStage() {
           <ul className="review-list">
             {hard.slice(0, 8).map((i) => (
               <li key={i.id} className={i.passed === false ? "bad" : ""}>
-                <span className="review-mark">{i.passed === false ? "✗" : "✓"}</span>
+                <span className="review-mark" aria-label={i.passed === false ? "fails" : "passes"}>{i.passed === false ? <Cross size={11} /> : <Check size={11} />}</span>
                 <span className="review-lab">{i.label}</span>
                 <span className="review-val num">
                   {typeof i.measured === "number" ? fmtNum(i.measured) : ""}

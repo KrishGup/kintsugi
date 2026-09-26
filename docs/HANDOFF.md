@@ -34,6 +34,13 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - Standards: `kintsugi/spec/standards.py` is a small knowledge base (bottle neck finishes, pipe ODs, shafts, metric fasteners, batteries, extrusions, bearings, bike parts…). Keywords in the sentence or in intake's object description attach a `standard:<id>` estimate (confidence 0.4–0.85, always below a real measurement). Extend it freely; entries are plain data.
 - The runtime is `kintsugi/graph/core.py` (about 300 lines): `Node(name, fn, inputs, outputs, kind, when, optional, after, est_s, ask)`, `Graph(name, nodes).run(state)` → `RunTrace`. Pipelines are in `kintsugi/graph/pipelines.py`, the session flow in `kintsugi/graph/flow.py`. Tests: `tests/test_graph.py`, `tests/test_capture_loop.py`.
 
+## The design system (and the `/impeccable` skill)
+
+- `DESIGN.md` (root) is the recorded visual system — the palette (navy #05142E ink, #155DD3 the one action colour, #6C9EF0 dimension blue, #BED4F9 tolerance tint), both themes, the type ramp, spacing, components, do's and don'ts — with the machine-readable tokens in its frontmatter and `.impeccable/design.json`. `PRODUCT.md` holds the product truth the design serves. Tokens live in `web/src/styles.css` (`:root` and the dark block); every component reads them, including the 3D viewer.
+- Fonts are bundled (`@fontsource/*`, latin subsets) so the app renders the same with no internet. Icons are one SVG family in `web/src/icons.tsx`.
+- On a phone the session shows one pane at a time, switched from the bar at the bottom (Guide · 3D & sheets · Details); the stage bar scrolls.
+- [Impeccable](https://github.com/pbakaus/impeccable) is vendored as a project skill (`.agent/skills/impeccable`, agents in `.agent/agents`, the design-detector hook in `.agent/settings.json`). In the coding assistant: `/impeccable audit web`, `/impeccable polish the settings modal`, `/impeccable critique home`. The launcher downloads its engine binary once on first run (Windows: `scripts/impeccable.cmd`). The mechanical detector is clean on `web/src` except one advisory for the blueprint grid, which is the drafting-sheet ground and deliberate.
+
 ## The customizer (Customize tab)
 
 - Backend: `kintsugi/scad/customizer.py` (`customizer_model()` — parameters with units/kinds/labels/gating, spec bindings from the `// Spec dims:` header or name+value matching, derived values with formulas, top-level asserts), `kintsugi/scad/preview.py` (`PreviewEngine`: one compile per session, the newest request kills and supersedes older ones, `preview/preview.stl` replaced atomically, draft `$fn` 32), `compile_scad(..., cancel=Event)`.

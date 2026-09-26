@@ -154,7 +154,7 @@ class LLM:
             if os.environ.get("AGENT_API_KEY") or shutil.which("agent"):
                 return True, "agent SDK"
             return False, "no AGENT_API_KEY and no agent CLI"
-        return True, "fake provider (scripted)"
+        return True, "demo mode: a scripted designer, no key needed"
 
     # ---- clients -----------------------------------------------------------------------------------
     def openai_client(self):

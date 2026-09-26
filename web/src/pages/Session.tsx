@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ApiError, kin } from "../api";
 import { CustomizerProvider } from "../customizer/context";
 import { REFRESH_KINDS, useEvents } from "../events";
+import { useLocal } from "../hooks";
 import CenterPane from "../panes/CenterPane";
 import LeftPane from "../panes/LeftPane";
 import RightPane from "../panes/RightPane";
@@ -21,6 +22,13 @@ export default function Session() {
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [runFlag, setRunFlag] = useState<boolean | null>(null);
+  // on a phone only one pane shows at a time; the bar at the bottom switches them
+  const [pane, setPane] = useLocal<"left" | "center" | "right">("kin.ws.pane", "left");
+  useEffect(() => {
+    const onTab = () => setPane("right");
+    window.addEventListener("kin:right-tab", onTab);
+    return () => window.removeEventListener("kin:right-tab", onTab);
+  }, [setPane]);
   const refreshTimer = useRef<number | undefined>(undefined);
   const alive = useRef(true);
   const detailRef = useRef<SessionDetail | null>(null);
@@ -188,7 +196,7 @@ export default function Session() {
   return (
     <SessionCtx.Provider value={state}>
       <CustomizerProvider>
-        <div className="ws">
+        <div className={`ws ws--${pane}`}>
           <div className="ws-top">
             <TopBar />
             <StageBar />
@@ -202,6 +210,17 @@ export default function Session() {
           <div className="ws-right">
             <RightPane />
           </div>
+          <nav className="ws-switch" aria-label="Panes">
+            <button className={pane === "left" ? "active" : ""} onClick={() => setPane("left")} aria-pressed={pane === "left"}>
+              Guide
+            </button>
+            <button className={pane === "center" ? "active" : ""} onClick={() => setPane("center")} aria-pressed={pane === "center"}>
+              3D &amp; sheets
+            </button>
+            <button className={pane === "right" ? "active" : ""} onClick={() => setPane("right")} aria-pressed={pane === "right"}>
+              Details
+            </button>
+          </nav>
         </div>
       </CustomizerProvider>
     </SessionCtx.Provider>

@@ -160,19 +160,20 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
     s3.current = state;
 
     const applyTheme = () => {
-      const rule = new THREE.Color(cssVar(el, "--rule", "#c9d0da"));
-      const ink3 = new THREE.Color(cssVar(el, "--ink-3", "#7a8594"));
-      const blue = new THREE.Color(cssVar(el, "--blue", "#1f4fa8"));
+      // every colour comes from the design tokens so the viewer belongs to the theme it sits in
+      const rule = new THREE.Color(cssVar(el, "--rule", "#c9d6ec"));
+      const ink3 = new THREE.Color(cssVar(el, "--ink-3", "#5b6982"));
       const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-      material.color.set(dark ? 0xb9c2ce : 0xd3d8df);
-      edgeMaterial.color.set(dark ? 0x1e2a3a : 0x5c6675);
-      ghostMaterial.color.copy(blue);
-      dimMaterial.color.copy(blue);
+      material.color.set(cssVar(el, "--viewer-part", "#d6dfeb"));
+      edgeMaterial.color.set(cssVar(el, "--viewer-edge", "#4d5f80"));
+      ghostMaterial.color.set(cssVar(el, "--viewer-ghost", "#6c9ef0"));
+      contextMaterial.color.set(cssVar(el, "--viewer-context", "#c9a227"));
+      dimMaterial.color.set(cssVar(el, "--viewer-dim", "#155dd3"));
       grid.traverse((o) => {
         if (o instanceof THREE.GridHelper) {
           const mat = o.material as THREE.LineBasicMaterial;
           mat.color.copy(dark ? ink3 : o.userData.major ? ink3 : rule);
-          mat.opacity = dark ? (o.userData.major ? 0.55 : 0.28) : o.userData.major ? 0.55 : 0.5;
+          mat.opacity = dark ? (o.userData.major ? 0.5 : 0.24) : o.userData.major ? 0.5 : 0.55;
           mat.transparent = true;
         }
       });

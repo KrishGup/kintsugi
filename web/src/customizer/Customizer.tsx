@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { useDismiss } from "../hooks";
+import { Close, Cross, More, Redo, Undo } from "../icons";
 import { useSession } from "../pages/session-context";
 import { useToast } from "../toast";
 import type { Param } from "../types";
@@ -100,10 +101,10 @@ export default function Customizer() {
             </button>
           </div>
           <button className="btn btn-xs btn-ghost" onClick={cz.undo} disabled={!cz.canUndo} title="Undo the last change (Ctrl+Z)" aria-label="undo">
-            ↶
+            <Undo size={13} />
           </button>
           <button className="btn btn-xs btn-ghost" onClick={cz.redo} disabled={!cz.canRedo} title="Redo (Ctrl+Shift+Z)" aria-label="redo">
-            ↷
+            <Redo size={13} />
           </button>
           <PresetsMenu />
           <MoreMenu />
@@ -312,7 +313,11 @@ function ComputedPanel() {
             <div className={`cz-derived-row${bad ? " bad" : ""}`} key={d.name} title={title}>
               <span className="mono">{d.name}</span>
               {d.expr && <span className="cz-formula mono dim">= {d.expr}</span>}
-              {lim.length > 0 && <span className="cz-derived-lim num">{bad ? "✗ " : ""}{lim.join(" ")}</span>}
+              {lim.length > 0 && (
+                <span className="cz-derived-lim num">
+                  {bad && <Cross size={10} />} {lim.join(" ")}
+                </span>
+              )}
               <span className="num cz-derived-val">{shown}</span>
             </div>
           );
@@ -360,7 +365,7 @@ function PresetsMenu() {
                     <span className="dim small">{diff ? `${diff} differ` : "same as verified"}</span>
                   </button>
                   <button className="btn btn-xs btn-quiet-danger" onClick={() => cz.deletePreset(n)} title={`Delete preset “${n}”`} aria-label={`delete preset ${n}`}>
-                    ×
+                    <Close size={12} />
                   </button>
                 </div>
               );
@@ -408,7 +413,7 @@ function MoreMenu() {
   return (
     <div className="cz-menu" ref={box}>
       <button className={`btn btn-xs btn-ghost${open ? " active" : ""}`} onClick={() => setOpen((v) => !v)} title="Preview options, export" aria-label="more" aria-expanded={open}>
-        ⋯
+        <More size={14} />
       </button>
       {open && (
         <div className="popover cz-more">
