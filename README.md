@@ -56,6 +56,18 @@ kin serve --port 8000                         # open http://localhost:8000
 
 `kin sheet -o calibration_sheet.pdf` prints the ArUco calibration sheet (print at 100%; the 100 mm bar is the check).
 
+On Windows (PowerShell):
+
+```powershell
+py -3.11 -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+winget install OpenSCAD.OpenSCAD            # or set KIN_OPENSCAD_BIN to your openscad.exe
+cd web; npm install; npm run build; cd ..
+kin serve                                    # then http://localhost:8000 → Settings → paste the OpenAI key
+```
+
+`xvfb` is not needed on Windows or macOS. Git Bash is picked up automatically for the designer's shell tool when present; otherwise it uses the platform shell.
+
 ## The flow
 
 1. **Intake** — photos + one sentence → object, broken part, its interfaces, a draft spec, a capture plan, batched questions.

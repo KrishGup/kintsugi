@@ -2,6 +2,7 @@
 
 ## Try this first
 
+0. **Windows setup** (PowerShell, from the repo folder): `py -3.11 -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e ".[dev]"`, install OpenSCAD (`winget install OpenSCAD.OpenSCAD`; the default install folder is found automatically, or set `KIN_OPENSCAD_BIN`), then `cd web; npm install; npm run build; cd ..`.
 1. **Run the tests** (no model needed): `pip install -e ".[dev]" && pytest -q`. About four minutes; all green means OpenSCAD, the geometry stack, the measurement core, the agent runtime (scripted provider) and the web API work on your machine.
 2. **Start the app**: `(cd web && npm install && npm run build)` once, then `kin serve` and open http://localhost:8000. The header pill says which model provider is active. Click **Settings**, paste your OpenAI API key, tick "remember on this server" — it is written to `.env`, never leaves the machine except to OpenAI.
 3. **Walk the demo without a key**: Settings → *Demo mode*. The scripted designer builds the bottle handle from the template so every screen (guide, 3D, sheets, checks, sliders, export) can be seen in a minute.
