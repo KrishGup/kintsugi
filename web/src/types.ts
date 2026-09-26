@@ -116,6 +116,21 @@ export interface PartSpec {
   open_questions?: string[];
 }
 
+export interface ParamBinding {
+  dim: string;
+  how: "explicit" | "name" | "value" | "name+value" | string;
+  role: "interface" | "requirement" | string;
+  target: number | null;
+  tol: number | null;
+  min: number | null;
+  max: number | null;
+  status: "unknown" | "estimated" | "confirmed" | string;
+  clearance: number | null;
+  fit: string | null;
+  sources: Array<{ value: number; source: string; conf: number | null; photo?: string | null }>;
+  feature?: string | null;
+}
+
 export interface Param {
   name: string;
   value: unknown;
@@ -127,6 +142,54 @@ export interface Param {
   step: number | null;
   options: Array<{ value: unknown; label: string }>;
   raw_value?: string;
+  unit?: string;
+  kind?: "length" | "angle" | "count" | "ratio" | "clearance" | "stress" | "mass" | "facets" | "toggle" | "choice" | "text" | "vector" | "number" | string;
+  label?: string;
+  gate?: string | null;
+  binding?: ParamBinding | null;
+  order?: number;
+}
+
+export interface DerivedValue {
+  name: string;
+  expr: string;
+  value: unknown;
+  echoed: boolean;
+  binding?: { dim: string; role: string; min: number | null; max: number | null; target: number | null; tol: number | null } | null;
+}
+
+export interface CustomizerModel {
+  available: boolean;
+  params: Param[];
+  sections: string[];
+  render_targets: string[] | null;
+  derived: DerivedValue[];
+  asserts: Array<{ cond: string; message: string; params: string[] }>;
+  bindings: Record<string, string>;
+  presets: Record<string, Record<string, unknown>>;
+  verified: { iteration: number; values: Record<string, unknown>; ok: boolean } | null;
+  preview: PreviewResult | null;
+  has_render_target: boolean;
+  draft_fn: number;
+  part_name?: string;
+}
+
+export interface PreviewResult {
+  ok: boolean;
+  gen: number;
+  superseded: boolean;
+  cancelled?: boolean;
+  values: Record<string, unknown>;
+  render_target?: string | null;
+  quality?: string;
+  duration_s?: number;
+  avg_duration_s?: number | null;
+  echo_values?: Record<string, unknown>;
+  errors?: string[];
+  warnings?: string[];
+  file?: string | null;
+  version?: number;
+  assert_failures?: string[];
 }
 
 export interface CheckItem {

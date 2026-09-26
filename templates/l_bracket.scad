@@ -25,7 +25,7 @@ gusset_t = 4;            // [2:0.5:10]  gusset thickness (along Y)
 
 /* [Holes] */
 countersink = false;     // 90° countersink on the screw-head side (top of the base, inside of the vertical leg)
-cs_d = 9;                // [4:0.5:20]  countersink diameter at the surface
+cs_d = 9;                // [4:0.5:20]  countersink diameter at the surface (when countersink)
 teardrop_angle = 50;     // [45:1:70]  roof angle of the horizontal holes, from horizontal (> 45° prints without support)
 
 /* [Render] */

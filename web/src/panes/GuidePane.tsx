@@ -974,9 +974,33 @@ function ReviewStage() {
             {busy === "export" ? <Spinner size={11} /> : <DownloadIcon />} Looks right — export
           </button>
         </div>
-        <span className="small dim">Tweak numbers yourself in the Params tab; every change re-runs the checks.</span>
+      </div>
+      <div className="gcard cz-guide-card">
+        <div className="row-wrap" style={{ alignItems: "center" }}>
+          <div className="stack-tight" style={{ flex: "1 1 200px" }}>
+            <b>Or adjust it yourself</b>
+            <span className="small dim">
+              Every parameter is a slider or a switch; fit dimensions show where their number came from; the 3D view previews each change as a draft;
+              <b> Apply &amp; verify</b> re-runs the checks and the drawings.
+            </span>
+          </div>
+          <button className="btn btn-sm" onClick={() => window.dispatchEvent(new CustomEvent("kin:right-tab", { detail: "params" }))}>
+            <SlidersSmallIcon /> Customize
+          </button>
+        </div>
       </div>
     </div>
+  );
+}
+
+function SlidersSmallIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+      <circle cx="9" cy="7" r="2" fill="currentColor" />
+      <circle cx="15" cy="12" r="2" fill="currentColor" />
+      <circle cx="7" cy="17" r="2" fill="currentColor" />
+    </svg>
   );
 }
 

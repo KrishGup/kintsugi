@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { fileUrl, kin } from "../api";
+
+const S = (sid: string) => `/api/sessions/${encodeURIComponent(sid)}`;
 import EvidenceMap from "../components/EvidenceMap";
 import ImageZoom from "../components/ImageZoom";
 import StlViewer from "../components/StlViewer";
+import { useCustomizer } from "../customizer/context";
 import { useLocal } from "../hooks";
 import { iterPath, useSession } from "../pages/session-context";
 import { useToast } from "../toast";
@@ -13,6 +16,7 @@ type Tab = "3d" | "views" | "sections" | "view" | "evidence";
 
 export default function CenterPane() {
   const s = useSession();
+  const cz = useCustomizer();
   const { toast, error } = useToast();
   const d = s.detail!;
   const [tab, setTab] = useLocal<Tab>("kin.center.tab", "3d");
@@ -43,6 +47,56 @@ export default function CenterPane() {
     return null;
   }, [it, isLatest, d.stl, s.sid, s.stlVersion]);
   const stlNote = it && !it.stl && isLatest && d.stl ? `iteration ${it.iteration} did not compile — showing the last compiled mesh` : null;
+
+  // the customizer's draft mesh replaces the verified one while there are unapplied edits (only on the latest iteration)
+  const draftShown = isLatest && cz.hasDraft && cz.viewMode === "draft" && !!cz.preview.url;
+  const shownUrl = draftShown ? cz.preview.url : stlUrl;
+  const ghostUrl = draftShown && stlUrl && cz.renderTarget === "part" ? stlUrl : null;
+  const contextUrl = (d.spec.context?.length || 0) > 0 && (cz.renderTarget !== "coupon" || !draftShown) ? `${S(s.sid)}/context.stl?v=${d.spec_yaml.length}` : null;
+  const openCustomizer = () => window.dispatchEvent(new CustomEvent("kin:right-tab", { detail: "params" }));
+  const targets = cz.model?.render_targets || null;
+  const pv = cz.preview;
+  const draftOverlay =
+    isLatest && cz.model?.available ? (
+      <div className="viewer-pills">
+        {draftShown && (
+          <span className="pill pill-blue" title="A quick compile of the current slider values — the checks have not run on it. Apply & verify for a checked iteration.">
+            <span className="pill-dot" /> draft · {cz.nChanged ? `${cz.nChanged} change${cz.nChanged === 1 ? "" : "s"}` : cz.renderTarget} · {(pv.durationS ?? 0).toFixed(pv.durationS && pv.durationS < 1 ? 2 : 1)} s
+            {pv.stale ? " · updating…" : ""}
+          </span>
+        )}
+        {(pv.status === "running" || pv.status === "queued") && (
+          <span className="pill pill-neutral">
+            <Spinner size={10} /> compiling preview…
+          </span>
+        )}
+        {pv.status === "error" && (
+          <span className="pill pill-fail" title={(pv.asserts.length ? pv.asserts : pv.errors).join("\n")}>
+            preview failed: {(pv.asserts[0] || pv.errors[0] || "").slice(0, 80)}
+          </span>
+        )}
+        {cz.hasDraft && (
+          <div className="seg seg-xs" role="tablist" aria-label="Mesh shown">
+            <button role="tab" aria-selected={cz.viewMode === "verified"} className={`seg-btn${cz.viewMode === "verified" ? " active" : ""}`} onClick={() => cz.setViewMode("verified")} title="The last verified iteration">
+              verified
+            </button>
+            <button role="tab" aria-selected={cz.viewMode === "draft"} className={`seg-btn${cz.viewMode === "draft" ? " active" : ""}`} onClick={() => cz.setViewMode("draft")} title="The current slider values (not checked yet)">
+              draft
+            </button>
+          </div>
+        )}
+        {draftShown && cz.nChanged > 0 && (
+          <button className="btn btn-xs btn-primary" onClick={() => cz.apply()} disabled={cz.applying || s.running || !!s.busy} title="Rewrite part.scad with these values and run the checks">
+            {cz.applying ? <Spinner size={10} /> : null} Apply &amp; verify
+          </button>
+        )}
+        {!draftShown && cz.nChanged === 0 && d.stl && (
+          <button className="btn btn-xs btn-ghost" onClick={openCustomizer} title="Sliders and switches for every parameter">
+            Customize
+          </button>
+        )}
+      </div>
+    ) : null;
 
   const sheetUrl = it?.sheet ? fileUrl(s.sid, it.sheet, it.iteration) : null;
   const sectionsUrl = it?.sections ? fileUrl(s.sid, it.sections, it.iteration) : null;
@@ -100,6 +154,15 @@ export default function CenterPane() {
           </button>
         </div>
         <div className="view-picker">
+          {tab === "3d" && targets && targets.length > 1 && isLatest && (
+            <div className="seg seg-xs" role="tablist" aria-label="Render target" title="Which top-level object to preview: the part, the fit coupon or the assembly with its context">
+              {targets.map((t) => (
+                <button key={t} role="tab" aria-selected={cz.renderTarget === t} className={`seg-btn${cz.renderTarget === t ? " active" : ""}`} onClick={() => cz.setRenderTarget(t)}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
           {n !== undefined && (
             <span className="small muted num nowrap">
               it {n}
@@ -131,7 +194,16 @@ export default function CenterPane() {
       <div className="center-body">
         {tab === "3d" && (
           <>
-            <StlViewer url={stlUrl} placeholder="The 3D model appears here after the first iteration compiles. Run the designer, apply params or run code to create one." />
+            <StlViewer
+              url={shownUrl}
+              ghostUrl={ghostUrl}
+              ghostLabel="Ghost the verified mesh behind the draft"
+              contextUrl={contextUrl}
+              contextOn={draftShown && cz.renderTarget === "assembly"}
+              overlay={draftOverlay}
+              units={cz.units}
+              placeholder="The 3D model appears here after the first iteration compiles. Run the designer, apply params or run code to create one."
+            />
             {stlNote && (
               <div style={{ position: "absolute", left: 10, top: 8 }}>
                 <Pill tone="warn">{stlNote}</Pill>

@@ -21,7 +21,7 @@
 3. **Step 2 — Photos & answers**: the capture plan lists one shot per dimension with a *Take / upload* slot (on a phone this opens the camera); each upload is graded and a bad one says why. Answer the numeric questions with a ruler; numbers become confirmed dimensions.
 4. **Step 3 — Confirm the fit**: every interface dimension with its status. Type a measured value to lock it, or leave it estimated and print the coupon later. Choose Quick / Standard / Thorough and **Design this part**.
 5. **Step 4 — Design & verify**: live progress (iteration k / budget, step, elapsed, the tool the model is using, the last failing checks); the 3D view and sheets refresh after every iteration; a question from the designer appears right here with its options.
-6. **Step 5 — Review**: pass/fail per check, the critic's verdict, the designer's narration; ask for a change in plain words, or **Looks right — export**.
+6. **Step 5 — Review**: pass/fail per check, the critic's verdict, the designer's narration; ask for a change in plain words, or **Looks right — export**. Or open **Customize** (right pane): sliders for every parameter with the measured value and tolerance band, a live draft in the 3D view, presets, undo; **Apply & verify** re-runs the checks.
 7. **Step 6 — Print**: STL / 3MF / bundle downloads and the print card. If a fit dimension was never confirmed the guide says to print `coupon.stl` first.
 
 The Timeline tab (left pane) is the full event log; the right pane keeps the engineer's view (checks, params, code, spec, photos).
@@ -33,6 +33,14 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - The right pane's **Graph** tab shows the session flow, the live iteration pipeline (nodes light up as they run; the blue path is the critical path; the footer says how much ran in parallel), the intake/capture graph and the export graph. The centre pane's **Evidence** tab draws where every dimension's value comes from.
 - Standards: `kintsugi/spec/standards.py` is a small knowledge base (bottle neck finishes, pipe ODs, shafts, metric fasteners, batteries, extrusions, bearings, bike parts…). Keywords in the sentence or in intake's object description attach a `standard:<id>` estimate (confidence 0.4–0.85, always below a real measurement). Extend it freely; entries are plain data.
 - The runtime is `kintsugi/graph/core.py` (about 300 lines): `Node(name, fn, inputs, outputs, kind, when, optional, after, est_s, ask)`, `Graph(name, nodes).run(state)` → `RunTrace`. Pipelines are in `kintsugi/graph/pipelines.py`, the session flow in `kintsugi/graph/flow.py`. Tests: `tests/test_graph.py`, `tests/test_capture_loop.py`.
+
+## The customizer (Customize tab)
+
+- Backend: `kintsugi/scad/customizer.py` (`customizer_model()` — parameters with units/kinds/labels/gating, spec bindings from the `// Spec dims:` header or name+value matching, derived values with formulas, top-level asserts), `kintsugi/scad/preview.py` (`PreviewEngine`: one compile per session, the newest request kills and supersedes older ones, `preview/preview.stl` replaced atomically, draft `$fn` 32), `compile_scad(..., cancel=Event)`.
+- API: `GET /customizer` (the model + presets + verified values + last preview), `POST /preview {values, render_target, quality}` (never touches part.scad), `GET/PUT/DELETE /presets[/name]` (stored as `part.json` in OpenSCAD's parameter-set format), `POST /params {values, update_spec}` (Apply & verify; a bound interface dimension moves the spec target and adds a `user_stated` estimate).
+- Web: `web/src/customizer/` — `context.tsx` (edits/undo/redo reducer, debounced latest-wins previews, adaptive facets and pause, apply, presets), `Slider.tsx` (custom rail with tolerance band and marks), `controls.tsx`, `Customizer.tsx`; the 3D view (`components/StlViewer.tsx`) draws the draft, ghosts the verified mesh, and labels the overall dimensions on the model.
+- Tests: `tests/test_customizer.py` (parser, bindings, presets, the preview engine's supersession, the API round trip including the spec update). Playwright walkthrough of the tab lives in the session notes, not the repo.
+- Rough edges: previews of BOSL2-heavy parts (threads, fluted knobs) take 5–10 s on OpenSCAD 2021.01 — the panel pauses auto-preview above 5 s and offers a button; a Manifold-enabled nightly makes them instant. Dimension lines are the bounding box only (no per-feature callouts).
 
 ## What the designer knows about OpenSCAD
 

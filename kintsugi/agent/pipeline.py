@@ -109,6 +109,11 @@ def run_iteration(session: Session, *, scad_text: str | None = None, spec: PartS
             (session.dir / "params.json").write_text(json.dumps(params, indent=2))
             if not params:
                 signals.append("no customizer parameters found: put user-facing dimensions in a parameter block with // [min:step:max] annotations")
+            else:
+                unranged = [p["name"] for p in params if p.get("type") == "number" and p.get("min") is None and not p.get("options")]
+                if unranged:
+                    signals.append(f"customizer: {len(unranged)} numeric parameter(s) have no range ({', '.join(unranged[:6])}"
+                                   f"{', …' if len(unranged) > 6 else ''}) — add // [min:step:max] so each one gets a slider")
     # policy: history-based signals
     hist = _load_history(session)
     entry = {"iteration": n, "ok": bool(comp.ok and checks and checks.all_hard_pass), "compile_ok": comp.ok,

@@ -10,7 +10,7 @@ thickness = 3;           // [0.8:0.1:20]
 
 /* [Options] */
 flats = false;           // two parallel flats on the outer diameter (for a wrench, or to key against a wall)
-across_flats = 17;       // [6:0.5:80]  distance between the flats
+across_flats = 17;       // [6:0.5:80]  distance between the flats (when flats)
 notch = true;            // radial keying notch in the outer edge
 notch_w = 2;             // [1:0.25:8]
 notch_depth = 1.5;       // [0.5:0.25:8]

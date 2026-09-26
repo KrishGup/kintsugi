@@ -21,7 +21,9 @@ from kintsugi.agent.export import export_bundle
 from kintsugi.agent.llm import DEFAULT_MODELS, get_llm
 from kintsugi.agent.pipeline import run_iteration
 from kintsugi.scad.compile import compile_scad, openscad_version
-from kintsugi.scad.customizer import parse_customizer, set_param_values
+from kintsugi.scad.customizer import (bind_params, current_values, customizer_model, parse_customizer, parse_header_bindings,
+                                      presets_from_openscad, presets_to_openscad, set_param_values)
+from kintsugi.scad.preview import DRAFT_FN, ENGINE
 from kintsugi.session.workspace import DEFAULT_SESSIONS_DIR, Session
 from kintsugi.spec.model import Estimate, PartSpec
 
@@ -641,6 +643,37 @@ async def events(sid: str, request: Request, since: int = 0, once: bool = False)
 class ParamsReq(BaseModel):
     values: dict[str, Any]
     label: str | None = None
+    update_spec: bool = True   # a changed parameter bound to a measured spec dimension moves that dimension's target with it
+
+
+def _apply_bound_spec_updates(s: Session, src: str, values: dict[str, Any]) -> list[dict[str, Any]]:
+    """When the user re-types a fit dimension in the customizer, the spec's target follows (else the checks would fight it)."""
+    if not s.spec_path.exists():
+        return []
+    spec = s.spec()
+    params = parse_customizer(src)
+    bind_params(params, spec, parse_header_bindings(src))
+    changed: list[dict[str, Any]] = []
+    for p in params:
+        b = p.binding
+        v = values.get(p.name)
+        if b is None or v is None or b.role != "interface" or b.target is None or b.how not in ("explicit", "name+value", "name"):
+            continue
+        if not isinstance(v, (int, float)) or isinstance(v, bool) or abs(float(v) - float(b.target)) < 1e-9:
+            continue
+        itf_id, key = b.dim.split(".", 1)
+        for itf in spec.interfaces:
+            if itf.id == itf_id and key in itf.dims:
+                d = itf.dims[key]
+                old = d.target
+                d.target = float(v)
+                d.status = "confirmed"
+                d.estimates.append(Estimate(value=float(v), source="user_stated", conf=0.9, note=f"typed in the customizer ({p.name})"))
+                changed.append({"dim": b.dim, "param": p.name, "from": old, "to": float(v)})
+    if changed:
+        spec.save(s.spec_path)
+        s.emit("spec_updated", source="customizer", changed=changed)
+    return changed
 
 
 @app.post("/api/sessions/{sid}/params")
@@ -649,9 +682,125 @@ def set_params(sid: str, body: ParamsReq):
     if not s.scad_path.exists():
         raise HTTPException(400, "no part.scad yet")
     src = s.scad_path.read_text(encoding="utf-8")
+    spec_changed = _apply_bound_spec_updates(s, src, body.values) if body.update_spec else []
     s.scad_path.write_text(set_param_values(src, body.values), encoding="utf-8")
     res = run_iteration(s, label=body.label or ("parameters: " + ", ".join(f"{k}={v}" for k, v in body.values.items())))
-    return res.to_dict()
+    out = res.to_dict()
+    out["spec_changed"] = spec_changed
+    return out
+
+
+# ---- customizer: live model, draft previews, presets ------------------------------------------------
+
+def _presets_path(s: Session) -> Path:
+    return s.dir / "part.json"     # OpenSCAD's own parameter-sets file, next to part.scad, so the desktop customizer reads it too
+
+
+def _load_presets(s: Session, params=None) -> dict[str, dict[str, Any]]:
+    p = _presets_path(s)
+    if not p.exists():
+        return {}
+    try:
+        return presets_from_openscad(json.loads(p.read_text(encoding="utf-8")), params)
+    except (json.JSONDecodeError, AttributeError):
+        return {}
+
+
+def _save_presets(s: Session, presets: dict[str, dict[str, Any]]) -> None:
+    _presets_path(s).write_text(json.dumps(presets_to_openscad(presets), indent=2), encoding="utf-8")
+
+
+def _last_echo_values(s: Session) -> dict[str, Any]:
+    n = int(s.meta.get("iteration", 0))
+    for k in range(n, 0, -1):
+        p = s.dir / "iterations" / f"iter_{k:02d}" / "compile.json"
+        if p.exists():
+            try:
+                d = json.loads(p.read_text())
+                if d.get("ok"):
+                    return d.get("echo_values") or {}
+            except json.JSONDecodeError:
+                pass
+    return {}
+
+
+@app.get("/api/sessions/{sid}/customizer")
+def customizer(sid: str):
+    s = _session(sid)
+    if not s.scad_path.exists():
+        return {"available": False, "params": [], "sections": [], "derived": [], "asserts": [], "presets": {}, "bindings": {},
+                "render_targets": None, "verified": None, "preview": None, "has_render_target": False, "draft_fn": DRAFT_FN}
+    src = s.scad_path.read_text(encoding="utf-8")
+    spec = s.spec() if s.spec_path.exists() else None
+    m = customizer_model(src, spec, _last_echo_values(s))
+    params = parse_customizer(src)
+    m["available"] = True
+    m["presets"] = _load_presets(s, params)
+    m["verified"] = {"iteration": int(s.meta.get("iteration", 0)), "values": current_values(params), "ok": bool(s.meta.get("last_ok"))}
+    m["preview"] = ENGINE.last(sid)
+    m["has_render_target"] = "render_target" in src
+    m["draft_fn"] = DRAFT_FN
+    m["part_name"] = spec.part.name if spec else s.meta.get("name")
+    return m
+
+
+class PreviewReq(BaseModel):
+    values: dict[str, Any] = {}
+    render_target: str | None = "part"
+    quality: str = "draft"      # draft ($fn lowered) | full
+
+
+@app.post("/api/sessions/{sid}/preview")
+def preview(sid: str, body: PreviewReq):
+    s = _session(sid)
+    if not s.scad_path.exists():
+        raise HTTPException(400, "no part.scad yet")
+    if body.quality not in ("draft", "full"):
+        raise HTTPException(400, "quality must be draft or full")
+    src = s.scad_path.read_text(encoding="utf-8")
+    return ENGINE.run(sid, s.scad_path, s.dir / "preview", body.values, render_target=body.render_target, quality=body.quality,
+                      has_render_target="render_target" in src)
+
+
+class PresetReq(BaseModel):
+    values: dict[str, Any]
+
+
+@app.get("/api/sessions/{sid}/presets")
+def list_presets(sid: str):
+    s = _session(sid)
+    params = parse_customizer(s.scad_path.read_text(encoding="utf-8")) if s.scad_path.exists() else []
+    return {"presets": _load_presets(s, params)}
+
+
+@app.put("/api/sessions/{sid}/presets/{name}")
+def save_preset(sid: str, name: str, body: PresetReq):
+    s = _session(sid)
+    name = name.strip()
+    if not name or len(name) > 60:
+        raise HTTPException(400, "preset name must be 1-60 characters")
+    params = parse_customizer(s.scad_path.read_text(encoding="utf-8")) if s.scad_path.exists() else []
+    known = {p.name for p in params}
+    presets = _load_presets(s, params)
+    presets[name] = {k: v for k, v in body.values.items() if k in known} if known else dict(body.values)
+    _save_presets(s, presets)
+    s.commit(f"preset saved: {name}")
+    s.emit("preset", name=name, action="saved")
+    return {"ok": True, "presets": presets}
+
+
+@app.delete("/api/sessions/{sid}/presets/{name}")
+def delete_preset(sid: str, name: str):
+    s = _session(sid)
+    params = parse_customizer(s.scad_path.read_text(encoding="utf-8")) if s.scad_path.exists() else []
+    presets = _load_presets(s, params)
+    if name not in presets:
+        raise HTTPException(404, f"preset {name!r} not found")
+    del presets[name]
+    _save_presets(s, presets)
+    s.commit(f"preset deleted: {name}")
+    s.emit("preset", name=name, action="deleted")
+    return {"ok": True, "presets": presets}
 
 
 class CodeReq(BaseModel):
@@ -733,6 +882,22 @@ def do_export(sid: str):
         raise HTTPException(400, str(e))
 
 
+@app.get("/api/sessions/{sid}/context.stl")
+def context_stl(sid: str):
+    """The spec's context proxies (neck, cap flange, wall…) as one mesh, for the ghosted assembly in the 3D view."""
+    s = _session(sid)
+    if not s.spec_path.exists():
+        raise HTTPException(404, "no spec")
+    out = s.dir / "context.stl"
+    if not out.exists() or out.stat().st_mtime < s.spec_path.stat().st_mtime:
+        from kintsugi.render.blueprint import context_ghost
+        ghost = context_ghost(s.spec())
+        if ghost is None:
+            raise HTTPException(404, "the spec has no context proxies")
+        ghost.export(str(out))
+    return FileResponse(out, media_type="model/stl")
+
+
 @app.get("/api/sessions/{sid}/files/{rel:path}")
 def get_file(sid: str, rel: str):
     s = _session(sid)
@@ -749,6 +914,7 @@ def delete_session(sid: str):
     t = RUNS.get(sid)
     if t and not t.done():
         raise HTTPException(409, "run in progress")
+    ENGINE.forget(sid)
     shutil.rmtree(s.dir)
     return {"ok": True}
 

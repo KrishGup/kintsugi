@@ -86,6 +86,10 @@ def copy_sources(session: Session, n: int, out: Path) -> dict[str, str]:
         files["checks"] = str(out / "checks.json")
     session.spec().save(out / "spec.yaml")
     files["spec"] = str(out / "spec.yaml")
+    presets = session.dir / "part.json"          # the customizer's presets, in OpenSCAD's parameter-sets format
+    if presets.exists():
+        shutil.copy(presets, out / "part.json")
+        files["presets"] = str(out / "part.json")
     return files
 
 

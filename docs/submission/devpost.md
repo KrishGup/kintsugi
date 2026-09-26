@@ -30,7 +30,8 @@ Kintsugi is an agent that behaves like a careful mechanical designer:
 2. **Capture rounds** — an *evidence graph* knows which dimensions are still guesses. The capture agent asks for exactly the photos and ruler readings that resolve them ("press the neck opening-down on the calibration sheet, shoot straight down"). Each upload is graded and measured automatically on a printed ArUco sheet; readings become confirmed dimensions; the next round asks only for what is still missing. The designer can ask for a photo the same way mid-run.
 3. **Design loop** — GPT-6 writes the OpenSCAD, compiles it, and every spec dimension is **measured on the exported mesh** — never trusted from the code. Blueprint sheets (views, sections, assembly with the mating object ghosted) carry dimension lines computed from the mesh, with pass/fail colours, and the model looks at them before its next change. Budget, oscillation detection and a strategy switch keep it converging.
 4. **Code-blind critic** — a second, fresh-context model reviews the drawings and the check table without ever seeing the code, and sends the designer back when the numbers pass but the part is wrong (a hole through the load path, missing finger scallops).
-5. **Fit coupon + export** — the mating feature alone at three clearances to print first; then an oriented STL/3MF, a customizer-ready `.scad` (every dimension a slider), a blueprint PDF and a print card that says *why* the settings are what they are.
+5. **Customize** — every parameter of the finished part is a slider or a switch with a live 3D draft, like MakerWorld's parametric model maker — except that each fit dimension shows *where its number came from* (the photo, the ruler, the caliper, a recognised standard), draws its tolerance band on the slider, and the computed dimensions turn red against the spec's limits before anything is applied. *Apply & verify* re-runs the real checks.
+6. **Fit coupon + export** — the mating feature alone at three clearances to print first; then an oriented STL/3MF, a customizer-ready `.scad` with presets in OpenSCAD's own format, a blueprint PDF and a print card that says *why* the settings are what they are.
 
 Everything runs as typed dataflow graphs: independent steps in parallel, people as first-class nodes, every run traced with its critical path.
 
@@ -50,7 +51,7 @@ Judges without a key: Settings → **Demo mode** runs the whole pipeline with a 
 
 ## Tech stack ("Built with")
 
-OpenAI GPT-6 (gpt-6-astra for design, critic and vision; gpt-6-sol optional) via the **OpenAI Responses API** (function tools with image outputs, `previous_response_id` chaining, reasoning effort, JSON mode) · Python 3.11 · OpenSCAD 2021 + BOSL2 · trimesh + manifold3d + shapely (mesh measurement) · OpenCV (ArUco calibration sheet, homography rectification, sub-pixel circle fitting) · NumPy software z-buffer renderer (hidden-line views, hatched sections, mesh-derived dimension lines) · FastAPI + SSE · React + Vite + three.js + Monaco · pydantic Part Spec · a home-grown dataflow-graph runtime · pytest (79 tests, no model needed) · Docker
+OpenAI GPT-6 (gpt-6-astra for design, critic and vision; gpt-6-sol optional) via the **OpenAI Responses API** (function tools with image outputs, `previous_response_id` chaining, reasoning effort, JSON mode) · Python 3.11 · OpenSCAD 2021 + BOSL2 · trimesh + manifold3d + shapely (mesh measurement) · OpenCV (ArUco calibration sheet, homography rectification, sub-pixel circle fitting) · NumPy software z-buffer renderer (hidden-line views, hatched sections, mesh-derived dimension lines) · FastAPI + SSE · React + Vite + three.js + Monaco · pydantic Part Spec · a home-grown dataflow-graph runtime · pytest (96 tests, no model needed) · Docker
 
 ## Build process (short version for the form)
 
@@ -77,6 +78,7 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 - **A measurement core that earns its numbers.** ArUco sheet → homography → metric top-down image at 0.1 mm/px → RANSAC circle candidates refined by radial edge profiles. On synthetic photos with known ground truth: diameters within 0.5 mm to 35° of camera tilt, centres within 0.3 mm.
 - **Graph engineering.** Each stage is a typed dataflow graph: nodes declare inputs and outputs, independent nodes run in parallel, humans are nodes that suspend the run, every run is traced with its critical path. The iteration pipeline got 1.6–1.7× faster on two cores just by declaring what depends on what.
 - **The evidence graph** decides what to ask for next; a knowledge base of standard interfaces (bottle finishes, pipe ODs, shafts, fasteners, batteries, extrusions, bearings, bike parts) seeds estimates from the object's identity.
+- **A customizer that knows its evidence.** The parameter block becomes sliders with units, switches that fold their dependents, option cards, presets and undo; each change compiles a draft with `-D` overrides (a burst of drags kills the stale compile and keeps the newest), the 3D view ghosts the verified mesh behind the draft with the overall dimensions drawn on the model, and a slider bound to a measured spec dimension carries the measurement, its sources and its tolerance band — moving it moves the spec with it, so the checks verify what the person chose.
 - **OpenAI Responses API, used the way it wants to be used:** function tools whose outputs are images (the model looks at its own blueprints), `previous_response_id` so each sheet is uploaded once, reasoning effort per role, JSON mode for the critic and intake, vision for the capture agent.
 
 ### Challenges we ran into
@@ -93,8 +95,9 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 - The loop converges: the bottle handle in 1, 1, 1, 2 and 7 iterations over five runs†.
 - The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed every check, two human parts failed wall or topology checks, and a blind judge preferred Kintsugi's part in 4 of 5.
 - The critic probe†: five defects injected into a passing part, four of which no numeric check can see; the code-blind critic caught 4 of 5 with a clean control.
-- 79 tests that need no model: geometry within 0.05 mm, interference volumes within 3 %, measurement within 0.5 mm on synthetic photos, every template against its spec, the agent runtime with a scripted provider, the OpenAI wire format through the real SDK against a mock transport, the web API end to end.
+- 96 tests that need no model: geometry within 0.05 mm, interference volumes within 3 %, measurement within 0.5 mm on synthetic photos, every template against its spec, every OpenSCAD guide example compiled, the customizer and its previews, the agent runtime with a scripted provider, the OpenAI wire format through the real SDK against a mock transport, the web API end to end.
 - The follow-up loop: the system asks for the *photo* it needs, measures it automatically, and stops asking when it knows enough.
+- The customizer: the finished part is not a file, it is a parametric designer with the evidence attached — the bottle handle previews in 0.1 s per slider move, and "overall length 118.8 mm ✗ ≤ 110" shows up before the person applies anything.
 
 ### What we learned
 

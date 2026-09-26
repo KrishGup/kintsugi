@@ -84,6 +84,14 @@ def initial_prompt(spec: PartSpec, user_message: str | None, strategy: str | Non
     return "\n".join(parts)
 
 
+def existing_part_note(session: Session) -> str:
+    """Appended to a fresh prompt when the session already holds a part: a change request must build on it."""
+    n = int(session.meta.get("iteration", 0))
+    return (f"\n\nThe session already has a part.scad ({n} iteration{'s' if n != 1 else ''} so far, the current values are the user's). "
+            "Read part.scad and the latest iterations/iter_NN/summary.txt first, then make the change requested above and iterate; "
+            "do not start over from a template unless the change needs a different part class.")
+
+
 CRITIC_FOLLOWUP = ("A code-blind critic reviewed the drawings of your last iteration and asks for changes:\n{verdict}\n\n"
                    "Address every high and medium item (or explain in the finish narration why a request is wrong per the spec), "
                    "iterate until checks pass, then call finish again.")
@@ -147,6 +155,8 @@ async def _run_openai(session, spec, state, model, budget, critic_rounds, user_m
     prompt = resume_message or initial_prompt(spec, user_message, strategy)
     if resume_message:
         prompt += "\n\n(Context: the design session continues; read part.scad and the latest iterations/iter_NN/summary.txt first.)"
+    elif session.scad_path.exists():
+        prompt += existing_part_note(session)
     parts = [text_part(prompt)]
     cost0 = llm.usage.cost_usd
     calls0 = llm.usage.calls
@@ -281,7 +291,10 @@ async def _run_agent(session, spec, state, model, budget, critic_rounds, user_me
         hooks={"PreToolUse": [HookMatcher(matcher="Write|Edit|MultiEdit|NotebookEdit|Bash|Read", hooks=[make_sandbox_hook(session.dir)])]},
     )
     async with SDKClient(options) as client:
-        await client.query(resume_message or initial_prompt(spec, user_message, strategy))
+        first = resume_message or initial_prompt(spec, user_message, strategy)
+        if not resume_message and session.scad_path.exists():
+            first += existing_part_note(session)
+        await client.query(first)
         await _drain(client, state, emit)
         rounds = 0
         while not state.question and state.finished and run_critic and rounds < critic_rounds:

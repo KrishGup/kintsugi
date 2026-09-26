@@ -1,6 +1,7 @@
 import type {
   AnswerBody,
   CaptureRound,
+  CustomizerModel,
   EvidenceGraph,
   ExampleSpec,
   GraphShape,
@@ -12,6 +13,7 @@ import type {
   KinEvent,
   MeasureResult,
   Photo,
+  PreviewResult,
   Readiness,
   SessionDetail,
   SessionMeta,
@@ -124,8 +126,19 @@ export const kin = {
   run: (sid: string, body: { message?: string; strategy?: string; budget?: number; critic_rounds?: number; answer?: string }) =>
     api.post<{ ok: boolean; status: string }>(`${S(sid)}/run`, body),
   stop: (sid: string) => api.post<{ ok: boolean; stopped: boolean }>(`${S(sid)}/stop`),
-  setParams: (sid: string, values: Record<string, unknown>, label?: string) =>
-    api.post<IterationRunResult>(`${S(sid)}/params`, { values, label }),
+  setParams: (sid: string, values: Record<string, unknown>, label?: string, updateSpec = true) =>
+    api.post<IterationRunResult & { spec_changed: Array<{ dim: string; param: string; from: number | null; to: number }> }>(`${S(sid)}/params`, {
+      values,
+      label,
+      update_spec: updateSpec,
+    }),
+  customizer: (sid: string) => api.get<CustomizerModel>(`${S(sid)}/customizer`),
+  preview: (sid: string, values: Record<string, unknown>, renderTarget: string | null, quality: "draft" | "full", signal?: AbortSignal) =>
+    request<PreviewResult>("POST", `${S(sid)}/preview`, { values, render_target: renderTarget, quality }, { signal }),
+  presets: (sid: string) => api.get<{ presets: Record<string, Record<string, unknown>> }>(`${S(sid)}/presets`),
+  savePreset: (sid: string, name: string, values: Record<string, unknown>) =>
+    api.put<{ ok: boolean; presets: Record<string, Record<string, unknown>> }>(`${S(sid)}/presets/${encodeURIComponent(name)}`, { values }),
+  deletePreset: (sid: string, name: string) => api.del<{ ok: boolean; presets: Record<string, Record<string, unknown>> }>(`${S(sid)}/presets/${encodeURIComponent(name)}`),
   iterate: (sid: string, scad: string, label?: string) => api.post<IterationRunResult>(`${S(sid)}/iterate`, { scad, label }),
   branch: (sid: string, iteration: number) => api.post<{ ok: boolean; scad: string }>(`${S(sid)}/branch`, { iteration }),
   coupon: (sid: string) => api.post<{ ok: boolean; file: string }>(`${S(sid)}/coupon`),

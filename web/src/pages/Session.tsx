@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError, kin } from "../api";
+import { CustomizerProvider } from "../customizer/context";
 import { REFRESH_KINDS, useEvents } from "../events";
 import CenterPane from "../panes/CenterPane";
 import LeftPane from "../panes/LeftPane";
@@ -186,21 +187,23 @@ export default function Session() {
 
   return (
     <SessionCtx.Provider value={state}>
-      <div className="ws">
-        <div className="ws-top">
-          <TopBar />
-          <StageBar />
+      <CustomizerProvider>
+        <div className="ws">
+          <div className="ws-top">
+            <TopBar />
+            <StageBar />
+          </div>
+          <div className="ws-left">
+            <LeftPane />
+          </div>
+          <div className="ws-center">
+            <CenterPane />
+          </div>
+          <div className="ws-right">
+            <RightPane />
+          </div>
         </div>
-        <div className="ws-left">
-          <LeftPane />
-        </div>
-        <div className="ws-center">
-          <CenterPane />
-        </div>
-        <div className="ws-right">
-          <RightPane />
-        </div>
-      </div>
+      </CustomizerProvider>
     </SessionCtx.Provider>
   );
 }

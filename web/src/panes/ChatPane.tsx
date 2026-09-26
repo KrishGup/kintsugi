@@ -324,10 +324,23 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
           </span>
         </div>
       );
-    case "spec_updated":
+    case "spec_updated": {
+      const changed = Array.isArray(ev.changed) ? (ev.changed as Array<{ dim: string; from: number | null; to: number }>) : [];
       return (
         <div className="card-sys">
-          <span>spec updated · {t}</span>
+          <span>
+            spec updated{ev.source === "customizer" ? " from the customizer" : ""}
+            {changed.length ? ": " + changed.map((c) => `${c.dim} ${c.from ?? "?"} → ${c.to}`).join(", ") : ""} · {t}
+          </span>
+        </div>
+      );
+    }
+    case "preset":
+      return (
+        <div className="card-sys">
+          <span>
+            preset “{String(ev.name)}” {String(ev.action)} · {t}
+          </span>
         </div>
       );
     case "coupon":

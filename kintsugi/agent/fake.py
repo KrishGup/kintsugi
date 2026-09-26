@@ -57,11 +57,14 @@ class FakeResponsesClient:
     async def create(self, **kwargs) -> Any:
         inputs = kwargs.get("input") or []
         self.calls.append({**kwargs, "input": list(inputs)})  # snapshot: the loop mutates its transcript list
-        # a new run starts when the input is a single user message (no transcript yet)
+        # a new run starts when the input is a single user message (no transcript yet); a session that already holds a
+        # part (a change request, a resume after ask_user) gets the follow-up script, a fresh one the design script
         if len(inputs) == 1 and isinstance(inputs[0], dict) and inputs[0].get("role") == "user":
             self._runs += 1
             self._pos = 0
-            self._active = self._turns if self._runs == 1 else self._followup
+            text = _user_text(inputs[0])
+            existing = "already has a part.scad" in text or "session continues" in text
+            self._active = self._followup if existing else self._turns
         turns = getattr(self, "_active", self._turns)
         if self._pos >= len(turns):
             turn: Turn = [{"text": "Done."}]
@@ -81,6 +84,17 @@ class FakeResponsesClient:
         text = "\n".join(c.text for o in output if o.type == "message" for c in o.content)
         usage = SimpleNamespace(input_tokens=1000, output_tokens=200, input_tokens_details=SimpleNamespace(cached_tokens=0))
         return SimpleNamespace(id=f"resp_{next(self._ids)}", output=output, output_text=text, usage=usage)
+
+
+def _user_text(item: dict[str, Any]) -> str:
+    content = item.get("content")
+    if isinstance(content, str):
+        return content
+    out = []
+    for c in content or []:
+        if isinstance(c, dict) and c.get("type") in ("input_text", "text"):
+            out.append(str(c.get("text", "")))
+    return "\n".join(out)
 
 
 def fake_complete(system: str, parts: list[dict[str, Any]]) -> str:

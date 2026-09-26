@@ -56,12 +56,19 @@ if (render_target == "part") part(); else if (render_target == "coupon") coupon(
 
 ## Customizer rules (what becomes a slider)
 
+The Customize panel turns the parameter block into a parametric designer: a slider with a number box and unit for every number, a switch for every boolean (its dependents fold underneath), option cards for every choice, a live draft of the mesh after each change, and *Apply & verify* to re-run the checks. Write the block so that panel reads well:
+
 - Only **top-level assignments before the first `module`/`function` definition** are parameters. Put every module after the parameter block.
-- Number ranges: `// [min:max]` or `// [min:step:max]`; choices: `// [a, b, c]` (strings or numbers), labelled `// [1:one, 2:two]`; booleans need no annotation.
-- `/* [Section] */` groups; `/* [Hidden] */` hides everything after it (derived values, `$fn`, constants). A comment line directly above a parameter is its description.
-- Derived values (`bore = neck_id + clearance;`) are expressions and are not sliders — keep them under `[Hidden]` so the panel stays clean.
+- Number ranges: `// [min:max]` or `// [min:step:max]`, then the description on the same line: `bridge_len = 4; // [0:0.5:20]  straight bridge between ring and loop`. Choose the range a person could reasonably want, not the range that compiles, with a step of about 1/100 of the range (0.05 for clearances, 1 for counts). Choices: `// [a, b, c]` (strings or numbers), labelled `// [1:one, 2:two]`; booleans need no annotation, only a description.
+- Units: numbers are millimetres unless the description says otherwise in parentheses — `(deg)` or `(°)`, `(kg)`, `(MPa)`, `(%)`, `(count)`; names ending in `_angle`, `_n`, `_kg`, `_mpa`, `factor`, `ratio` are recognised too. The panel converts lengths to inches on request; the model stays in mm.
+- Sections: `/* [Interface] */` first (the measured, mating dimensions and `clearance`), then the body and features (`[Body]`, `[Loop]`, `[Grip]`…), `[Options]` for toggles, `[Render]`, `[Hidden]`. `/* [Hidden] */` hides everything after it (derived values, `$fn`, constants). A comment line directly above a parameter is also read as its description.
+- Feature toggles: `scallops = true; // finger scallops` with the dependents named after it — `scallop_depth`, `pointer_len`, `set_screw_d` — so they nest under the switch and grey out when it is off. A dependent that cannot carry the prefix says `(when countersink)` in its description.
+- Spec bindings: a header comment `// Spec dims: neck_ring.inner_diameter <- neck_id (+ clearance), load.loop_inner_width <- loop_inner_w` ties a slider to the spec dimension it controls. The panel then shows where the number came from (photo, ruler, caliper, a standard), its tolerance band on the slider, and moving a measured dimension moves the spec target with it on apply. Without the header the panel matches by name (`loop_inner_w` ↔ `loop_inner_width`) and by value.
+- Derived values (`bore = neck_id + clearance;`) are expressions and are not sliders — keep them under `[Hidden]`; `echo()` the ones a person would want to read (`echo(bore = bore, ring_od = ring_od, overall_length = ring_od + loop_ow);`). Name them like the spec dims (`overall_length`, `ring_od` ↔ `ring_outer_diameter`) and the panel shows them live against the spec's limits.
+- `assert(cond, "message a person understands")` at top level: the message is what the panel shows next to the slider when a preview fails, so say what to change ("scallops too deep for the loop height").
 - Do not reassign a parameter later in the file (last assignment wins silently and the slider stops working).
-- `render_target = "part"; // [part, coupon, assembly]` is required: Kintsugi compiles with `-D render_target="part"` for the mesh, `"coupon"` for the fit coupon and `"assembly"` for the ghosted views.
+- `render_target = "part"; // [part, coupon, assembly]` is required: Kintsugi compiles with `-D render_target="part"` for the mesh, `"coupon"` for the fit coupon and `"assembly"` for the ghosted views; the panel previews any of the three.
+- Presets a person saves are written to `part.json` next to `part.scad` in OpenSCAD's parameter-set format, so the desktop customizer reads them too.
 
 ## The coordinate frame (the checker's measure recipes are written in it)
 

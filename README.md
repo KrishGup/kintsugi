@@ -19,7 +19,7 @@ Built for OFFGRID (Hack47), September–October 2026.
 
 | piece | what it does |
 |---|---|
-| `kintsugi/scad` | headless OpenSCAD compile with structured errors/echoes; customizer annotation parser (sliders) |
+| `kintsugi/scad` | headless OpenSCAD compile with structured errors/echoes, cancellable for live previews; the customizer model (annotations → sliders with units, kinds, gated toggles, spec bindings, computed values, asserts), the latest‑wins preview engine, OpenSCAD‑compatible parameter‑set presets |
 | `kintsugi/checks` | mesh measurements: sections, robust circle fits, hole patterns, notch (clip) fits, wall thickness by ray casting, overhang/bed/orientation scoring, boolean interference against context proxies |
 | `kintsugi/render` | software z‑buffer renderer for 7 orthographic/iso views with hidden lines, hatched sections, mesh‑derived dimension lines, composed blueprint sheets |
 | `kintsugi/spec` | the Part Spec (pydantic): interfaces, requirements, context proxies, print settings, evidence fusion and confirmation gates; the evidence graph (dimensions ↔ photos ↔ estimates ↔ questions ↔ checks) that decides what is missing and plans the cheapest next round; a knowledge base of standard interfaces (bottle finishes, pipe ODs, shafts, fasteners, batteries, rails…) that seeds estimates from the object's identity |
@@ -27,7 +27,7 @@ Built for OFFGRID (Hack47), September–October 2026.
 | `kintsugi/agent` | the designer (a GPT‑6 tool loop on the OpenAI Responses API, sandboxed file tools + `iterate`/`finish`/`ask_user` with photo requests), the code‑blind critic, photo intake, the capture loop (automatic sheet measurement, evidence‑driven follow‑up rounds written by a capture agent), iteration policy (budget/oscillation/strategy switch), export bundle; a scripted `fake` provider runs the whole loop without a key |
 | `kintsugi/agent/knowledge` | what the designer knows about OpenSCAD: seven curated guides for OpenSCAD 2021.01 as shipped (language essentials, shapes and rounding, the vendored BOSL2, design for FDM, Kintsugi's conventions, compiling patterns for repair parts, errors) — every example is compiled by the test‑suite — plus a searchable reference of all builtins and the 980 BOSL2 modules/functions parsed from the library's own doc comments; exposed to the model as `scad_guide` / `scad_docs`, to people as `kin docs` / `kin guide` and the Code tab's *Reference* search |
 | `kintsugi/measure` | printable ArUco calibration sheet, marker detection + homography rectification (sub‑0.1 mm on synthetic photos to 35° tilt), circle/outline/rectangle measurement, coin/card reference scale, capture grading, synthetic photo generator |
-| `kintsugi/server` + `web/` | FastAPI API with SSE event stream; React + three.js workspace: a six‑stage guide (intake → capture → confirm → design → review → print), chat/timeline, 3D viewer, blueprint tabs, checks table, parameter sliders, code pane, spec editor, photos/measure, model settings |
+| `kintsugi/server` + `web/` | FastAPI API with SSE event stream; React + three.js workspace: a six‑stage guide (intake → capture → confirm → design → review → print), chat/timeline, 3D viewer with on‑model dimensions and draft/verified ghosting, blueprint tabs, checks table, the parametric customizer, code pane, spec editor, photos/measure, model settings |
 | `templates/` | seven vetted parametric templates (ring‑and‑loop handle, L bracket, snap clip, D‑shaft knob, hook, spacer/gasket, threaded cap), each with a spec it passes |
 | `eval/` | benchmark specs and the A/B evaluation against human‑designed OpenSCAD repair parts |
 
@@ -77,7 +77,7 @@ kin serve                                    # then http://localhost:8000 → Se
 3. **Measurement** — rectify to a metric top‑down image of the sheet plane; fit circles and outlines; attach estimates to spec dimensions with a confidence; independent sources that agree confirm a dimension, sources that disagree trigger a ruler request.
 4. **Spec review** — the editable spec card; interface dimensions must be *confirmed* before the export loses its "fit unconfirmed" label.
 5. **Design loop** — write `part.scad` → compile → checks → blueprint → (critic) → revise, with an iteration budget, oscillation detection and a strategy switch (CSG → template → profile).
-6. **Review** — 3D viewer, sheets, checks, sliders, code, iteration timeline with branching.
+6. **Review** — 3D viewer, sheets, checks, the customizer, code, iteration timeline with branching.
 7. **Fit coupon** — the mating feature only, in three clearances; the result locks the clearance.
 8. **Export** — oriented STL and 3MF, customizer‑ready `.scad`, blueprint PDF, print card, spec, session log.
 
@@ -91,6 +91,18 @@ Every stage runs as a typed dataflow graph (`kintsugi/graph`): a node declares t
 - **Session flow**: the stages as a state graph with guarded transitions (`kintsugi/graph/flow.py`); the stepper and the "open moves" come from it, and the loops (another capture round, a designer's photo request, a coupon result) are explicit edges.
 
 The **evidence graph** (`kintsugi/spec/evidence.py`) is the data structure the capture loop reasons over: dimension nodes with status and confidence, estimate nodes weighted by source trust, photo/question/standard/request nodes that target dimensions, check nodes that verify them on the mesh. `missing()` ranks what still needs evidence; `plan_round()` batches it into the fewest user actions; `readiness()` decides when designing is safe. The *Evidence* tab draws it.
+
+## Customize like a parametric designer
+
+The *Customize* tab is what MakerWorld's parametric model maker or Thingiverse's customizer give a downloaded model — sliders, number boxes with units, switches, option cards, presets, a live 3D preview — with one difference that only a photo‑measured part can offer: **every slider knows where its number came from.**
+
+- **Controls from the code.** The parameter block of `part.scad` (`neck_id = 43.2; // [20:0.1:90]  description`) becomes a slider with a typed box (`45`, `1.75 in`, `1 3/4"` all work), ± steppers and a unit; a boolean becomes a switch whose dependent parameters (`scallops` → `scallop_depth`) fold underneath; a `// [a, b, c]` choice becomes option cards; sections become tabs. A mm/in toggle converts the display; the model stays metric.
+- **Measured dimensions carry their evidence.** A slider bound to a spec dimension shows *measured 43.2 ± 0.3 · from caliper +1 · sliding fit, +0.25 clearance*, draws the tolerance band on the rail, and warns when you leave it. Requirement dimensions show their floor or ceiling. Applying a changed fit dimension moves the spec target with it (with a `user_stated` estimate in the evidence graph) so the checks verify the value you chose instead of fighting it.
+- **Live draft, verified on apply.** Each change compiles a draft with `-D` overrides (nothing written to `part.scad`); a burst of drags kills the stale compile and keeps only the newest one; the 3D view shows the draft with the verified mesh ghosted behind it, overall dimensions drawn on the model, and the *Computed* panel reads the model's `echo()` values live — `overall_length 118.8 mm ✗ ≤ 110` turns red before anything is applied. Facets adapt: full quality while previews are quick, draft `$fn` once a full preview proves slow; a slow model pauses auto‑preview and offers a button instead. *Apply & verify* rewrites the parameters and runs the real iteration (compile → checks → blueprints).
+- **Presets, undo, portability.** Named presets are stored as `part.json` next to `part.scad` in OpenSCAD's own parameter‑set format (the desktop customizer opens them) and ride along in the export bundle; undo/redo (Ctrl+Z) covers every change; the *⋯* menu copies the equivalent `openscad -D …` command line and downloads the draft STL.
+- **Assertions are messages.** A top‑level `assert(cond, "scallops too deep for the loop height")` fails a preview with that sentence next to the slider that caused it.
+
+The designer is told to write for this panel (`scad_guide("kintsugi")`): ranges and descriptions on every number, units in parentheses, `[Interface]` first, toggles with prefixed dependents, a `// Spec dims: … <- …` header binding sliders to spec dimensions, echoed derived values named like the spec's, and the iteration policy nags it about numbers without ranges.
 
 ## How the agent runs
 

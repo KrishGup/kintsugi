@@ -14,10 +14,10 @@ dimension line with the measured number in the middle.
 | 5 | Capture loop | it asks for the photo it needs, not a number; evidence graph; ≤ 0.5 mm; one round for the handle | guide column + evidence map |
 | 6 | Graph engineering (dark) | every stage is a typed dataflow graph; people are nodes; critical path; 1.6–1.7× | live pipeline graph |
 | 7 | Built on OpenAI | two models, two jobs; Responses API features used natively | designer → checker → critic diagram + feature chips |
-| 8 | Proof | measured, not claimed: A/B table, critic probe, 79 tests, convergence († = re-run on GPT-6 pending) | A/B sheet pair |
-| 9 | Product | a guide, not a console; phone capture; coupon; print card; demo mode | review screenshot |
+| 8 | Proof | measured, not claimed: A/B table, critic probe, 96 tests, convergence († = re-run on GPT-6 pending) | A/B sheet pair |
+| 9 | Product | a guide, not a console — and a part you can change: the customizer (sliders that know their evidence, live draft, the object in place); phone capture; coupon; demo mode | customizer screenshot (`img/customizer.png`) |
 | 10 | After OFFGRID (dark) | ordering, publishing, interface library, fleet; what $10k of credits buys | 2×2 cards |
-| 11 | Built in the open | six phases; 36 commits · 18k lines · 79 tests · 3 docs; disclosure; thanks to sponsors | timeline + dimension stats |
+| 11 | Built in the open | six phases; 36 commits · 18k lines · 96 tests · 3 docs; disclosure; thanks to sponsors | timeline + dimension stats |
 | 12 | Close (dark) | off-grid, the repair is the supply chain; links | — |
 
 ## Talk track (3 minutes, if the deck is presented rather than the video)

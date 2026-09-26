@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import subprocess
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -45,6 +46,7 @@ class CompileResult:
     command: list[str] = field(default_factory=list)
     top_level_kind: str | None = None  # "3D" | "2D" | None
     returncode: int | None = None
+    cancelled: bool = False
 
     def summary(self) -> str:
         """A compact, model-readable summary."""
@@ -70,6 +72,7 @@ class CompileResult:
             "echo_values": self.echo_values,
             "top_level_kind": self.top_level_kind,
             "returncode": self.returncode,
+            "cancelled": self.cancelled,
         }
 
 
@@ -210,11 +213,14 @@ def compile_scad(
     extra_args: list[str] | None = None,
     include_dirs: list[str | Path] | None = None,
     use_xvfb: bool | None = None,
+    cancel: threading.Event | None = None,
 ) -> CompileResult:
     """Compile a .scad file to STL/OFF/3MF/PNG/SVG/etc.
 
     `defines` become -D overrides (strings are quoted, numbers left as-is, "raw:expr" passes through).
     PNG output is routed through xvfb-run automatically when no display is available.
+    `cancel` (a threading.Event) kills the OpenSCAD process when set — the live preview uses it so a slider drag
+    never queues stale compiles; the result then has `cancelled=True`.
     """
     scad_path = Path(scad_path).resolve()
     out_path = Path(out_path).resolve()
@@ -241,18 +247,24 @@ def compile_scad(
     env["OPENSCADPATH"] = os.pathsep.join(paths)
 
     t0 = time.time()
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, env=env, cwd=str(scad_path.parent))
-        rc = proc.returncode
-        stdout, stderr = proc.stdout, proc.stderr
-    except subprocess.TimeoutExpired as e:
-        rc = -1
-        stdout = (e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
-        stderr = ((e.stderr or b"").decode() if isinstance(e.stderr, bytes) else (e.stderr or "")) + \
-            f"\nERROR: OpenSCAD timed out after {timeout_s:.0f}s (reduce $fn or simplify booleans)"
+    cancelled = False
+    if cancel is None:
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, env=env, cwd=str(scad_path.parent))
+            rc = proc.returncode
+            stdout, stderr = proc.stdout, proc.stderr
+        except subprocess.TimeoutExpired as e:
+            rc = -1
+            stdout = (e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+            stderr = ((e.stderr or b"").decode() if isinstance(e.stderr, bytes) else (e.stderr or "")) + \
+                f"\nERROR: OpenSCAD timed out after {timeout_s:.0f}s (reduce $fn or simplify booleans)"
+    else:
+        rc, stdout, stderr, cancelled = _run_cancellable(cmd, env, str(scad_path.parent), timeout_s, cancel)
     duration = time.time() - t0
 
     errors, warnings, echoes, echo_values, kind = parse_openscad_log(stderr + "\n" + stdout)
+    if cancelled:
+        errors.append("cancelled (superseded by a newer preview)")
     produced = out_path.exists() and out_path.stat().st_size > 0
     if rc != 0 and not errors:
         tail = [ln for ln in (stderr + "\n" + stdout).splitlines() if ln.strip() and not ln.startswith(_NOISE_PREFIXES)]
@@ -267,8 +279,48 @@ def compile_scad(
     return CompileResult(
         ok=ok, out_path=out_path if produced else None, format=fmt, duration_s=duration,
         errors=errors, warnings=warnings, echoes=echoes, echo_values=echo_values,
-        stdout=stdout, stderr=stderr, command=cmd, top_level_kind=kind, returncode=rc,
+        stdout=stdout, stderr=stderr, command=cmd, top_level_kind=kind, returncode=rc, cancelled=cancelled,
     )
+
+
+def _run_cancellable(cmd: list[str], env: dict[str, str], cwd: str, timeout_s: float, cancel: threading.Event) -> tuple[int, str, str, bool]:
+    """Run OpenSCAD in a subprocess that dies as soon as `cancel` is set (or the timeout passes)."""
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env, cwd=cwd)
+    chunks: dict[str, str] = {"out": "", "err": ""}
+
+    def pump(stream, key):
+        try:
+            chunks[key] = stream.read()
+        except Exception:
+            pass
+
+    t_out = threading.Thread(target=pump, args=(proc.stdout, "out"), daemon=True)
+    t_err = threading.Thread(target=pump, args=(proc.stderr, "err"), daemon=True)
+    t_out.start()
+    t_err.start()
+    deadline = time.time() + timeout_s
+    cancelled = False
+    timed_out = False
+    while proc.poll() is None:
+        if cancel.is_set():
+            cancelled = True
+            break
+        if time.time() > deadline:
+            timed_out = True
+            break
+        time.sleep(0.03)
+    if proc.poll() is None:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        proc.wait()
+    t_out.join(timeout=2)
+    t_err.join(timeout=2)
+    stderr = chunks["err"]
+    if timed_out:
+        stderr += f"\nERROR: OpenSCAD timed out after {timeout_s:.0f}s (reduce $fn or simplify booleans)"
+    return (proc.returncode if proc.returncode is not None else -1), chunks["out"], stderr, cancelled
 
 
 def render_png(

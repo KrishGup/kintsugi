@@ -82,7 +82,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     ["target", Fi.FiTarget, C.blue], ["download", Fi.FiDownload, C.blue], ["check", Fi.FiCheckCircle, C.pass],
     ["layers", Fi.FiLayers, C.sky], ["users", Fi.FiUsers, C.sky], ["cart", Fi.FiShoppingCart, C.sky], ["cloud", Fi.FiUploadCloud, C.sky],
     ["book", Fi.FiBookOpen, C.sky], ["git", Fi.FiGitBranch, C.blue], ["ruler", Fi.FiSliders, C.blue], ["zap", Fi.FiZap, C.sky],
-    ["help", Fi.FiHelpCircle, C.blue], ["shield", Fi.FiShield, C.blue], ["smartphone", Fi.FiSmartphone, C.blue], ["printer", Fi.FiPrinter, C.blue],
+    ["help", Fi.FiHelpCircle, C.blue], ["shield", Fi.FiShield, C.blue], ["smartphone", Fi.FiSmartphone, C.blue], ["printer", Fi.FiPrinter, C.blue], ["sliders", Fi.FiSliders, C.blue],
   ]) icons[k] = await iconPng(Icon, col);
 
   // ---- 1. title (dark) ------------------------------------------------------------------------------------
@@ -286,7 +286,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     mono(s, 3.45, 5.0, 2.75, 0.2, "kintsugi — same spec, 2 iterations", { size: 8 });
     dimLine(s, 6.5, 1.35, 3.0, "5/5 pass · 4/5 preferred†", "A/B vs human-designed repair parts", { size: 11.5 });
     dimLine(s, 6.5, 2.35, 3.0, "4 / 5 caught †", "critic probe: injected defects invisible to the checks; control passes", { size: 13 });
-    dimLine(s, 6.5, 3.45, 3.0, "79 tests", "no model needed: geometry ≤0.05 mm, interference ≤3 %, measurement ≤0.5 mm, API end to end", { size: 13 });
+    dimLine(s, 6.5, 3.45, 3.0, "96 tests", "no model needed: geometry ≤0.05 mm, interference ≤3 %, measurement ≤0.5 mm, API end to end", { size: 13 });
     dimLine(s, 6.5, 4.55, 3.0, "1·1·1·2·7", "iterations to converge, five bottle-handle runs †", { size: 13 });
     s.addNotes("Every number here has a file behind it in eval/reports and tests/. The dagger marks numbers produced on the previous model provider; they are re-run on GPT-6 before submission and replaced.");
   }
@@ -295,12 +295,12 @@ function frame(slide, x, y, w, h, img, opts = {}) {
   {
     const s = pres.addSlide();
     bg(s, C.paper);
-    title(s, "A guide, not a console.");
-    frame(s, 0.5, 1.25, 5.85, 3.65, IMG("review.png"), { sizing: "cover" });
+    title(s, "A guide, not a console. A part you can change.", { size: 26 });
+    frame(s, 0.5, 1.25, 5.85, 3.65, IMG("customizer.png"), { sizing: "cover" });
     const pts = [
-      ["smartphone", "Six steps on the left, the engineer's view on the right", "Photos and readings from a phone on the same Wi-Fi; checks, sliders, code, spec and graphs on the desktop."],
+      ["sliders", "Sliders that know their evidence", "A live 3D draft on each change; the measured value, its sources and its tolerance band on the rail; computed lengths turn red against the spec before you apply."],
+      ["smartphone", "Six steps left, the engineer's view right", "Photos and readings from a phone on the same Wi-Fi; checks, code, spec and graphs on the desktop."],
       ["target", "Coupon before the part", "Three clearances in one small print; the one that slides on locks the fit."],
-      ["printer", "A print card that explains itself", "Walls, infill, orientation and why — from the load in the spec and the overhang measured on the mesh."],
       ["help", "Demo mode for judges", "A scripted designer runs the whole flow in a minute without a key; the real thing needs only an OpenAI key in Settings."],
     ];
     pts.forEach(([ic, head, text], i) => {
@@ -309,8 +309,8 @@ function frame(slide, x, y, w, h, img, opts = {}) {
       s.addText(head, { x: 6.95, y, w: 2.55, h: 0.32, fontFace: FONT_B, fontSize: 11.5, bold: true, color: C.ink, isTextBox: true, margin: 0 });
       s.addText(text, { x: 6.95, y: y + 0.32, w: 2.55, h: 0.58, fontFace: FONT_B, fontSize: 9.5, color: C.ink2, isTextBox: true, margin: 0 });
     });
-    footer(s, "review step: every hard check green, the critic's verdict, the designer's narration — and one text box to ask for a change");
-    s.addNotes("Product thinking: the person does three things and looks at pictures. The guide never shows a blank screen — every stage has its one next action. The engineer's tabs are there for the curious.");
+    footer(s, "the Customize tab: a draft of the handle after two slider moves, the verified mesh ghosted behind it, the bottle neck in place, Apply & verify one click away");
+    s.addNotes("Product thinking: the person does three things and looks at pictures. The guide never shows a blank screen — every stage has its one next action. And the finished part is not a file: it is a parametric designer like MakerWorld's, except every fit dimension shows where its number came from and warns before a check would fail.");
   }
 
   // ---- 10. potential (dark) ------------------------------------------------------------------------------------
@@ -352,7 +352,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     });
     dimLine(s, 0.5, 3.05, 2.1, "36 commits", "a log, not a launch", { size: 13 });
     dimLine(s, 2.8, 3.05, 2.1, "18k lines", "Python · TypeScript · SCAD", { size: 13 });
-    dimLine(s, 5.1, 3.05, 2.1, "79 tests", "green before every push", { size: 13 });
+    dimLine(s, 5.1, 3.05, 2.1, "96 tests", "green before every push", { size: 13 });
     dimLine(s, 7.4, 3.05, 2.1, "3 docs", "design rev B · hand-off · eval reports", { size: 13 });
     body(s, 0.5, 4.0, 5.6, 1.1, [
       { text: "Every stage has a headless test; the UI was walked end to end in a headless browser after each change. Rough edges are listed in the hand-off doc, not hidden.", options: { breakLine: true } },

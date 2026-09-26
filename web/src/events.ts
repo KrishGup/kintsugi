@@ -32,6 +32,7 @@ export const EVENT_KINDS = [
   "graph_run",
   "capture_round",
   "capture_ready",
+  "preset",
   "event",
 ];
 

@@ -30,3 +30,4 @@ eval/references/*.stl
 eval/runs/
 eval/reports/**/views/
 eval/reports/**/*.stl
+web/tsconfig.tsbuildinfo
