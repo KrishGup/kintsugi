@@ -55,8 +55,8 @@ class FakeResponsesClient:
         self.responses = SimpleNamespace(create=self.create)
 
     async def create(self, **kwargs) -> Any:
-        self.calls.append(kwargs)
         inputs = kwargs.get("input") or []
+        self.calls.append({**kwargs, "input": list(inputs)})  # snapshot: the loop mutates its transcript list
         # a new run starts when the input is a single user message (no transcript yet)
         if len(inputs) == 1 and isinstance(inputs[0], dict) and inputs[0].get("role") == "user":
             self._runs += 1

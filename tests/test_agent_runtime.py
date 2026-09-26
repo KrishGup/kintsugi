@@ -339,3 +339,77 @@ def test_openai_image_output_fallback(monkeypatch):
     assert r3["previous_response_id"] == "resp_1"
     assert r3["input"][0]["type"] == "function_call_output" and r3["input"][0]["output"] == "table"
     assert r3["input"][1]["role"] == "user" and r3["input"][1]["content"][1]["type"] == "input_image"
+
+
+def test_designer_critic_revise_round(tmp_path, monkeypatch):
+    """Critic says 'revise' once: the designer gets a follow-up loop, iterates again, finishes, and the second review passes."""
+    import kintsugi.agent.fake as fake
+    from kintsugi.agent.designer import run_designer
+    from kintsugi.session.workspace import Session
+    from kintsugi.spec.model import PartSpec
+
+    verdicts = iter(["revise", "pass"])
+    orig = fake.fake_complete
+
+    def scripted(system, parts):
+        if "critic" in system[:200].lower():
+            v = next(verdicts, "pass")
+            return json.dumps({"inspection": {}, "verdict": v, "summary": f"scripted {v}",
+                               "discrepancies": [{"where": "loop", "expected": "fillet", "observed": "sharp", "severity": "medium", "suggestion": "add a fillet"}] if v == "revise" else []})
+        return orig(system, parts)
+
+    monkeypatch.setattr(fake, "fake_complete", scripted)
+    spec = PartSpec.load(SPEC)
+    s = Session.create("revise", spec, sessions_dir=tmp_path)
+    llm = LLM(provider="fake", client=FakeResponsesClient(default_design_script(), revise_script()))
+    out = asyncio.run(run_designer(s, spec=spec, llm=llm, critic_rounds=2))
+    assert out.status == "done", out.to_dict()
+    evs = [json.loads(line) for line in (s.dir / "events.jsonl").read_text().splitlines()]
+    kinds = [e["kind"] for e in evs]
+    assert kinds.count("critic") == 2 and "critic_followup" in kinds and kinds.count("iteration") == 2
+    assert [e["verdict"] for e in evs if e["kind"] == "critic"] == ["revise", "pass"]
+    assert kinds.index("critic_followup") < kinds.index("run_end") and s.meta["critic_rounds"] == 2
+
+
+def test_ask_user_then_resume_via_api(tmp_path, monkeypatch):
+    """The designer asks a question (run pauses as waiting_user); answering through the API resumes and finishes."""
+    monkeypatch.setenv("KIN_SESSIONS_DIR", str(tmp_path / "sessions"))
+    monkeypatch.setenv("KIN_PROVIDER", "fake")
+    from fastapi.testclient import TestClient
+
+    import kintsugi.server.app as appmod
+    from kintsugi.agent import llm as llmmod
+
+    ask_script = [[{"call": "read_file", "args": {"path": "spec.yaml"}}],
+                  [{"text": "The spec leaves the loop width open."},
+                   {"call": "ask_user", "args": {"question": "How wide should the finger loop be?", "options": ["40 mm", "48 mm"]}}]]
+    resume_script = [[{"call": "list_templates", "args": {}}], [{"call": "read_template", "args": {"name": "ring_loop_handle"}}],
+                     [{"call": "write_file", "args": lambda ctx: {"path": "part.scad", "content": (Path("templates") / "ring_loop_handle.scad").read_text()}}],
+                     [{"call": "iterate", "args": {"label": "48 mm loop as the user asked"}}],
+                     [{"call": "finish", "args": {"narration": "Loop at 48 mm per your answer."}}]]
+    client = FakeResponsesClient(ask_script, resume_script)
+    llmmod.set_llm(LLM(provider="fake", client=client))
+    appmod.SESSIONS_DIR = (tmp_path / "sessions").resolve()
+    appmod.SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    with TestClient(appmod.app) as c:
+        sid = c.post("/api/sessions", json={"name": "ask", "spec_yaml": SPEC.read_text()}).json()["meta"]["id"]
+        assert c.post(f"/api/sessions/{sid}/run", json={"budget": 4, "critic_rounds": 0}).status_code == 202
+        for _ in range(60):
+            d = c.get(f"/api/sessions/{sid}").json()
+            if not d["running"]:
+                break
+            time.sleep(0.5)
+        assert d["meta"]["status"] == "waiting_user" and d["meta"]["question"]["options"] == ["40 mm", "48 mm"]
+        assert c.post(f"/api/sessions/{sid}/run", json={"answer": "48 mm", "critic_rounds": 0}).status_code == 202
+        for _ in range(120):
+            d = c.get(f"/api/sessions/{sid}").json()
+            if not d["running"]:
+                break
+            time.sleep(0.5)
+        assert d["meta"]["status"] == "done" and d["meta"]["question"] is None and d["stage"] == "review", d["meta"]
+        kinds = [e["kind"] for e in c.get(f"/api/sessions/{sid}/events", params={"once": "true"}).json()["events"]]
+        assert kinds.count("run_start") == 2 and "question" in kinds and "answer" in kinds and kinds.count("run_end") == 2
+        # the resume prompt carried the answer to the model
+        resume_call = [k for k in client.calls if len(k["input"]) == 1 and k["input"][0].get("role") == "user"][1]
+        assert "48 mm" in json.dumps(resume_call["input"][0]["content"])
+    llmmod.get_llm(reset=True)
