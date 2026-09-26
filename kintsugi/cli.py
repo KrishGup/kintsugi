@@ -5,7 +5,7 @@
     kin blueprint part.stl --spec spec.yaml -o sheets/ [--iteration N]
     kin new --spec spec.yaml --name bottle_handle [--sessions DIR]      -> creates a session directory
     kin iterate SESSION_DIR [--label "..."]                               -> compile + checks + blueprint for part.scad
-    kin design SESSION_DIR [--model opus] [--budget 8] [--critic-rounds 2] [--message "..."]
+    kin design SESSION_DIR [--provider openai|fake] [--model gpt-6-astra] [--budget 8] [--critic-rounds 2] [--message "..."]
     kin critique SESSION_DIR [--iteration N]
     kin params part.scad                                                  -> customizer parameters as JSON
     kin sheet -o calibration_sheet.pdf                                    -> printable ArUco calibration sheet

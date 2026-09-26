@@ -178,7 +178,10 @@ async def run_intake(session: Session, text: str, photos: list[Path], model: str
         spec.part.name = "_".join(words[:3]) or "part"
     spec.save(session.spec_path)
     (session.dir / "intake.json").write_text(json.dumps(data, indent=2))
-    session.update_meta(status="intake_done", name=spec.part.name, stage="capture")
+    # keep a user-given session name; only fill in the default one
+    cur = str(session.meta.get("name") or "")
+    new_name = cur if cur and cur not in ("part", "session") and not cur.startswith("part_") else spec.part.name
+    session.update_meta(status="intake_done", name=new_name, stage="capture")
     session.commit("intake: draft spec")
     session.emit("intake", object=data.get("object"), part_role=data.get("part_role"), damage=data.get("damage"),
                  questions=data.get("questions", []), capture_plan=data.get("capture_plan", []), duration_s=round(time.time() - t0, 1))

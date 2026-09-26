@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError, kin } from "../api";
 import { REFRESH_KINDS, useEvents } from "../events";
-import ChatPane from "../panes/ChatPane";
 import CenterPane from "../panes/CenterPane";
+import LeftPane from "../panes/LeftPane";
 import RightPane from "../panes/RightPane";
+import StageBar from "../panes/StageBar";
 import TopBar from "../panes/TopBar";
 import { useToast } from "../toast";
 import type { KinEvent, SessionDetail } from "../types";
@@ -105,6 +106,7 @@ export default function Session() {
         return true;
       } catch (e) {
         if (e instanceof ApiError && e.status === 409) toast("A run is already in progress", "warn");
+        else if (e instanceof ApiError && e.status === 412) toast("Add your OpenAI API key in Settings to run the designer", "warn");
         else error(e, "Could not start the designer");
         return false;
       }
@@ -187,9 +189,10 @@ export default function Session() {
       <div className="ws">
         <div className="ws-top">
           <TopBar />
+          <StageBar />
         </div>
         <div className="ws-left">
-          <ChatPane />
+          <LeftPane />
         </div>
         <div className="ws-center">
           <CenterPane />

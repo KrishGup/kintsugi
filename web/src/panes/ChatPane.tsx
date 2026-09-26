@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { fileUrl } from "../api";
 import { useSession } from "../pages/session-context";
 import type { Discrepancy, KinEvent } from "../types";
@@ -13,7 +13,7 @@ function toolName(t: string): string {
   return t.replace(/^mcp__kin__/, "kin.").replace(/^mcp__/, "");
 }
 
-export default function ChatPane() {
+export default function ChatPane({ header }: { header?: ReactNode }) {
   const s = useSession();
   const d = s.detail!;
   const body = useRef<HTMLDivElement>(null);
@@ -82,10 +82,10 @@ export default function ChatPane() {
 
   return (
     <div className="pane" style={{ position: "relative" }}>
-      <div className="pane-head">
-        <h2>Chat &amp; timeline</h2>
+      <div className="pane-head" style={header ? { padding: "0 4px" } : undefined}>
+        {header || <h2>Chat &amp; timeline</h2>}
         <span className="grow" />
-        <span className="small muted num">{s.events.length} events</span>
+        {!header && <span className="small muted num">{s.events.length} events</span>}
       </div>
       <div className="pane-body pane-body-flush" ref={body} onScroll={onScroll}>
         <div className="timeline">
@@ -384,6 +384,41 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
           <span>branched from iteration {String(ev.iteration ?? "")}</span>
         </div>
       );
+    case "step":
+      return null;
+    case "usage": {
+      const cost = typeof ev.cost_usd === "number" ? ev.cost_usd : 0;
+      return (
+        <div className="card-sys">
+          <span>
+            {String(ev.calls ?? "")} model calls · ${cost.toFixed(2)}
+            {ev.model ? ` · ${String(ev.model)}` : ""}
+          </span>
+        </div>
+      );
+    }
+    case "stage":
+      return (
+        <div className="card-sys">
+          <span>stage → {String(ev.stage || "")}</span>
+        </div>
+      );
+    case "answers": {
+      const applied = (ev.applied as Array<Record<string, unknown>>) || [];
+      return (
+        <div className="card">
+          <div className="card-head">
+            <span>Your answers</span>
+            <span className="t">{t}</span>
+          </div>
+          <ul className="md">
+            {applied.map((a, i) => (
+              <li key={i}>{a.dim ? `${String(a.dim)} = ${fmtNum(a.value)} mm (confirmed)` : String(a.note || "")}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
     default:
       return (
         <div className="card-sys">

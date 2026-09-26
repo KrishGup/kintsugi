@@ -75,7 +75,7 @@ async def main() -> None:
             continue
         rep = run_checks(d / "part.stl", spec, iteration=1)
         bp = make_blueprint(d / "part.stl", spec, rep, d / "sheets", 1)
-        verdict = await critique(spec, rep, [p for p in (bp.sheet_path, bp.sections_path) if p], model="opus", cwd=d)
+        verdict = await critique(spec, rep, [p for p in (bp.sheet_path, bp.sections_path) if p], model=None, cwd=d)
         text = json.dumps(verdict.to_dict()).lower()
         caught = None
         if v["defect"] is not None:

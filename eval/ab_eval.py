@@ -337,7 +337,7 @@ def write_report(results: list[dict], mode: str) -> None:
               "- The specs were written by the Kintsugi authors from each reference's own parameters; a spec that better captures a designer's unstated intent would change the comparison.",
               "- The judge is the same model family as the designer, sees the check tables (which the human designs were never written against), and judges from drawings, not from printed parts.",
               "- Silhouette IoU and Chamfer distance describe how different the shapes are, not which is better; only interfaces are specified, so bodies are free to differ.",
-              "- Costs are Agent API list prices for the design run (designer + critic); the human designs' cost is a person's time.",
+              "- Costs are model API list prices for the design run (designer + critic); the human designs' cost is a person's time.",
               "- `n = 1` run per part. Runs vary (the bottle-handle benchmark converged in 1, 1, 1, 2 and 7 iterations across five runs).",
               "", "## Reading the numbers", "",
               "- *checks*: every hard check in the spec (interface dimensions with clearance, interference against the context proxies, walls, topology).",

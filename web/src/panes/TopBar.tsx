@@ -2,8 +2,10 @@ import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fileUrl, kin } from "../api";
 import { useDismiss } from "../hooks";
+import { ProviderPill, useLlm } from "../llm";
 import { Mark } from "../pages/Home";
 import { useSession } from "../pages/session-context";
+import { fmtElapsed, useRunProgress } from "../progress";
 import { useToast } from "../toast";
 import { Pill, Spinner, statusLabel, statusTone } from "../ui";
 
@@ -26,8 +28,14 @@ export default function TopBar() {
 
   const status = s.running ? "running" : d.meta.status;
   const waiting = d.meta.status === "waiting_user" && !s.running;
+  const llm = useLlm();
+  const p = useRunProgress(s.events, s.running);
 
   const onRun = async () => {
+    if (!llm.ready) {
+      llm.openSettings();
+      return;
+    }
     const ok = await s.startRun({
       message: message.trim() || undefined,
       strategy: strategy.trim() || undefined,
@@ -78,12 +86,22 @@ export default function TopBar() {
         <Pill tone={statusTone(status, s.running)} dot={s.running} title={`status: ${d.meta.status}`}>
           {statusLabel(status, s.running)}
         </Pill>
+        {s.running && (
+          <span className="topbar-progress num" title="iterations used / budget · model steps · elapsed">
+            it {p.iterations}
+            {p.budget ? `/${p.budget}` : ""} · step {p.step} · {fmtElapsed(p.elapsed)}
+          </span>
+        )}
         {!s.connected && (
           <Pill tone="warn" title="Event stream disconnected; reconnecting">
             offline
           </Pill>
         )}
         {s.busy && <Spinner size={12} label={s.busy} />}
+      </div>
+
+      <div className="topbar-provider">
+        <ProviderPill />
       </div>
 
       <div className="topbar-actions">

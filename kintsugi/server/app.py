@@ -73,8 +73,35 @@ def get_settings():
             "defaults": DEFAULT_MODELS, "providers": ["openai", "agent", "fake"]}
 
 
+async def _probe_openai(model: str) -> dict[str, Any]:
+    """A free call to OpenAI to validate the key and the model id (models.retrieve)."""
+    try:
+        from openai import AsyncOpenAI
+        client = AsyncOpenAI(timeout=20, max_retries=1)
+        m = await client.models.retrieve(model)
+        return {"checked": True, "ok": True, "model": getattr(m, "id", model)}
+    except Exception as e:  # noqa: BLE001
+        name = type(e).__name__
+        status = getattr(e, "status_code", None)
+        if status == 401 or "Authentication" in name:
+            return {"checked": True, "ok": False, "message": "OpenAI rejected the API key (401)."}
+        if status == 404 or "NotFound" in name:
+            return {"checked": True, "ok": False, "message": f"The model '{model}' is not available to this key."}
+        return {"checked": False, "ok": None, "message": f"Could not reach OpenAI to verify the key ({name}); it is saved anyway."}
+
+
+@app.post("/api/settings/test")
+async def test_settings():
+    llm = get_llm()
+    if llm.provider != "openai":
+        return {"checked": False, "ok": True, "message": f"{llm.provider} provider needs no key check"}
+    if not os.environ.get("OPENAI_API_KEY"):
+        return {"checked": True, "ok": False, "message": "OPENAI_API_KEY is not set"}
+    return await _probe_openai(llm.models["designer"])
+
+
 @app.post("/api/settings")
-def set_settings(body: Settings):
+async def set_settings(body: Settings):
     changed = {}
     if body.openai_api_key is not None and body.openai_api_key.strip():
         os.environ["OPENAI_API_KEY"] = body.openai_api_key.strip()
@@ -97,8 +124,11 @@ def set_settings(body: Settings):
             lines = [ln for ln in lines if not ln.startswith(k + "=")]
             lines.append(f"{k}={val}")
         env_path.write_text("\n".join(lines) + "\n")
-    get_llm(reset=True)
-    return {"ok": True, "changed": list(changed), "llm": get_llm().status()}
+    llm = get_llm(reset=True)
+    probe = None
+    if llm.provider == "openai" and os.environ.get("OPENAI_API_KEY") and (body.openai_api_key or body.designer_model or body.provider):
+        probe = await _probe_openai(llm.models["designer"])
+    return {"ok": True, "changed": list(changed), "llm": llm.status(), "probe": probe}
 
 
 @app.get("/api/templates")
@@ -297,15 +327,19 @@ def confirm_dim(sid: str, body: ConfirmDim):
 # ---- photos -----------------------------------------------------------------------------------------
 
 @app.post("/api/sessions/{sid}/photos")
-async def upload_photos(sid: str, files: list[UploadFile] = File(...), expect_sheet: bool = Form(True)):
+async def upload_photos(sid: str, files: list[UploadFile] = File(...), expect_sheet: bool = Form(True), label: str | None = Form(None)):
+    """Store and grade photos. `label` (e.g. `shot2`) prefixes the file name so the UI can match a capture-plan slot."""
     s = _session(sid)
     from kintsugi.measure.grade import grade_capture
     import cv2
     import numpy as np
     out = []
+    prefix = "".join(ch for ch in (label or "") if ch.isalnum() or ch in "-_")[:32]
     for f in files:
         data = await f.read()
         name = Path(f.filename or "photo.jpg").name
+        if prefix:
+            name = f"{prefix}_{name}"
         dest = s.dir / "photos" / name
         i = 1
         while dest.exists():

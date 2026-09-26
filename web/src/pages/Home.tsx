@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { kin, sheetPdfUrl } from "../api";
+import { ApiError, kin, sheetPdfUrl } from "../api";
 import { useBusy } from "../hooks";
+import { ProviderPill, useLlm } from "../llm";
 import { useToast } from "../toast";
 import type { ExampleSpec, IntakeResult, SessionMeta } from "../types";
 import { Empty, Pill, Spinner, relTime, statusLabel, statusTone } from "../ui";
@@ -11,10 +12,10 @@ type Mode = "spec" | "photos";
 export default function Home() {
   const nav = useNavigate();
   const { toast, error } = useToast();
+  const llm = useLlm();
   const [sessions, setSessions] = useState<SessionMeta[] | null>(null);
   const [examples, setExamples] = useState<ExampleSpec[]>([]);
-  const [health, setHealth] = useState<{ version: string; openscad?: string | null } | null>(null);
-  const [mode, setMode] = useState<Mode>("spec");
+  const [mode, setMode] = useState<Mode>("photos");
 
   // new-part form
   const [name, setName] = useState("");
@@ -58,7 +59,6 @@ export default function Home() {
         }
       })
       .catch((e) => error(e, "Could not load example specs"));
-    kin.health().then(setHealth).catch(() => setHealth(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -102,12 +102,16 @@ export default function Home() {
       toast("Add at least one photo first", "warn");
       return;
     }
+    if (!llm.ready) {
+      llm.openSettings();
+      return;
+    }
+    let sid = intakeSid;
     try {
       setIntake(null);
       setIntakeStep(1);
-      let sid = intakeSid;
       if (!sid) {
-        const d = await kin.createSession({ name: name.trim() || undefined });
+        const d = await kin.createSession({ name: name.trim() || undefined, intake: true });
         sid = d.meta.id;
         setIntakeSid(sid);
       }
@@ -123,11 +127,15 @@ export default function Home() {
         setIntakeSpecSaved(res.spec_yaml);
       }
       setIntakeStep(4);
-      toast("Intake complete — review the draft spec", "pass");
-      loadSessions();
+      toast(`Intake: ${res.object || "object recognised"} — opening the session`, "pass");
+      nav(`/s/${sid}`);
     } catch (e) {
       setIntakeStep(intake ? 4 : 0);
-      error(e, "Intake failed");
+      if (e instanceof ApiError && e.status === 412) {
+        toast("Add your OpenAI API key to analyze photos", "warn");
+        llm.openSettings();
+      } else error(e, "Intake failed");
+      if (sid && intakeStep >= 2) loadSessions();
     }
   };
 
@@ -168,19 +176,33 @@ export default function Home() {
         </Link>
         <span className="brand-tag">Photograph what broke. Print what fits.</span>
         <span className="header-spacer" />
+        <ProviderPill />
         <a className="btn btn-sm" href={sheetPdfUrl} target="_blank" rel="noreferrer" title="Printable ArUco calibration sheet (letter)">
           <DownloadIcon /> Calibration sheet
         </a>
+        <button className="btn btn-sm" onClick={llm.openSettings} title="Model provider, API key, models">
+          <GearIcon /> Settings
+        </button>
       </header>
 
       <main className="home">
         <div className="hero">
-          <h1>Sessions</h1>
+          <h1>Photograph what broke. Print what fits.</h1>
           <p>
-            Each session turns a Part Spec into a verified, parametric OpenSCAD part. Start from an example spec, or photograph the broken
-            object and let intake draft the spec for you.
+            Kintsugi turns photos of a broken part into a verified, printable replacement: GPT-6 writes the OpenSCAD, compiles it, measures the
+            mesh against every dimension of the real object, fixes what fails, and a second model reviews the blueprint before you print.
           </p>
         </div>
+        {llm.status && !llm.ready && (
+          <div className="banner banner-warn mb">
+            <span>
+              <b>No model provider yet.</b> Add your OpenAI API key to design parts — or switch to demo mode for a scripted walkthrough.
+            </span>
+            <button className="btn btn-sm btn-primary" onClick={llm.openSettings}>
+              Open settings
+            </button>
+          </div>
+        )}
 
         <div className="home-grid">
           <section className="panel">
@@ -243,10 +265,11 @@ export default function Home() {
                 </tbody>
               </table>
             )}
-            {health && (
+            {llm.version && (
               <div className="panel-body health">
-                kintsugi v{health.version}
-                {health.openscad ? ` · openscad ${health.openscad}` : " · openscad not found"}
+                kintsugi v{llm.version}
+                {llm.openscad ? ` · openscad ${llm.openscad}` : " · openscad not found"}
+                {llm.status ? ` · ${llm.status.provider}${llm.status.models.designer ? " " + llm.status.models.designer : ""}` : ""}
               </div>
             )}
           </section>
@@ -256,16 +279,16 @@ export default function Home() {
               <h2>New part</h2>
               <span className="grow" />
               <div className="mode-switch" role="tablist" aria-label="Start from">
-                <button role="tab" aria-selected={mode === "spec"} className={mode === "spec" ? "active" : ""} onClick={() => setMode("spec")}>
-                  From spec
-                </button>
                 <button
                   role="tab"
                   aria-selected={mode === "photos"}
                   className={mode === "photos" ? "active" : ""}
                   onClick={() => setMode("photos")}
                 >
-                  Photo intake
+                  Photograph what broke
+                </button>
+                <button role="tab" aria-selected={mode === "spec"} className={mode === "spec" ? "active" : ""} onClick={() => setMode("spec")}>
+                  From a spec
                 </button>
               </div>
             </div>
@@ -395,19 +418,7 @@ export default function Home() {
                   />
                 </label>
               )}
-              {mode === "photos" && intakeStep === 4 && (
-                <label className="field">
-                  <span className="field-label">Draft Part Spec (YAML) — edit before opening</span>
-                  <textarea
-                    className="textarea textarea-mono"
-                    rows={14}
-                    value={intakeYaml}
-                    onChange={(e) => setIntakeYaml(e.target.value)}
-                    spellCheck={false}
-                    placeholder="Filled in by intake; edit before opening the session."
-                  />
-                </label>
-              )}
+
 
               {mode === "spec" && (
                 <>
@@ -437,11 +448,8 @@ export default function Home() {
               {mode === "photos" && intakeSid && intakeStep === 4 && (
                 <div className="row">
                   <button className="btn btn-primary" onClick={onOpenIntake}>
-                    Save spec &amp; open session
+                    Open the session →
                   </button>
-                  <Link to={`/s/${intakeSid}`} className="btn btn-sm">
-                    Open without saving
-                  </Link>
                 </div>
               )}
             </div>
@@ -562,6 +570,15 @@ function CameraIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
       <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
       <circle cx="12" cy="13" r="3.2" />
+    </svg>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
     </svg>
   );
 }

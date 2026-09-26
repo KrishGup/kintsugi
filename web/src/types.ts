@@ -1,11 +1,47 @@
 // Shapes returned by the Kintsugi FastAPI backend (kintsugi/server/app.py).
 
+export type Stage = "intake" | "capture" | "spec" | "design" | "review" | "export";
+
+export interface LlmStatus {
+  provider: "openai" | "agent" | "fake" | string;
+  models: { designer?: string; critic?: string; vision?: string; fast?: string; [k: string]: string | undefined };
+  effort: string;
+  ready: boolean;
+  reason: string;
+}
+
+export interface Health {
+  ok: boolean;
+  version: string;
+  openscad?: string | null;
+  sessions_dir?: string;
+  llm?: LlmStatus;
+}
+
+export interface SettingsInfo {
+  llm: LlmStatus;
+  openai_key_masked: string;
+  defaults: Record<string, Record<string, string>>;
+  providers: string[];
+}
+
+export interface SettingsBody {
+  openai_api_key?: string;
+  provider?: string;
+  designer_model?: string;
+  critic_model?: string;
+  vision_model?: string;
+  effort?: string;
+  persist?: boolean;
+}
+
 export interface SessionMeta {
   id: string;
   name: string;
   created: number;
   updated?: number;
   status: string; // new | intake_done | running | iterating | waiting_user | done | budget_exhausted | stopped | error
+  stage?: Stage | string;
   iteration: number;
   critic_rounds?: number;
   model?: string;
@@ -202,6 +238,33 @@ export interface SessionDetail {
   running: boolean;
   export: string[];
   unconfirmed: string[];
+  intake: IntakeResult | null;
+  stage: Stage | string;
+  llm?: LlmStatus;
+}
+
+export interface IntakeQuestion {
+  id?: string;
+  text?: string;
+  kind?: string; // number | choice | text
+  options?: string[];
+  dim?: string | null;
+}
+
+export interface CaptureShot {
+  n?: number;
+  name?: string;
+  purpose?: string;
+  how?: string;
+  measures?: string[];
+}
+
+export interface AnswerBody {
+  id?: string;
+  dim?: string | null;
+  kind: "number" | "choice" | "text";
+  value: string | number;
+  question?: string;
 }
 
 export interface ExampleSpec {
@@ -216,8 +279,8 @@ export interface IntakeResult {
   interfaces_reasoning?: string;
   spec?: unknown;
   spec_error?: string;
-  capture_plan?: Array<{ n?: number; name?: string; purpose?: string; how?: string; measures?: string[] }>;
-  questions?: Array<{ id?: string; text?: string; kind?: string; options?: string[]; dim?: string | null }>;
+  capture_plan?: CaptureShot[];
+  questions?: IntakeQuestion[];
   confidence?: number;
   spec_yaml?: string;
 }

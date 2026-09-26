@@ -163,6 +163,17 @@ async def _run_openai(session, spec, state, model, budget, critic_rounds, user_m
     if res.error:
         state.error = res.error
         emit("error", message=res.error)
+    if not state.finished and not state.question and not res.error and res.stopped_by is None and state.last_result and state.last_result.ok:
+        # the model stopped talking instead of calling finish although the last iteration passed: one nudge
+        emit("assistant", text="(designer stopped without calling finish; asking it to wrap up)")
+        nudge = [text_part("You stopped without calling finish, but your last iteration passed every check. Read part.scad and the latest "
+                           "iterations/iter_NN/summary.txt; if the design is complete call finish(narration=...), otherwise continue iterating.")]
+        res = await llm.run_tools(system=system, parts=nudge, tools=tools, model=model, max_steps=max(10, max_turns // 5),
+                                  on_text=on_text, on_tool=on_tool, on_step=on_step)
+        state.turns += res.steps
+        if res.error:
+            state.error = res.error
+            emit("error", message=res.error)
     rounds = 0
     followup_parts: list[dict[str, Any]] | None = None
     # the critic loop: the designer continues in a fresh tool loop that carries the critic's verdict

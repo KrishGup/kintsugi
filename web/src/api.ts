@@ -1,12 +1,17 @@
 import type {
+  AnswerBody,
   ExampleSpec,
   ExportResult,
+  Health,
   IntakeResult,
   IterationRunResult,
+  KinEvent,
   MeasureResult,
   Photo,
   SessionDetail,
   SessionMeta,
+  SettingsBody,
+  SettingsInfo,
 } from "./types";
 
 export class ApiError extends Error {
@@ -74,19 +79,31 @@ export function fileUrl(sid: string, rel: string, v?: string | number): string {
 export const sheetPdfUrl = "/api/sheet.pdf";
 
 export const kin = {
-  health: () => api.get<{ ok: boolean; version: string; openscad?: string | null }>("/api/health"),
+  health: () => api.get<Health>("/api/health"),
+  settings: () => api.get<SettingsInfo>("/api/settings"),
+  setSettings: (body: SettingsBody) =>
+    api.post<{ ok: boolean; changed: string[]; llm: SettingsInfo["llm"]; probe?: { checked: boolean; ok: boolean | null; message?: string; model?: string } | null }>(
+      "/api/settings",
+      body,
+    ),
+  testSettings: () => api.post<{ checked: boolean; ok: boolean | null; message?: string; model?: string }>("/api/settings/test"),
   examples: () => api.get<ExampleSpec[]>("/api/specs/examples"),
   sessions: () => api.get<SessionMeta[]>("/api/sessions"),
-  createSession: (body: { name?: string; spec_yaml?: string; scad?: string }) => api.post<SessionDetail>("/api/sessions", body),
+  createSession: (body: { name?: string; spec_yaml?: string; scad?: string; intake?: boolean }) => api.post<SessionDetail>("/api/sessions", body),
+  setStage: (sid: string, stage: string) => api.post<{ ok: boolean; stage: string }>(`${S(sid)}/stage`, { stage }),
+  answers: (sid: string, answers: AnswerBody[]) =>
+    api.post<{ ok: boolean; applied: unknown[]; unconfirmed: string[]; spec_yaml: string }>(`${S(sid)}/answers`, { answers }),
+  eventsOnce: (sid: string, since = 0) => api.get<{ since: number; next: number; events: KinEvent[] }>(`${S(sid)}/events?once=true&since=${since}`),
   session: (sid: string) => api.get<SessionDetail>(S(sid)),
   deleteSession: (sid: string) => api.del<{ ok: boolean }>(S(sid)),
   updateSpec: (sid: string, spec_yaml: string) => api.put<{ ok: boolean }>(`${S(sid)}/spec`, { spec_yaml }),
   confirm: (sid: string, dim: string, value: number, source = "user_stated") =>
     api.post<{ ok: boolean; unconfirmed: string[] }>(`${S(sid)}/confirm`, { dim, value, source }),
-  uploadPhotos: (sid: string, files: File[], expectSheet: boolean) => {
+  uploadPhotos: (sid: string, files: File[], expectSheet: boolean, label?: string) => {
     const fd = new FormData();
     for (const f of files) fd.append("files", f, f.name);
     fd.append("expect_sheet", expectSheet ? "true" : "false");
+    if (label) fd.append("label", label);
     return api.post<Photo[]>(`${S(sid)}/photos`, fd);
   },
   measure: (sid: string, body: { photo: string; mode: "sheet" | "reference"; dim?: string | null; reference?: string }) =>

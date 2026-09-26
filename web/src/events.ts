@@ -24,6 +24,10 @@ export const EVENT_KINDS = [
   "export",
   "intake",
   "branch",
+  "step",
+  "usage",
+  "stage",
+  "answers",
   "event",
 ];
 
@@ -46,6 +50,9 @@ export const REFRESH_KINDS = new Set([
   "answer",
   "error",
   "narration",
+  "stage",
+  "answers",
+  "usage",
 ]);
 
 export interface EventStream {

@@ -23,21 +23,21 @@ Built for OFFGRID (Hack47), September–October 2026.
 | `kintsugi/checks` | mesh measurements: sections, robust circle fits, hole patterns, notch (clip) fits, wall thickness by ray casting, overhang/bed/orientation scoring, boolean interference against context proxies |
 | `kintsugi/render` | software z‑buffer renderer for 7 orthographic/iso views with hidden lines, hatched sections, mesh‑derived dimension lines, composed blueprint sheets |
 | `kintsugi/spec` | the Part Spec (pydantic): interfaces, requirements, context proxies, print settings, evidence fusion and confirmation gates |
-| `kintsugi/agent` | the designer (agent SDK session in the workspace with `iterate`/`finish`/`ask_user` tools), the code‑blind critic, photo intake, iteration pipeline with budget/oscillation/strategy‑switch policy, export bundle |
+| `kintsugi/agent` | the designer (a GPT‑6 tool loop on the OpenAI Responses API, sandboxed file tools + `iterate`/`finish`/`ask_user`), the code‑blind critic, photo intake, iteration pipeline with budget/oscillation/strategy‑switch policy, export bundle; a scripted `fake` provider runs the whole loop without a key |
 | `kintsugi/measure` | printable ArUco calibration sheet, marker detection + homography rectification (sub‑0.1 mm on synthetic photos to 35° tilt), circle/outline/rectangle measurement, coin/card reference scale, capture grading, synthetic photo generator |
-| `kintsugi/server` + `web/` | FastAPI API with SSE event stream; React + three.js workspace: chat/timeline, 3D viewer, blueprint tabs, checks table, parameter sliders, code pane, spec editor, photos/measure |
+| `kintsugi/server` + `web/` | FastAPI API with SSE event stream; React + three.js workspace: a six‑stage guide (intake → capture → confirm → design → review → print), chat/timeline, 3D viewer, blueprint tabs, checks table, parameter sliders, code pane, spec editor, photos/measure, model settings |
 | `templates/` | seven vetted parametric templates (ring‑and‑loop handle, L bracket, snap clip, D‑shaft knob, hook, spacer/gasket, threaded cap), each with a spec it passes |
 | `eval/` | benchmark specs and the A/B evaluation against human‑designed OpenSCAD repair parts |
 
 ## Quick start
 
-Requirements: Python 3.11+, OpenSCAD (2021.01 works; a Manifold‑enabled nightly is faster), `xvfb-run` on headless Linux (only for OpenSCAD's own PNG renders), Node 22 for the web UI, and a Agent model for the agent (an `AGENT_API_KEY`, or a logged‑in `agent` CLI, which the Agent SDK also accepts).
+Requirements: Python 3.11+, OpenSCAD (2021.01 works; a Manifold‑enabled nightly is faster), `xvfb-run` on headless Linux (only for OpenSCAD's own PNG renders), Node 22 for the web UI, and an `OPENAI_API_KEY` for the agent (GPT‑6 through the Responses API). Without a key, the `fake` provider runs the whole pipeline with a scripted designer.
 
 ```bash
 git clone https://github.com/KrishGup/kintsugi && cd kintsugi
 pip install -e ".[dev]"
 sudo apt-get install -y openscad xvfb          # or your platform's equivalent
-cp .env.example .env                          # set AGENT_API_KEY (or rely on the agent CLI login)
+cp .env.example .env                          # set OPENAI_API_KEY (or paste it in the web app's Settings)
 
 # 1. the toolchain, no model needed
 kin compile templates/ring_loop_handle.scad -o /tmp/handle.stl
@@ -46,7 +46,7 @@ kin blueprint /tmp/handle.stl --spec eval/specs/bottle_handle.yaml -o /tmp/sheet
 
 # 2. the loop, with the model
 S=$(kin new --spec eval/specs/bottle_handle.yaml --name bottle_handle)
-kin design "$S" --model opus --budget 8 --critic-rounds 2
+kin design "$S" --budget 8 --critic-rounds 2  # gpt-6-astra by default; --provider fake needs no key
 kin export "$S"                               # STL/3MF/SCAD/blueprint.pdf/print_card.md/coupon.stl/bundle.zip
 
 # 3. the web app
@@ -69,13 +69,13 @@ kin serve --port 8000                         # open http://localhost:8000
 
 ## How the agent runs
 
-The designer is a agent SDK session (the same agent loop as the coding assistant) whose working directory is the session workspace. It has file tools, a shell confined to that directory, and five in‑process tools: `iterate` (compile + checks + blueprint; returns the check table and the sheets as images), `list_templates`, `read_template`, `ask_user`, `finish`. The critic is a separate single‑turn call with fresh context that receives the spec, the check table and the sheets — never the code — and returns a JSON verdict. Both default to Opus; set `KIN_DESIGNER_MODEL` / `KIN_CRITIC_MODEL` to change.
+The designer is a GPT‑6 tool loop on the OpenAI Responses API (`gpt-6-astra`, reasoning effort `high` by default) whose working directory is the session workspace. It has sandboxed file tools (`read_file`, `write_file`, `edit_file`, `list_files`, `run_command` — confined to the session directory, with the templates and BOSL2 readable) and five in‑process tools: `iterate` (compile + checks + blueprint; returns the check table and the sheets as images the model looks at), `list_templates`, `read_template`, `ask_user`, `finish`. Tool steps are chained server‑side with `previous_response_id`, so each blueprint image is uploaded once; `KIN_OPENAI_STATELESS=1` resends the transcript with encrypted reasoning instead. The critic is a separate single‑turn call with fresh context that receives the spec, the check table and the sheets — never the code — and returns a JSON verdict. Set `KIN_DESIGNER_MODEL` / `KIN_CRITIC_MODEL` / `KIN_VISION_MODEL` (or use the Settings dialog) to change models; `gpt-6-sol` is the fast, inexpensive option for the critic and intake. A `agent` provider (agent SDK, `pip install ".[agent]"`) and a scripted `fake` provider share the same interface.
 
 Every iteration is a git commit in the session directory. The UI panels are views of the session's files; the event log (`events.jsonl`) drives the timeline.
 
 ## Evaluation
 
-- `tests/` — 50+ tests that need no model: toolchain accuracy on known geometry (circle fits within 0.05 mm, wall thickness, interference volumes within 3%), measurement accuracy on synthetic photos, every template against its spec, the session pipeline and export.
+- `tests/` — 60 tests that need no model: toolchain accuracy on known geometry (circle fits within 0.05 mm, wall thickness, interference volumes within 3%), measurement accuracy on synthetic photos, every template against its spec, the session pipeline and export, the agent runtime with a scripted provider, the OpenAI wire format through the real SDK against a mock transport, and the web API end to end.
 - `eval/ab_eval.py` — the A/B study: five human‑designed OpenSCAD repair parts from public repositories, a spec written from each one's own mating dimensions, the designer builds from the spec alone, both measured by the same checker and judged blind. Report in `eval/reports/`.
 
 ## Repository layout
@@ -92,7 +92,7 @@ docs/                design document
 
 ## Disclosure
 
-Kintsugi uses OpenSCAD (GPL‑2.0, invoked as a separate process), BOSL2 (BSD‑2, vendored), OpenCV, trimesh + manifold3d, shapely, FastAPI, React, three.js, Monaco, and Agent models through the agent SDK. The A/B references are cloned at evaluation time from their authors' repositories and are not redistributed here.
+Kintsugi uses OpenSCAD (GPL‑2.0, invoked as a separate process), BOSL2 (BSD‑2, vendored), OpenCV, trimesh + manifold3d, shapely, FastAPI, React, three.js, Monaco, and OpenAI GPT‑6 models through the official `openai` Python SDK (Responses API). The A/B references are cloned at evaluation time from their authors' repositories and are not redistributed here.
 
 ## License
 

@@ -27,12 +27,12 @@ dependencies = [
   "python-multipart>=0.0.9",
   "sse-starlette>=2.0",
   "httpx>=0.27",
-  "agent-agent-sdk>=0.1.20",
-  "vendor>=0.40",
+  "openai>=2.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-timeout>=2.3", "ruff>=0.5"]
+agent = ["agent-agent-sdk>=0.1.20", "vendor>=0.40"]
 
 [project.scripts]
 kin = "kintsugi.cli:main"

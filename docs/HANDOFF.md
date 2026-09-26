@@ -1,27 +1,36 @@
 # Hand-off notes — what to try, what to expect, what is rough
 
-## Try this first (30 minutes)
+## Try this first
 
-1. **Run the tests** (no model needed): `pip install -e ".[dev]" && pytest -q`. ~4 minutes, all green means OpenSCAD, the geometry stack and the measurement core work on your machine.
-2. **The loop from a typed spec** (needs `AGENT_API_KEY` in `.env` or a logged-in `agent` CLI):
+1. **Run the tests** (no model needed): `pip install -e ".[dev]" && pytest -q`. About four minutes; all green means OpenSCAD, the geometry stack, the measurement core, the agent runtime (scripted provider) and the web API work on your machine.
+2. **Start the app**: `(cd web && npm install && npm run build)` once, then `kin serve` and open http://localhost:8000. The header pill says which model provider is active. Click **Settings**, paste your OpenAI API key, tick "remember on this server" — it is written to `.env`, never leaves the machine except to OpenAI.
+3. **Walk the demo without a key**: Settings → *Demo mode*. The scripted designer builds the bottle handle from the template so every screen (guide, 3D, sheets, checks, sliders, export) can be seen in a minute.
+4. **The loop from a typed spec**, on the CLI:
    ```bash
    S=$(kin new --spec eval/specs/bottle_handle.yaml --name bottle_handle)
-   kin design "$S" --model opus
+   kin design "$S"                 # gpt-6-astra, effort high, budget 8, 2 critic rounds
    kin export "$S"
    ```
-   Watch `$S/events.jsonl` or open the web app. The bottle handle converges in 1–3 iterations, ~10 minutes, ~$3 on Opus (Sonnet is ~4x cheaper and does the simple parts fine: `--model sonnet`).
-3. **The web app**: `kin serve` then http://localhost:8000. Open the session above, drag the parameter sliders (each Apply re-runs compile + checks + blueprint in a few seconds), read the checks table, look at the Sections tab.
-4. **Print the coupon** from the Coupon button, then the part from the Export bundle. The print card says why the settings are what they are.
+   `kin design "$S" --provider fake` runs the same thing with the scripted designer.
 
-## The photo flow with a real object
+## The photo flow with a real object (the hero demo)
 
-1. Print `kin sheet -o sheet.pdf` at 100% (check the 100 mm bar with a ruler).
-2. Home → Photo intake: upload 2–4 photos of the broken object (one context shot, one of the mating feature pressed onto the sheet, shot straight down), type one sentence, Analyze.
-3. Intake returns the object, the broken part, a draft spec, a capture plan and up to four questions. Edit the spec YAML if it guessed wrong; answer the numeric questions with a ruler (Spec tab → Confirm).
-4. Photos tab → Measure on the sheet photo with the interface dimension selected: the rectified image and the fitted circle are shown, and the estimate is attached to the spec with its confidence.
-5. Run designer. Confirm the interface dimensions before Export or the bundle carries a "fit unconfirmed" label.
+1. Print the calibration sheet (header button, or `kin sheet -o sheet.pdf`) at 100%; the 100 mm bar is the check.
+2. Home → **Photograph what broke**: two or three photos (whole object, the break close up, the mating feature pressed onto the sheet and shot straight down), one sentence, **Analyze photos**. The session opens on its guide.
+3. **Step 2 — Photos & answers**: the capture plan lists one shot per dimension with a *Take / upload* slot (on a phone this opens the camera); each upload is graded and a bad one says why. Answer the numeric questions with a ruler; numbers become confirmed dimensions.
+4. **Step 3 — Confirm the fit**: every interface dimension with its status. Type a measured value to lock it, or leave it estimated and print the coupon later. Choose Quick / Standard / Thorough and **Design this part**.
+5. **Step 4 — Design & verify**: live progress (iteration k / budget, step, elapsed, the tool the model is using, the last failing checks); the 3D view and sheets refresh after every iteration; a question from the designer appears right here with its options.
+6. **Step 5 — Review**: pass/fail per check, the critic's verdict, the designer's narration; ask for a change in plain words, or **Looks right — export**.
+7. **Step 6 — Print**: STL / 3MF / bundle downloads and the print card. If a fit dimension was never confirmed the guide says to print `coupon.stl` first.
 
-The intake prompt has only been exercised on rendered scenes here (no real photos were available in the build environment). Real photos of shiny or transparent objects will need the neck-on-sheet trick and a manual confirmation; expect to edit the draft spec.
+The Timeline tab (left pane) is the full event log; the right pane keeps the engineer's view (checks, params, code, spec, photos).
+
+## Model provider
+
+- Default: OpenAI Responses API, `gpt-6-astra` for the designer, critic and intake, reasoning effort `high`. `gpt-6-sol` for the critic/intake is ~5× cheaper and fine on simple parts; set it in Settings → *Models & reasoning effort*.
+- Each tool step is chained with `previous_response_id` (`store=true`), so a run uploads every blueprint sheet once. `KIN_OPENAI_STATELESS=1` resends the whole transcript with `store=false` and encrypted reasoning (for zero-retention orgs); the loop also falls back to it automatically if the API rejects storing.
+- Cost is accounted per run from the usage numbers (`usage` event, session meta `cost_usd`); prices are in `kintsugi/agent/llm.py:PRICES` — check them against the current price list.
+- The live OpenAI path was verified through the official SDK against a mock transport (request shape, chaining, image tool outputs, JSON mode, truncation nudge) — a real end-to-end run with a key is the first thing to do on your machine. The Agent provider (`pip install ".[agent]"`, `KIN_PROVIDER=agent`) is the path the A/B study in `eval/reports` was run on.
 
 ## What the numbers mean
 
@@ -31,17 +40,18 @@ The intake prompt has only been exercised on rendered scenes here (no real photo
 
 ## Known rough edges
 
-- The designer is confined to its session directory by a hook; it still has a shell, so keep sessions on a machine you trust.
-- OpenSCAD 2021.01 is slow on BOSL2-heavy models (CGAL). A Manifold-enabled nightly (`KIN_OPENSCAD_BIN`) is 10–50x faster; the templates avoid post-2021 syntax.
+- The designer's shell is confined to its session directory and a blocklist (no package installs, no network tools), but it is still a shell; keep sessions on a machine you trust and do not expose the server (no authentication).
+- OpenSCAD 2021.01 is slow on BOSL2-heavy models (CGAL). A Manifold-enabled nightly (`KIN_OPENSCAD_BIN`) is 10–50× faster; the templates avoid post-2021 syntax.
 - Section recipes need a height where the feature exists (`at_z`); a spec written at the wrong height reads "no hole found". The intake prompt knows this but check the draft.
+- The intake prompt has only been exercised on rendered scenes and the scripted provider here (no real photos in the build environment). Shiny or transparent objects will need the neck-on-sheet trick and a manual confirmation; expect to correct a number or two in step 3.
 - The critic occasionally asks for changes the spec does not justify; the designer is told it may push back in its narration.
-- Server has no authentication. It is a local tool / demo, not a public service.
-- Reconstruction from many photos (approach D in the scope) and the printed 3D jig (approach C) are not built; the sheet + reference-object paths are.
+- Reconstruction from many photos and the printed 3D jig (approaches C/D in the design doc) are not built; the sheet + reference-object paths are.
 
 ## Where things are
 
-- Session workspaces: `sessions/<id>/` (spec.yaml, part.scad, iterations/, sheets/, checks.json, critic/, export/, events.jsonl, history.json, a git repo).
-- Prompts: `kintsugi/agent/prompts/{designer,critic,intake}.md`.
+- Session workspaces: `sessions/<id>/` (spec.yaml, part.scad, intake.json, iterations/, sheets/, checks.json, critic/, export/, events.jsonl, history.json, a git repo).
+- Prompts: `kintsugi/agent/prompts/{designer,critic,intake}.md`. Provider facade: `kintsugi/agent/llm.py`; tools: `kintsugi/agent/tools.py`; scripted provider: `kintsugi/agent/fake.py`.
 - Recipes the checker understands: `kintsugi/spec/model.py` (MeasureRecipe docstring).
 - Templates: `templates/*.scad`, their specs `eval/specs/*.yaml`.
 - A/B evaluation: `eval/ab_eval.py`, report `eval/reports/ab_templates.md`.
+- Web UI: `web/src` (guide: `panes/GuidePane.tsx`, settings: `llm.tsx`); `npm run build` writes `web/dist`, which the API serves.

@@ -240,34 +240,70 @@ class LLM:
         raise NotImplementedError("the Agent designer runs through the Agent SDK path in designer.py")
 
     async def _openai_loop(self, system, parts, tools, model, effort, max_steps, stop_tools, on_text, on_tool, on_step) -> ToolLoopResult:
+        """The Responses-API tool loop.
+
+        Stateful mode (default): the conversation lives on OpenAI's side and each step sends only the new tool outputs with
+        `previous_response_id`, so the growing pile of blueprint images is not re-uploaded on every step. Stateless mode
+        (`KIN_OPENAI_STATELESS=1`, or automatically after a stateful request is rejected): the full transcript is resent
+        with `store=False`, carrying the reasoning items' encrypted content so reasoning survives across tool calls.
+        """
         client = self.openai_client()
         by_name = {t.name: t for t in tools}
         schemas = [t.openai_schema() for t in tools]
-        input_items: list[dict[str, Any]] = [{"role": "user", "content": [_oa_part(p) for p in parts]}]
+        stateless = self.provider == "fake" or os.environ.get("KIN_OPENAI_STATELESS", "").lower() in ("1", "true", "yes")
+        first_user: dict[str, Any] = {"role": "user", "content": [_oa_part(p) for p in parts]}
+        transcript: list[dict[str, Any]] = [first_user]  # complete client-side copy (stateless mode sends all of it)
+        pending: list[dict[str, Any]] = [first_user]     # stateful mode sends only what is new since the last response
+        prev_id: str | None = None
         texts: list[str] = []
         stopped_by = None
         steps = 0
         error = None
-        # We keep the full transcript client-side (reasoning items included), so a retry can resend everything.
-        for step in range(1, max_steps + 1):
+        truncations = 0
+        images_split = os.environ.get("KIN_OPENAI_IMAGES_AS_MESSAGE", "").lower() in ("1", "true", "yes")
+        max_out = int(os.environ.get("KIN_MAX_OUTPUT_TOKENS", "32000"))
+        step = 0
+        while step < max_steps:
+            step += 1
             steps = step
             if on_step:
                 on_step(step)
             kwargs: dict[str, Any] = {
-                "model": model, "instructions": system, "input": input_items, "tools": schemas, "store": False,
-                "max_output_tokens": 16000, "parallel_tool_calls": False,
+                "model": model, "instructions": system, "tools": schemas, "max_output_tokens": max_out, "parallel_tool_calls": False,
             }
+            if stateless:
+                kwargs.update({"input": transcript, "store": False})
+                if _is_reasoning_model(model):
+                    kwargs["include"] = ["reasoning.encrypted_content"]
+            else:
+                kwargs.update({"input": pending, "store": True})
+                if prev_id:
+                    kwargs["previous_response_id"] = prev_id
             if _is_reasoning_model(model):
                 kwargs["reasoning"] = {"effort": _clamp_effort(effort, model)}
             try:
                 resp = await client.responses.create(**kwargs)
             except Exception as e:  # after the SDK's own retries
-                error = f"{type(e).__name__}: {str(e)[:300]}"
+                msg = str(e)
+                if not stateless and prev_id is None and _looks_like_store_rejection(msg):
+                    # the org cannot store responses: switch to the stateless transcript and retry this step
+                    stateless = True
+                    step -= 1
+                    continue
+                if not images_split and getattr(e, "status_code", None) == 400 and any(_has_image_output(i) for i in pending):
+                    # the API rejected images inside function_call_output: send them as a user message instead
+                    images_split = True
+                    pending = _split_images(pending)
+                    transcript = _split_images(transcript)
+                    step -= 1
+                    continue
+                error = f"{type(e).__name__}: {msg[:300]}"
                 break
             self._account(model, resp)
+            prev_id = getattr(resp, "id", None) or prev_id
+            pending = []
             outputs = list(resp.output or [])
-            # keep the model's items (reasoning, messages, calls) in the transcript
-            input_items.extend(_oa_item_to_input(o) for o in outputs if _oa_item_to_input(o) is not None)
+            transcript.extend(x for x in (_oa_item_to_input(o, stateless) for o in outputs) if x is not None)
             calls = [o for o in outputs if getattr(o, "type", "") == "function_call"]
             for o in outputs:
                 if getattr(o, "type", "") == "message":
@@ -277,6 +313,14 @@ class LLM:
                             if on_text:
                                 on_text(c.text)
             if not calls:
+                if getattr(resp, "status", "") == "incomplete" and truncations < 2:
+                    # the reasoning/output hit max_output_tokens before a tool call: ask for the next step in smaller pieces
+                    truncations += 1
+                    nudge = {"role": "user", "content": [{"type": "input_text", "text": "Your last response was cut off by the output limit. "
+                                                                                          "Continue from where you were; make smaller edits and call tools one at a time."}]}
+                    transcript.append(nudge)
+                    pending.append(nudge)
+                    continue
                 break
             stop = False
             for call in calls:
@@ -295,7 +339,11 @@ class LLM:
                         result = await tool.handler(args)
                     except Exception as e:
                         result = ToolResult(f"{name} failed: {type(e).__name__}: {e}", is_error=True)
-                input_items.append(_oa_call_output(call.call_id, result))
+                items = [_oa_call_output(call.call_id, result)]
+                if images_split:
+                    items = _split_images(items)
+                transcript.extend(items)
+                pending.extend(items)
                 if name in stop_tools and not result.is_error:
                     stopped_by = name
                     stop = True
@@ -350,13 +398,42 @@ def _oa_call_output(call_id: str, result: ToolResult) -> dict[str, Any]:
     return {"type": "function_call_output", "call_id": call_id, "output": result.text}
 
 
-def _oa_item_to_input(o: Any) -> dict[str, Any] | None:
+def _looks_like_store_rejection(msg: str) -> bool:
+    m = msg.lower()
+    return ("store" in m or "previous_response_id" in m or "retention" in m) and ("not" in m or "unsupported" in m or "invalid" in m)
+
+
+def _has_image_output(item: dict[str, Any]) -> bool:
+    return item.get("type") == "function_call_output" and isinstance(item.get("output"), list)
+
+
+def _split_images(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rewrite function_call_output items that carry images into a text output plus a user message with the images."""
+    out: list[dict[str, Any]] = []
+    for it in items:
+        if _has_image_output(it):
+            texts = [c["text"] for c in it["output"] if c.get("type") == "input_text"]
+            images = [c for c in it["output"] if c.get("type") == "input_image"]
+            out.append({**it, "output": "\n".join(texts) or "(see the attached images)"})
+            if images:
+                out.append({"role": "user", "content": [{"type": "input_text", "text": "Images returned by the tool call above:"}, *images]})
+        else:
+            out.append(it)
+    return out
+
+
+def _oa_item_to_input(o: Any, stateless: bool = True) -> dict[str, Any] | None:
     """Convert a response output item back into an input item (so the transcript stays complete)."""
     t = getattr(o, "type", None)
     if t == "reasoning":
         d = o.model_dump(exclude_none=True) if hasattr(o, "model_dump") else dict(o)
-        keep = {k: v for k, v in d.items() if k in ("id", "type", "summary", "encrypted_content", "content")}
-        return keep or None
+        keep = {k: v for k, v in d.items() if k in ("id", "type", "summary", "encrypted_content")}
+        if stateless and not keep.get("encrypted_content"):
+            # without the encrypted payload a stored-less reasoning item cannot be replayed; the following
+            # function_call still replays fine on its own
+            return None
+        keep.setdefault("summary", [])
+        return keep
     if t == "message":
         return {"type": "message", "role": "assistant", "id": getattr(o, "id", None), "status": "completed",
                 "content": [{"type": "output_text", "text": c.text, "annotations": []} for c in (o.content or []) if getattr(c, "type", "") == "output_text"]}
