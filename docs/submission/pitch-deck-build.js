@@ -8,10 +8,12 @@ const ReactDOMServer = require("react-dom/server");
 const sharp = require("sharp");
 const Fi = require("react-icons/fi");
 
+// the brand palette (docs/brand): navy ink, one action blue, mid and pale blues as tints, paper ground
 const C = {
-  paper: "FAFBFC", ink: "18212C", ink2: "4A5563", ink3: "7A8594", rule: "C9D0DA", rule2: "E1E6EC",
-  blue: "1F4FA8", blueSoft: "E4ECFA", pass: "1F7A46", passSoft: "E3F1E8", fail: "B8322A", failSoft: "F6E4E2",
-  warn: "9A6A08", warnSoft: "F5EBD3", navy: "0E1A2B", navy2: "132238", ice: "E4ECF6", ice2: "AFBCCB", sky: "8FB8FF",
+  paper: "F3F7FE", ink: "05142E", ink2: "3C485C", ink3: "5B6982", rule: "C9D6EC", rule2: "E1E9F5",
+  blue: "155DD3", blueSoft: "E2ECFC", pass: "1F7A46", passSoft: "E3F1E8", fail: "B8322A", failSoft: "F6E4E2",
+  warn: "9A6A08", warnSoft: "F5EBD3", navy: "05142E", navy2: "0B2049", ice: "F3F7FE", ice2: "BED4F9", sky: "6C9EF0",
+  seam: "F2C14E",
 };
 const FONT_H = "Arial";
 const FONT_B = "Calibri";
@@ -89,7 +91,8 @@ function frame(slide, x, y, w, h, img, opts = {}) {
   {
     const s = pres.addSlide();
     bg(s, C.navy);
-    s.addText("KINTSUGI", { x: 0.6, y: 1.05, w: 5.6, h: 1.0, fontFace: FONT_H, fontSize: 54, bold: true, color: C.ice, isTextBox: true, margin: 0, charSpacing: 6 });
+    s.addImage({ path: IMG("logo-mark.png"), x: 0.6, y: 1.1, w: 0.9, h: 0.9 });
+    s.addText("KINTSUGI", { x: 1.65, y: 1.05, w: 5.0, h: 1.0, fontFace: FONT_H, fontSize: 54, bold: true, color: C.ice, isTextBox: true, margin: 0, charSpacing: 6 });
     s.addText("Photograph what broke. Print what fits.", { x: 0.6, y: 2.0, w: 5.6, h: 0.6, fontFace: FONT_B, fontSize: 24, color: C.sky, isTextBox: true, margin: 0 });
     s.addText("An agent that turns phone photos of a broken part into a verified, printable replacement — and checks its own work like an engineer.",
       { x: 0.6, y: 2.7, w: 5.3, h: 1.0, fontFace: FONT_B, fontSize: 14, color: C.ice2, isTextBox: true, margin: 0 });
@@ -286,7 +289,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     mono(s, 3.45, 5.0, 2.75, 0.2, "kintsugi — same spec, 2 iterations", { size: 8 });
     dimLine(s, 6.5, 1.35, 3.0, "5/5 pass · 4/5 preferred†", "A/B vs human-designed repair parts", { size: 11.5 });
     dimLine(s, 6.5, 2.35, 3.0, "4 / 5 caught †", "critic probe: injected defects invisible to the checks; control passes", { size: 13 });
-    dimLine(s, 6.5, 3.45, 3.0, "96 tests", "no model needed: geometry ≤0.05 mm, interference ≤3 %, measurement ≤0.5 mm, API end to end", { size: 13 });
+    dimLine(s, 6.5, 3.45, 3.0, "≤ 0.05 mm", "the toolchain on known geometry: circle fits, interference ≤3 %, measurement ≤0.5 mm — before any model", { size: 13 });
     dimLine(s, 6.5, 4.55, 3.0, "1·1·1·2·7", "iterations to converge, five bottle-handle runs †", { size: 13 });
     s.addNotes("Every number here has a file behind it in eval/reports and tests/. The dagger marks numbers produced on the previous model provider; they are re-run on GPT-6 before submission and replaced.");
   }
@@ -352,10 +355,10 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     });
     dimLine(s, 0.5, 3.05, 2.1, "36 commits", "a log, not a launch", { size: 13 });
     dimLine(s, 2.8, 3.05, 2.1, "18k lines", "Python · TypeScript · SCAD", { size: 13 });
-    dimLine(s, 5.1, 3.05, 2.1, "96 tests", "green before every push", { size: 13 });
+    dimLine(s, 5.1, 3.05, 2.1, "5 A/B parts", "judged blind against humans", { size: 13 });
     dimLine(s, 7.4, 3.05, 2.1, "3 docs", "design rev B · hand-off · eval reports", { size: 13 });
     body(s, 0.5, 4.0, 5.6, 1.1, [
-      { text: "Every stage has a headless test; the UI was walked end to end in a headless browser after each change. Rough edges are listed in the hand-off doc, not hidden.", options: { breakLine: true } },
+      { text: "Every stage was walked by hand — real photos, real prints, the UI driven end to end in a browser after each change. Rough edges are listed in the hand-off doc, not hidden.", options: { breakLine: true } },
       { text: "Solo build; AI coding assistants used throughout, as the rules allow. OpenSCAD, BOSL2, OpenCV, trimesh and the OpenAI SDK are the third-party pillars — all disclosed.", options: {} },
     ], { size: 10.5, para: 4 });
     s.addText("Thanks to HACK47 and the sponsors — OpenAI, whose Responses API runs every model call here, and Red Bull, who keep the house shipping.",
@@ -368,6 +371,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
   {
     const s = pres.addSlide();
     bg(s, C.navy);
+    s.addImage({ path: IMG("logo-mark.png"), x: 0.6, y: 0.55, w: 0.7, h: 0.7 });
     s.addText("Photograph what broke.\nPrint what fits.", { x: 0.6, y: 1.4, w: 8.8, h: 1.7, fontFace: FONT_H, fontSize: 40, bold: true, color: C.ice, isTextBox: true, margin: 0, valign: "middle" });
     s.addText("Off-grid, the repair is the supply chain.", { x: 0.6, y: 3.15, w: 8.8, h: 0.5, fontFace: FONT_B, fontSize: 18, color: C.sky, isTextBox: true, margin: 0, italic: true });
     s.addText("github.com/KrishGup/kintsugi   ·   demo: [link]   ·   video: [link]", { x: 0.6, y: 4.1, w: 8.8, h: 0.4, fontFace: FONT_M, fontSize: 11, color: C.ice2, isTextBox: true, margin: 0 });

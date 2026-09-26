@@ -50,7 +50,7 @@ export default function RightPane() {
       <div className="pane-head" style={{ padding: "0 4px" }}>
         <div className="tabs" role="tablist" aria-label="Details">
           {tabs.map((t) => (
-            <button key={t.id} role="tab" aria-selected={tab === t.id} className={`tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)} title={t.title}>
+            <button key={t.id} role="tab" aria-selected={tab === t.id} className={`tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)} aria-label={t.title ? `${t.label}: ${t.title}` : undefined}>
               {t.label}
               {t.count !== undefined && (
                 <span className="tab-count" style={t.tone ? { color: `var(--${t.tone})`, background: `var(--${t.tone}-soft)` } : undefined}>

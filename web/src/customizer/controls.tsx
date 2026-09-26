@@ -4,6 +4,7 @@ import type { Param, ParamBinding } from "../types";
 import { useCustomizer } from "./context";
 import Slider, { type SliderBand, type SliderMark } from "./Slider";
 import { clamp, decimalsFor, displayStep, fmt, fmtValue, fromDisplay, parseTyped, same, snap, sourceLabel, toDisplay, unitLabel } from "./units";
+import { hoverProps, useHoveredDim } from "../hover";
 
 // ---- shared bits -----------------------------------------------------------------------------------------------
 
@@ -13,14 +14,17 @@ function Head({ p, right, children }: { p: Param; right?: ReactNode; children?: 
   return (
     <div className="cz-head">
       <div className="cz-title">
-        <span className={`cz-label${changed ? " changed" : ""}`} title={p.name}>
-          {p.label || p.name}
-        </span>
+        <span className={`cz-label${changed ? " changed" : ""}`}>{p.label || p.name}</span>
         <span className="cz-name mono">{p.name}</span>
         {changed && (
-          <button className="cz-reset" onClick={() => cz.reset(p.name)} title={`Back to the verified value (${fmtValue(p, cz.verified[p.name], cz.units)})`} aria-label={`reset ${p.name}`}>
-            <Reset size={12} />
-          </button>
+          <span className="hover-anchor">
+            <button className="cz-reset" onClick={() => cz.reset(p.name)} aria-label={`Reset ${p.name} to the verified value`}>
+              <Reset size={12} />
+            </button>
+            <span className="hover-card below" role="tooltip">
+              back to <b className="num">{fmtValue(p, cz.verified[p.name], cz.units)}</b> (verified)
+            </span>
+          </span>
         )}
         {children}
       </div>
@@ -56,13 +60,27 @@ export function BindingBadge({ p }: { p: Param }) {
     if (typeof b.target === "number") lim.push(`= ${fmtValue(p, b.target, cz.units)}`);
     parts.push(lim.join(", "));
   }
-  const title = `${b.dim}${b.feature ? ` — ${b.feature}` : ""}\n${b.sources.map((s) => `${s.value} from ${sourceLabel(s.source)} (conf ${((s.conf ?? 0) * 100).toFixed(0)}%)`).join("\n")}`;
+  const sorted = [...b.sources].sort((x, y) => (y.conf ?? 0) - (x.conf ?? 0));
   return (
-    <div className={`cz-bind tone-${st.tone}`} title={title}>
+    <div className={`cz-bind tone-${st.tone} hover-anchor`} tabIndex={sorted.length ? 0 : undefined}>
       <span className="cz-bind-dot" />
       <b>{st.text}</b>
       <span className="mono">{b.dim}</span>
       {parts.filter(Boolean).length > 0 && <span className="dim">· {parts.filter(Boolean).join(" · ")}</span>}
+      {sorted.length > 0 && (
+        <span className="hover-card below cz-evidence-card" role="tooltip">
+          <b>
+            {b.dim}
+            {b.feature ? ` — ${b.feature}` : ""}
+          </b>
+          {sorted.map((src, i) => (
+            <span key={i} className="cz-evidence-line">
+              <span className="num">{fmtValue(p, src.value, cz.units)}</span> from {sourceLabel(src.source)}
+              <span className="dim"> · {((src.conf ?? 0) * 100).toFixed(0)}% confidence</span>
+            </span>
+          ))}
+        </span>
+      )}
     </div>
   );
 }
@@ -70,6 +88,7 @@ export function BindingBadge({ p }: { p: Param }) {
 // ---- number -------------------------------------------------------------------------------------------------------
 
 export function NumberControl({ p, disabled }: { p: Param; disabled: boolean }) {
+  const hovered = useHoveredDim();
   const cz = useCustomizer();
   const raw = cz.valueOf(p);
   const value = typeof raw === "number" ? raw : Number(raw);
@@ -137,7 +156,7 @@ export function NumberControl({ p, disabled }: { p: Param; disabled: boolean }) 
   const assertHit = cz.preview.status === "error" && cz.model?.asserts.some((a) => a.params.includes(p.name) && cz.preview.asserts.some((m) => m === a.message));
 
   return (
-    <div className={`cz-param cz-number${disabled ? " disabled" : ""}${assertHit ? " assert-hit" : ""}`}>
+    <div className={`cz-param cz-number${disabled ? " disabled" : ""}${assertHit ? " assert-hit" : ""}${hovered && hovered === p.binding?.dim ? " is-hovered" : ""}`} {...hoverProps(p.binding?.dim)}>
       <Head
         p={p}
         right={
@@ -172,7 +191,7 @@ export function NumberControl({ p, disabled }: { p: Param; disabled: boolean }) 
               }}
               disabled={disabled}
               aria-label={p.name}
-              title="Type a number — units are understood: 45, 1.75 in, 1 3/4&quot;, 2 cm"
+              aria-description="Units are understood: 45, 1.75 in, 1 3/4 inch, 2 cm"
             />
             <button className="cz-step" onClick={() => bump(1)} disabled={disabled} aria-label={`increase ${p.name}`} tabIndex={-1}>
               +

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ApiError, kin } from "./api";
-import { Mark } from "./brand";
+import { Brand } from "./brand";
 import type { AuthInfo } from "./types";
 import { Spinner } from "./ui";
 
@@ -90,10 +90,7 @@ function Gate({ title, children }: { title?: string; children: ReactNode }) {
     <div className="gate">
       <div className="gate-card">
         <div className="brand" style={{ marginBottom: 14 }}>
-          <span className="brand-mark">
-            <Mark />
-          </span>
-          <span className="brand-name">Kintsugi</span>
+          <Brand />
         </div>
         {title && <h1 className="gate-title">{title}</h1>}
         {children}
@@ -115,7 +112,13 @@ function TokenLogin({ onDone }: { onDone: () => Promise<void> }) {
       await kin.login(token.trim());
       await onDone();
     } catch (ex) {
-      setErr(ex instanceof ApiError && ex.status === 401 ? "That access code is not right." : (ex as Error).message);
+      setErr(
+        ex instanceof ApiError && ex.status === 401
+          ? "That access code is not right."
+          : ex instanceof ApiError && ex.status === 429
+            ? "Too many wrong codes from this device — wait a minute, then try again."
+            : (ex as Error).message,
+      );
     } finally {
       setBusy(false);
     }
@@ -144,12 +147,24 @@ function TokenLogin({ onDone }: { onDone: () => Promise<void> }) {
   );
 }
 
+/** The platform's login URL, sent back to the page the person was on (the SPA routes live in the hash). */
+function loginHere(url: string): string {
+  const here = window.location.pathname + window.location.search + window.location.hash;
+  try {
+    const u = new URL(url, window.location.origin);
+    if (u.searchParams.has("post_login_redirect_uri")) u.searchParams.set("post_login_redirect_uri", here);
+    return u.pathname + u.search;
+  } catch {
+    return url;
+  }
+}
+
 function PlatformLogin({ info }: { info: AuthInfo }) {
   return (
     <Gate title="Sign in to continue">
       <p className="dim">Your parts, photos and exports belong to your account on this server.</p>
       {info.login_url ? (
-        <a className="btn btn-primary" href={info.login_url}>
+        <a className="btn btn-primary" href={loginHere(info.login_url)}>
           Sign in
         </a>
       ) : (
@@ -165,8 +180,11 @@ export function UserChip() {
   if (!a.info || a.info.mode === "none" || !a.info.user) return null;
   const u = a.info.user;
   return (
-    <span className="user-chip" title={`${u.name} (${u.provider})${u.admin ? " · admin" : ""}`}>
-      <span className="user-name">{a.info.mode === "token" ? "shared access" : u.name}</span>
+    <span className="user-chip">
+      <span className="user-name">
+        {a.info.mode === "token" ? "shared access" : u.name}
+        {u.admin && a.info.mode === "easyauth" ? <span className="user-role"> · admin</span> : null}
+      </span>
       <button className="btn btn-xs btn-ghost" onClick={a.signOut}>
         Sign out
       </button>

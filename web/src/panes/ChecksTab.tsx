@@ -1,3 +1,4 @@
+import { hoverProps, useHoveredDim } from "../hover";
 import { useSession } from "../pages/session-context";
 import type { CheckItem } from "../types";
 import { Empty, Pill, fmtNum } from "../ui";
@@ -26,6 +27,8 @@ export default function ChecksTab() {
   const st = c.stats;
   const best = c.orientations && c.orientations[0];
   const latestN = s.latestIter?.iteration;
+  const hovered = useHoveredDim();
+  const sectioned = new Set((c.sections || []).flatMap((x) => x.dims));
 
   return (
     <div>
@@ -79,31 +82,35 @@ export default function ChecksTab() {
         <thead>
           <tr>
             <th>Check</th>
-            <th title="measured on the mesh → target from the spec">Measured</th>
+            <th>
+              Measured
+              <span className="th-sub">on the mesh · target below</span>
+            </th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>
           {c.items.map((it) => (
-            <tr key={it.id}>
+            <tr
+              key={it.id}
+              className={`${sectioned.has(it.id) ? "is-linked" : ""}${hovered === it.id ? " is-hovered" : ""}`}
+              tabIndex={sectioned.has(it.id) ? 0 : undefined}
+              {...hoverProps(it.id)}
+            >
               <td>
                 <div className="check-id">{breakable(it.id)}</div>
                 <div className="small dim">{it.label}</div>
                 {it.detail && <div className="check-detail">{it.detail}</div>}
               </td>
               <td>
-                <div className="val-meas" title="measured on the exported mesh">
+                <div className="val-meas">
                   {fmtNum(it.measured)}
                   {it.unit ? <span className="muted"> {it.unit}</span> : null}
                 </div>
-                {it.target !== null && it.target !== undefined && (
-                  <div className="val-target" title="target from the spec">
-                    {targetText(it)}
-                  </div>
-                )}
+                {it.target !== null && it.target !== undefined && <div className="val-target">{targetText(it)}</div>}
               </td>
               <td>
-                <Pill tone={it.passed === true ? "pass" : it.passed === false ? (it.kind === "hard" ? "fail" : "warn") : "neutral"} title={`${it.kind} check`}>
+                <Pill tone={it.passed === true ? "pass" : it.passed === false ? (it.kind === "hard" ? "fail" : "warn") : "neutral"}>
                   {it.passed === true ? "pass" : it.passed === false ? (it.kind === "hard" ? "fail" : "soft") : "info"}
                 </Pill>
               </td>
@@ -113,7 +120,8 @@ export default function ChecksTab() {
       </table>
       {c.sections && c.sections.length > 0 && (
         <div className="small muted mt">
-          Sections: {c.sections.map((x) => `${x.plane_axis} = ${fmtNum(x.at, 1)}${x.dims.length ? ` (${x.dims.join(", ")})` : ""}`).join(" · ")}
+          Point at a check to see its section on the model. Sections:{" "}
+          {c.sections.map((x) => `${x.plane_axis} = ${fmtNum(x.at, 1)}${x.dims.length ? ` (${x.dims.join(", ")})` : ""}`).join(" · ")}
         </div>
       )}
     </div>

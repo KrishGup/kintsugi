@@ -19,6 +19,8 @@ interface Props {
   overlay?: ReactNode;
   /** show the overall dimensions as drafting-style dimension lines on the model */
   units?: "mm" | "in";
+  /** the section a hovered check was measured on: a translucent plane through the part, with the dimension's name */
+  focus?: { axis: "x" | "y" | "z"; at: number; label: string } | null;
 }
 
 interface Label {
@@ -36,6 +38,8 @@ interface Scene3 {
   context: THREE.Group;
   dims: THREE.Group;
   grid: THREE.Group;
+  focus: THREE.Group;
+  focusMaterial: THREE.MeshBasicMaterial;
   material: THREE.MeshStandardMaterial;
   ghostMaterial: THREE.MeshStandardMaterial;
   contextMaterial: THREE.MeshStandardMaterial;
@@ -67,7 +71,7 @@ function fmtLen(mm: number, units: "mm" | "in"): string {
   return units === "in" ? `${(mm / 25.4).toFixed(3)} in` : `${mm.toFixed(1)} mm`;
 }
 
-export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, contextUrl, contextOn, overlay, units = "mm" }: Props) {
+export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, contextUrl, contextOn, overlay, units = "mm", focus = null }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const labelHost = useRef<HTMLDivElement>(null);
   const s3 = useRef<Scene3 | null>(null);
@@ -127,12 +131,14 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
     });
     const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x7a8594, transparent: true, opacity: 0.55 });
     const dimMaterial = new THREE.LineBasicMaterial({ color: 0x1f4fa8, transparent: true, opacity: 0.9 });
+    const focusMaterial = new THREE.MeshBasicMaterial({ color: 0x155dd3, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide });
     const group = new THREE.Group();
     const ghost = new THREE.Group();
     const context = new THREE.Group();
     const dims = new THREE.Group();
     const grid = new THREE.Group();
-    scene.add(group, ghost, context, dims, grid);
+    const focus = new THREE.Group();
+    scene.add(group, ghost, context, dims, grid, focus);
 
     const state: Scene3 = {
       renderer,
@@ -144,6 +150,8 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
       context,
       dims,
       grid,
+      focus,
+      focusMaterial,
       material,
       ghostMaterial,
       contextMaterial,
@@ -169,6 +177,7 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
       ghostMaterial.color.set(cssVar(el, "--viewer-ghost", "#6c9ef0"));
       contextMaterial.color.set(cssVar(el, "--viewer-context", "#c9a227"));
       dimMaterial.color.set(cssVar(el, "--viewer-dim", "#155dd3"));
+      focusMaterial.color.set(cssVar(el, "--viewer-dim", "#155dd3"));
       grid.traverse((o) => {
         if (o instanceof THREE.GridHelper) {
           const mat = o.material as THREE.LineBasicMaterial;
@@ -382,6 +391,18 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
     st.needsRender = true;
   }, [showDims, units]);
 
+  // ---- the hovered dimension's section plane ------------------------------------
+  useEffect(() => {
+    const st = s3.current;
+    if (!st) return;
+    clearGroup(st.focus);
+    for (const l of st.labels.filter((x) => x.el.classList.contains("dim-focus"))) l.el.remove();
+    st.labels = st.labels.filter((x) => !x.el.classList.contains("dim-focus"));
+    const box = st.bbox;
+    if (focus && box && labelHost.current) buildFocus(st, labelHost.current, box, focus, units);
+    st.needsRender = true;
+  }, [focus, units, info, showDims]);
+
   const view = (kind: "iso" | "top" | "front") => {
     const st = s3.current;
     if (st && st.bbox) fitCamera(st, kind);
@@ -401,20 +422,20 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
       <div className="viewer-labels" ref={labelHost} aria-hidden="true" />
       {url && (
         <div className="viewer-tools">
-          <button className="btn btn-xs" onClick={() => view("iso")} title="Isometric view">
+          <button className="btn btn-xs" onClick={() => view("iso")}>
             ISO
           </button>
-          <button className="btn btn-xs" onClick={() => view("top")} title="Top view">
+          <button className="btn btn-xs" onClick={() => view("top")}>
             TOP
           </button>
-          <button className="btn btn-xs" onClick={() => view("front")} title="Front view">
+          <button className="btn btn-xs" onClick={() => view("front")}>
             FRONT
           </button>
-          <button className={`btn btn-xs${showDims ? " active" : ""}`} onClick={() => setShowDims(!showDims)} title="Overall dimensions on the model" aria-pressed={showDims}>
+          <button className={`btn btn-xs${showDims ? " active" : ""}`} onClick={() => setShowDims(!showDims)} aria-pressed={showDims}>
             DIMS
           </button>
           {ghostUrl && (
-            <button className={`btn btn-xs${showGhost ? " active" : ""}`} onClick={() => setShowGhost(!showGhost)} title={ghostLabel || "Show the reference mesh as a ghost"} aria-pressed={showGhost}>
+            <button className={`btn btn-xs${showGhost ? " active" : ""}`} onClick={() => setShowGhost(!showGhost)} aria-label={ghostLabel || "Show the reference mesh as a ghost"} aria-pressed={showGhost}>
               GHOST
             </button>
           )}
@@ -423,7 +444,7 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
               className={`btn btn-xs${contextVisible ? " active" : ""}`}
               onClick={() => setShowContext(!showContext)}
               disabled={!!contextOn}
-              title={contextOn ? "The assembly view always shows the mating object" : "Show the spec's context proxies (the object the part mates with) in place"}
+              aria-label="Show the object the part mates with, in place"
               aria-pressed={contextVisible}
             >
               OBJECT
@@ -546,6 +567,43 @@ function buildDims(st: Scene3, host: HTMLDivElement | null, show: boolean, units
   mk(V((min.x + max.x) / 2, yx - tick * 1.8, min.z), fmtLen(size.x, units), "x");
   mk(V(xy + tick * 1.8, (min.y + max.y) / 2, min.z), fmtLen(size.y, units), "y");
   mk(V(xz + tick * 1.2, yz - tick * 1.2, (min.z + max.z) / 2), fmtLen(size.z, units), "z");
+}
+
+/** A translucent plane through the part where a check took its measurement, with the dimension's name on it. */
+function buildFocus(st: Scene3, host: HTMLDivElement, box: THREE.Box3, f: { axis: "x" | "y" | "z"; at: number; label: string }, units: "mm" | "in") {
+  const size = box.getSize(new THREE.Vector3());
+  const pad = 1.18;
+  // the mesh is centred in XY (st.offset); a section given in the part's own X/Y moves with it, Z is untouched
+  const at = f.axis === "x" ? f.at + st.offset.x : f.axis === "y" ? f.at + st.offset.y : f.at;
+  const lo = f.axis === "x" ? box.min.x : f.axis === "y" ? box.min.y : box.min.z;
+  const hi = f.axis === "x" ? box.max.x : f.axis === "y" ? box.max.y : box.max.z;
+  if (at < lo - size.length() || at > hi + size.length()) return;
+  const w = (f.axis === "x" ? size.y : size.x) * pad;
+  const h = (f.axis === "z" ? size.y : size.z) * pad;
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(w, 1), Math.max(h, 1)), st.focusMaterial);
+  const outline = new THREE.LineSegments(new THREE.EdgesGeometry(plane.geometry), st.dimMaterial);
+  const c = box.getCenter(new THREE.Vector3());
+  if (f.axis === "z") {
+    plane.position.set(c.x, c.y, at);
+  } else if (f.axis === "y") {
+    plane.rotation.x = Math.PI / 2;
+    plane.position.set(c.x, at, c.z);
+  } else {
+    plane.rotation.y = Math.PI / 2;
+    plane.position.set(at, c.y, c.z);
+  }
+  outline.position.copy(plane.position);
+  outline.rotation.copy(plane.rotation);
+  st.focus.add(plane, outline);
+  const el = document.createElement("div");
+  el.className = "dim-label dim-focus";
+  el.textContent = `${f.label} · ${f.axis} = ${fmtLen(f.at, units)}`;
+  host.appendChild(el);
+  // the name sits on the plane's front edge (z sections) or above it, where the model rarely covers it
+  const lp = plane.position.clone();
+  if (f.axis === "z") lp.y = box.min.y * pad;
+  else lp.z = box.max.z + Math.max(2, size.z * 0.06);
+  st.labels.push({ pos: lp, el });
 }
 
 function fitCamera(st: Scene3, kind: "iso" | "top" | "front") {

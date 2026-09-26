@@ -79,7 +79,7 @@ export default function Customizer() {
               {sections.map((sec) => (
                 <button key={sec} role="tab" aria-selected={section === sec} className={`seg-btn${section === sec ? " active" : ""}`} onClick={() => setSection(sec)}>
                   {sec}
-                  {changedIn(sec) > 0 && <span className="seg-dot" title={`${changedIn(sec)} changed`} />}
+                  {changedIn(sec) > 0 && <span className="seg-dot" aria-label={`${changedIn(sec)} changed`} />}
                 </button>
               ))}
             </div>
@@ -87,12 +87,12 @@ export default function Customizer() {
             <span className="label">{sections[0] || "Parameters"}</span>
           )}
           <span className="grow" />
-          <button className={`btn btn-xs btn-ghost${searchOpen ? " active" : ""}`} onClick={() => setSearchOpen((v) => !v)} title="Find a parameter" aria-label="search parameters">
+          <button className={`btn btn-xs btn-ghost${searchOpen ? " active" : ""}`} onClick={() => setSearchOpen((v) => !v)} aria-label="Find a parameter" aria-pressed={searchOpen}>
             <SearchIcon />
           </button>
         </div>
         <div className="cz-toolbar-row popover-anchor">
-          <div className="seg cz-units" title="Display units (the model stays in millimetres)">
+          <div className="seg cz-units" role="radiogroup" aria-label="Display units">
             <button className={`seg-btn${cz.units === "mm" ? " active" : ""}`} onClick={() => cz.setUnits("mm")}>
               mm
             </button>
@@ -100,10 +100,10 @@ export default function Customizer() {
               in
             </button>
           </div>
-          <button className="btn btn-xs btn-ghost" onClick={cz.undo} disabled={!cz.canUndo} title="Undo the last change (Ctrl+Z)" aria-label="undo">
+          <button className="btn btn-xs btn-ghost" onClick={cz.undo} disabled={!cz.canUndo} aria-label="Undo (Ctrl+Z)">
             <Undo size={13} />
           </button>
-          <button className="btn btn-xs btn-ghost" onClick={cz.redo} disabled={!cz.canRedo} title="Redo (Ctrl+Shift+Z)" aria-label="redo">
+          <button className="btn btn-xs btn-ghost" onClick={cz.redo} disabled={!cz.canRedo} aria-label="Redo (Ctrl+Shift+Z)">
             <Redo size={13} />
           </button>
           <PresetsMenu />
@@ -151,7 +151,7 @@ export default function Customizer() {
 
       <div className="sticky-actions cz-footer">
         {cz.boundEdits.length > 0 && (
-          <label className="cz-spec-note" title="These parameters are bound to measured dimensions in the spec. Applying moves the spec target with the parameter so the fit check verifies the value you chose.">
+          <label className="cz-spec-note">
             <input type="checkbox" checked={updateSpec} onChange={(e) => setUpdateSpec(e.target.checked)} />
             <span>
               Fit {cz.boundEdits.length === 1 ? "dimension" : "dimensions"} changed ({cz.boundEdits.map((p) => p.label || p.name).join(", ")}) — also update the spec target
@@ -159,7 +159,7 @@ export default function Customizer() {
           </label>
         )}
         <div className="cz-footer-row">
-          <button className="btn btn-primary btn-sm" onClick={() => cz.apply({ updateSpec })} disabled={disabled || !cz.nChanged} title="Rewrite part.scad with these values and run compile → checks → blueprints (a new verified iteration)">
+          <button className="btn btn-primary btn-sm" onClick={() => cz.apply({ updateSpec })} disabled={disabled || !cz.nChanged}>
             {cz.applying ? <Spinner size={11} /> : <CheckIcon />} Apply &amp; verify{cz.nChanged ? ` (${cz.nChanged})` : ""}
           </button>
           <button className="btn btn-ghost btn-sm" onClick={cz.resetAll} disabled={!cz.nChanged || cz.applying}>
@@ -173,11 +173,11 @@ export default function Customizer() {
               designer running
             </Pill>
           ) : cz.draftDownloadUrl ? (
-            <a className="btn btn-xs" href={cz.draftDownloadUrl} download={`${(model.part_name || "part").replace(/[^\w.-]+/g, "_")}-draft.stl`} title="The draft mesh as shown (lower facet count, not verified). Apply & verify for the checked STL.">
+            <a className="btn btn-xs" href={cz.draftDownloadUrl} download={`${(model.part_name || "part").replace(/[^\w.-]+/g, "_")}-draft.stl`}>
               <DownloadIcon /> draft STL
             </a>
           ) : (
-            <span className="small muted" title="Drag a slider: the 3D view shows a draft; Apply & verify runs the checks">
+            <span className="small muted">
               {cz.nChanged ? "draft only — not verified yet" : `verified · it ${model.verified?.iteration ?? 0}`}
             </span>
           )}
@@ -267,7 +267,10 @@ function StatusStrip() {
     );
   return (
     <div className="cz-status dim">
-      <span>Drag a slider or type a value — the 3D view shows a draft at once. Apply &amp; verify re-runs the checks and the drawings.</span>
+      <span>
+        Drag a slider or type a value (<span className="num">45</span>, <span className="num">1.75 in</span>, <span className="num">2 cm</span> all work) — the 3D view
+        shows a draft at once. Apply &amp; verify re-runs the checks and the drawings.
+      </span>
     </div>
   );
 }
@@ -308,9 +311,8 @@ function ComputedPanel() {
               if (num && (v as number) > b.max + 1e-9) bad = true;
             }
           }
-          const title = [d.expr ? `${d.name} = ${d.expr}` : d.name, b ? `spec ${b.dim}${lim.length ? ` (${lim.join(", ")})` : ""}` : "", bad ? "outside the spec's limit — the check will fail" : ""].filter(Boolean).join("\n");
           return (
-            <div className={`cz-derived-row${bad ? " bad" : ""}`} key={d.name} title={title}>
+            <div className={`cz-derived-row${bad ? " bad" : ""}`} key={d.name}>
               <span className="mono">{d.name}</span>
               {d.expr && <span className="cz-formula mono dim">= {d.expr}</span>}
               {lim.length > 0 && (
@@ -319,6 +321,7 @@ function ComputedPanel() {
                 </span>
               )}
               <span className="num cz-derived-val">{shown}</span>
+              {bad && <span className="cz-derived-why">outside the spec's limit for {b?.dim} — the check will fail</span>}
             </div>
           );
         })}
@@ -344,8 +347,8 @@ function PresetsMenu() {
   };
   return (
     <div className="cz-menu" ref={box}>
-      <button className={`btn btn-xs btn-ghost${open ? " active" : ""}`} onClick={() => setOpen((v) => !v)} title="Presets — named parameter sets (also readable by OpenSCAD's own customizer)" aria-label="presets" aria-expanded={open}>
-        <StarIcon /> {names.length ? names.length : ""}
+      <button className={`btn btn-xs btn-ghost${open ? " active" : ""}`} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <StarIcon /> Presets{names.length ? ` · ${names.length}` : ""}
       </button>
       {open && (
         <div className="popover cz-presets">
@@ -359,12 +362,19 @@ function PresetsMenu() {
               const pv = cz.presets[n];
               const diff = Object.entries(pv).filter(([k, v]) => k in cz.verified && JSON.stringify(v) !== JSON.stringify(cz.verified[k])).length;
               return (
-                <div className="cz-preset-row" key={n}>
-                  <button className="cz-preset" onClick={() => { cz.applyPreset(n); setOpen(false); }} title={Object.entries(pv).map(([k, v]) => `${k} = ${JSON.stringify(v)}`).join("\n")}>
+                <div className="cz-preset-row hover-anchor" key={n}>
+                  <button className="cz-preset" onClick={() => { cz.applyPreset(n); setOpen(false); }}>
                     <span>{n}</span>
                     <span className="dim small">{diff ? `${diff} differ` : "same as verified"}</span>
                   </button>
-                  <button className="btn btn-xs btn-quiet-danger" onClick={() => cz.deletePreset(n)} title={`Delete preset “${n}”`} aria-label={`delete preset ${n}`}>
+                  <span className="hover-card below right cz-preset-card" role="tooltip">
+                    {Object.entries(pv).map(([k, v]) => (
+                      <span key={k} className="mono">
+                        {k} = {JSON.stringify(v)}
+                      </span>
+                    ))}
+                  </span>
+                  <button className="btn btn-xs btn-quiet-danger" onClick={() => cz.deletePreset(n)} aria-label={`Delete preset ${n}`}>
                     <Close size={12} />
                   </button>
                 </div>
@@ -412,7 +422,7 @@ function MoreMenu() {
   }, [model, cz]);
   return (
     <div className="cz-menu" ref={box}>
-      <button className={`btn btn-xs btn-ghost${open ? " active" : ""}`} onClick={() => setOpen((v) => !v)} title="Preview options, export" aria-label="more" aria-expanded={open}>
+      <button className={`btn btn-xs btn-ghost${open ? " active" : ""}`} onClick={() => setOpen((v) => !v)} aria-label="More: preview options, changes, export" aria-expanded={open}>
         <More size={14} />
       </button>
       {open && (
@@ -427,19 +437,25 @@ function MoreMenu() {
           <div className="cz-more-row">
             <span>Facets</span>
             <div className="seg">
-              <button className={`seg-btn${cz.quality === "auto" ? " active" : ""}`} onClick={() => cz.setQuality("auto")} title="full facets while previews are quick; coarse facets once a full preview took more than a couple of seconds">
+              <button className={`seg-btn${cz.quality === "auto" ? " active" : ""}`} onClick={() => cz.setQuality("auto")}>
                 auto
               </button>
-              <button className={`seg-btn${cz.quality === "draft" ? " active" : ""}`} onClick={() => cz.setQuality("draft")} title={`$fn ${model.draft_fn}: fast, coarse facets`}>
+              <button className={`seg-btn${cz.quality === "draft" ? " active" : ""}`} onClick={() => cz.setQuality("draft")}>
                 draft
               </button>
-              <button className={`seg-btn${cz.quality === "full" ? " active" : ""}`} onClick={() => cz.setQuality("full")} title="the model's own facet count (slower)">
+              <button className={`seg-btn${cz.quality === "full" ? " active" : ""}`} onClick={() => cz.setQuality("full")}>
                 full
               </button>
             </div>
           </div>
           <div className="small dim">
-            next preview: {cz.effectiveQuality === "draft" ? `draft ($fn ${model.draft_fn})` : "full facets"}
+            {cz.quality === "auto"
+              ? "Full facets while previews are quick; coarse ones once a full preview takes more than a couple of seconds."
+              : cz.quality === "draft"
+                ? `Coarse facets ($fn ${model.draft_fn}) — fast; the applied part keeps its own.`
+                : "The model's own facet count — slower on curved parts."}
+            {" "}
+            Next preview: {cz.effectiveQuality === "draft" ? `draft ($fn ${model.draft_fn})` : "full"}
             {cz.preview.avgS != null ? ` · average ${fmt(cz.preview.avgS, 1)} s` : ""}
           </div>
           <h3 style={{ marginTop: 10 }}>Changes</h3>
@@ -454,9 +470,10 @@ function MoreMenu() {
           )}
           <h3 style={{ marginTop: 10 }}>Take it elsewhere</h3>
           <div className="stack-tight">
-            <button className="btn btn-sm" onClick={copy} title={cz.command}>
+            <button className="btn btn-sm" onClick={copy}>
               Copy the OpenSCAD command line
             </button>
+            <code className="cz-command">{cz.command}</code>
             {cz.draftDownloadUrl && (
               <a className="btn btn-sm" href={cz.draftDownloadUrl} download={`${(model.part_name || "part").replace(/[^\w.-]+/g, "_")}-draft.stl`}>
                 Download the draft STL

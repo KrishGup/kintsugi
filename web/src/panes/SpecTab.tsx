@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { kin } from "../api";
+import { hoverProps } from "../hover";
 import CodeEditor from "../components/CodeEditor";
 import { useSession } from "../pages/session-context";
 import { useToast } from "../toast";
@@ -71,13 +72,18 @@ export default function SpecTab() {
           <span className="mono small">spec.yaml</span>
           {dirty && <Pill tone="warn">modified</Pill>}
           {d.unconfirmed.length > 0 ? (
-            <Pill tone="fail" title={d.unconfirmed.join(", ")}>
-              {d.unconfirmed.length} unconfirmed
-            </Pill>
+            <span className="hover-anchor">
+              <Pill tone="fail">{d.unconfirmed.length} unconfirmed</Pill>
+              <span className="hover-card below" role="tooltip">
+                {d.unconfirmed.map((u) => (
+                  <span key={u} className="mono">
+                    {u}
+                  </span>
+                ))}
+              </span>
+            </span>
           ) : (
-            <Pill tone="pass" title="every interface dimension is confirmed">
-              fit confirmed
-            </Pill>
+            <Pill tone="pass">fit confirmed</Pill>
           )}
           <span className="grow" />
           <button
@@ -137,7 +143,7 @@ export default function SpecTab() {
                 return (
                   <div className="dim-item" key={q}>
                     <div className="dim-head">
-                      <span className="dim-name" title={q}>
+                      <span className="dim-name" {...hoverProps(q)}>
                         <span className="itf">{itf.id}.</span>
                         {k}
                       </span>

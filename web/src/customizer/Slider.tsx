@@ -104,11 +104,11 @@ export default function Slider({ min, max, step, value, onChange, onDragStart, o
       <div className="slider-rail" ref={host} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={finish} onPointerCancel={finish}>
         <div className="slider-track" />
         {band && band.hi > band.lo && (
-          <div className={`slider-band band-${band.tone}`} style={{ left: pct(band.lo), width: `calc(${pct(band.hi)} - ${pct(band.lo)})` }} title={band.title} />
+          <div className={`slider-band band-${band.tone}`} style={{ left: pct(band.lo), width: `calc(${pct(band.hi)} - ${pct(band.lo)})` }} aria-hidden="true" />
         )}
         <div className="slider-fill" style={{ width: pct(shown) }} />
         {(marks || []).map((m, i) => (
-          <div key={i} className={`slider-mark mark-${m.tone || "neutral"}`} style={{ left: pct(m.at) }} title={m.label} />
+          <div key={i} className={`slider-mark mark-${m.tone || "neutral"}`} style={{ left: pct(m.at) }} aria-hidden="true" />
         ))}
         <div
           className="slider-thumb"

@@ -89,8 +89,8 @@ export default function GraphView({ trace, shape, title, compact, direction }: {
             ) : null}
           </span>
           <span className="grow" />
-          <span title="longest chain of dependent nodes">
-            critical: <span className="mono">{trace.critical_path.join(" → ")}</span>
+          <span>
+            critical path: <span className="mono">{trace.critical_path.join(" → ")}</span>
           </span>
         </div>
       )}

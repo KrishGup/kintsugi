@@ -72,6 +72,11 @@ export const ChevronRight = (p: P) => (
     <path d="m9 6 6 6-6 6" />
   </Svg>
 );
+export const ChevronLeft = (p: P) => (
+  <Svg {...p}>
+    <path d="m15 6-6 6 6 6" />
+  </Svg>
+);
 export const More = (p: P) => (
   <Svg {...p} stroke={0}>
     <circle cx="5" cy="12" r="2" fill="currentColor" />

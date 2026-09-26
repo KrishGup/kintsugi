@@ -97,15 +97,17 @@ class ArchiveError(ValueError):
     pass
 
 
-_SAFE_SEG = re.compile(r"^[A-Za-z0-9._ \-()\[\]+@,]+$")
+# a segment may be any unicode name that no filesystem we write to would refuse: no control characters, no separators,
+# none of the characters Windows forbids, and never a bare "." / ".." (traversal) or a trailing dot/space
+_SAFE_SEG = re.compile(r'^[^\x00-\x1f\x7f/\\:*?"<>|]+$')
 
 
 def _safe_rel(name: str) -> Path:
-    """Refuse absolute paths, drive letters, parent traversal, and odd segments (zip-slip)."""
+    """Refuse absolute paths, drive letters, parent traversal, and segments no filesystem should get (zip-slip)."""
     if not name or name.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", name):
         raise ArchiveError(f"unsafe path in archive: {name!r}")
     parts = [p for p in re.split(r"[\\/]+", name) if p]
-    if any(p in ("..", ".") or not _SAFE_SEG.match(p) for p in parts):
+    if not parts or any(p in ("..", ".") or p.endswith((" ", ".")) or not _SAFE_SEG.match(p) or len(p) > 200 for p in parts):
         raise ArchiveError(f"unsafe path in archive: {name!r}")
     return Path(*parts)
 

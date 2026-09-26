@@ -33,5 +33,5 @@ Target: **2:30–2:50**, 1080p, captions burned in (judges watch muted). Voice-o
 - "diameters within 0.5 mm on synthetic photos, to 35° of tilt"
 - "critic caught 4 of 5 injected defects (control: pass)"
 - "A/B vs five human designs: 5/5 pass · 4/5 preferred by a blind judge" (re-run on GPT-6 first)
-- "96 tests, no model needed"
+- "verified on known geometry before any model was involved"
 - "OpenAI Responses API: image tool outputs · previous_response_id · reasoning effort"

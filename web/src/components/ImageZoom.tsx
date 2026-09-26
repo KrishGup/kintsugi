@@ -150,16 +150,16 @@ export default function ImageZoom({ src, alt, placeholder }: Props) {
         }}
       />
       <div className="zoomer-tools" onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-        <button className="btn btn-xs" onClick={() => fit("fit")} title="Fit to pane">
+        <button className="btn btn-xs" onClick={() => fit("fit")}>
           FIT
         </button>
-        <button className="btn btn-xs" onClick={() => fit("width")} title="Fit to width">
+        <button className="btn btn-xs" onClick={() => fit("width")}>
           WIDTH
         </button>
-        <button className="btn btn-xs" onClick={() => fit("one")} title="Actual pixels">
+        <button className="btn btn-xs" onClick={() => fit("one")}>
           1:1
         </button>
-        <a className="btn btn-xs" href={src} target="_blank" rel="noreferrer" title="Open full size in a new tab">
+        <a className="btn btn-xs" href={src} target="_blank" rel="noreferrer">
           OPEN ↗
         </a>
       </div>

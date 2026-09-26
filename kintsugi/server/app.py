@@ -9,6 +9,7 @@ import re
 import shutil
 import time
 import zipfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -32,7 +33,34 @@ from kintsugi.session.archive import ArchiveError, export_archive, import_archiv
 from kintsugi.session.workspace import DEFAULT_SESSIONS_DIR, Session
 from kintsugi.spec.model import Estimate, PartSpec
 
-app = FastAPI(title="Kintsugi", version=__version__)
+def _reconcile_runs() -> int:
+    """A run lives in this process; a session still marked `running` when the process starts belonged to a previous one
+    (a restart, an image roll, a crash). Mark it stopped so the UI does not show a run that nobody can stop or follow."""
+    n = 0
+    for meta in Session.list_all(SESSIONS_DIR):
+        if meta.get("status") == "running" and meta.get("id"):
+            try:
+                s = Session.open(SESSIONS_DIR / meta["id"])
+                s.update_meta(status="stopped")
+                s.emit("run_end", status="stopped", reason="the server restarted during the run")
+                n += 1
+            except OSError:
+                continue
+    return n
+
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    stale = _reconcile_runs()
+    if stale:
+        print(f"kintsugi: {stale} session(s) were mid-run when the previous process ended; marked stopped", flush=True)
+    yield
+    for t in list(RUNS.values()):
+        if not t.done():
+            t.cancel()
+
+
+app = FastAPI(title="Kintsugi", version=__version__, lifespan=_lifespan)
 app.middleware("http")(auth.middleware)
 SESSIONS_DIR = Path(os.environ.get("KIN_SESSIONS_DIR", DEFAULT_SESSIONS_DIR)).resolve()
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
@@ -67,6 +95,15 @@ def _readiness(spec: PartSpec) -> dict[str, Any]:
         return {"ready": True, "error": str(e)}
 
 
+def _upload_name(filename: str | None) -> str:
+    """A file name that survives URLs, shells, Windows and zip archives: ASCII letters, digits, dot, dash, underscore."""
+    raw = Path(filename or "photo.jpg").name
+    stem, suffix = Path(raw).stem, Path(raw).suffix.lower()
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "_", stem).strip("._") or "photo"
+    suffix = suffix if re.fullmatch(r"\.[a-z0-9]{1,5}", suffix) else ".jpg"
+    return stem[:64] + suffix
+
+
 def _safe_path(session: Session, rel: str) -> Path:
     p = (session.dir / rel).resolve()
     if session.dir.resolve() not in p.parents and p != session.dir.resolve():
@@ -97,12 +134,19 @@ def auth_me(request: Request):
 
 
 @app.post("/api/auth/login")
-def auth_login(body: LoginReq, request: Request):
+async def auth_login(body: LoginReq, request: Request):
     """Token mode: trade the shared access code for a signed cookie. Other modes have nothing to log into here."""
     if auth.mode() != "token":
         raise HTTPException(400, f"sign-in is handled by the platform in {auth.mode()} mode")
+    key = auth.client_key(request)
+    wait = auth.throttle_check(key)
+    if wait > 0:
+        raise HTTPException(429, f"too many wrong codes; try again in {int(wait) + 1} s", headers={"Retry-After": str(int(wait) + 1)})
     if not auth.check_token(body.token):
+        auth.throttle_fail(key)
+        await asyncio.sleep(0.4)               # a flat cost per wrong guess, before any lockout
         raise HTTPException(401, "that access code is not right")
+    auth.throttle_clear(key)
     resp = JSONResponse({"ok": True, "user": auth.SHARED.to_dict()})
     resp.set_cookie(auth.COOKIE, auth.cookie_value(), max_age=auth.COOKIE_MAX_AGE, httponly=True, samesite="lax", secure=auth.secure_cookie(request), path="/")
     return resp
@@ -358,11 +402,21 @@ def session_archive(sid: str):
 
 @app.post("/api/sessions/import", status_code=201)
 async def session_import(file: UploadFile = File(...)):
-    data = await file.read()
-    if len(data) > MAX_IMPORT_MB << 20:
-        raise HTTPException(413, f"archive is larger than {MAX_IMPORT_MB} MB")
-    try:
-        s = import_archive(data, SESSIONS_DIR, max_bytes=MAX_IMPORT_MB << 20, owner=auth.owner_fields())
+    limit = MAX_IMPORT_MB << 20
+    chunks: list[bytes] = []
+    size = 0
+    while True:                                   # stop reading the moment the cap is passed instead of buffering it all
+        chunk = await file.read(1 << 20)
+        if not chunk:
+            break
+        size += len(chunk)
+        if size > limit:
+            raise HTTPException(413, f"archive is larger than {MAX_IMPORT_MB} MB")
+        chunks.append(chunk)
+    data = b"".join(chunks)
+    owner = auth.owner_fields()
+    try:                                          # extraction is disk work: off the event loop, the event streams keep flowing
+        s = await asyncio.to_thread(import_archive, data, SESSIONS_DIR, max_bytes=limit, owner=owner)
     except ArchiveError as e:
         raise HTTPException(422, str(e))
     except zipfile.BadZipFile:
@@ -479,7 +533,7 @@ async def upload_photos(sid: str, files: list[UploadFile] = File(...), expect_sh
     prefix = "".join(ch for ch in (label or "") if ch.isalnum() or ch in "-_")[:32]
     for f in files:
         data = await f.read()
-        name = Path(f.filename or "photo.jpg").name
+        name = _upload_name(f.filename)
         if prefix:
             name = f"{prefix}_{name}"
         dest = s.dir / "photos" / name
@@ -692,12 +746,16 @@ async def start_run(sid: str, body: RunReq):
 
 @app.post("/api/sessions/{sid}/stop")
 async def stop_run(sid: str):
+    s = _session(sid)                      # scope first: nobody stops a run on a session they cannot see
     t = RUNS.get(sid)
     if t and not t.done():
         t.cancel()
-        s = _session(sid)
         s.update_meta(status="stopped")
         s.emit("run_end", status="stopped")
+        return {"ok": True, "stopped": True}
+    if s.meta.get("status") == "running":  # a run that died with a previous process
+        s.update_meta(status="stopped")
+        s.emit("run_end", status="stopped", reason="no run in this server process")
         return {"ok": True, "stopped": True}
     return {"ok": True, "stopped": False}
 
@@ -1016,6 +1074,8 @@ def delete_session(sid: str):
 
 _dist = REPO_DIR / "web" / "dist"
 if _dist.exists():
+    import mimetypes
+    mimetypes.add_type("application/manifest+json", ".webmanifest")   # the PWA manifest (Python's table lacks it)
     app.mount("/", StaticFiles(directory=str(_dist), html=True), name="ui")
 else:
     @app.get("/")

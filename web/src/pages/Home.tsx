@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } fro
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, kin, sheetPdfUrl } from "../api";
 import { UserChip, useAuth } from "../auth";
-import { Mark } from "../brand";
+import { Brand } from "../brand";
 import { useBusy } from "../hooks";
 import { Camera, Check, ChevronDown, ChevronRight, Close, Dot, Download, Gear, Plus, Upload } from "../icons";
 import { ProviderPill, providerLabel, useLlm } from "../llm";
@@ -193,18 +193,15 @@ export default function Home() {
     <div className="app">
       <header className="app-header">
         <Link to="/" className="brand">
-          <span className="brand-mark">
-            <Mark />
-          </span>
-          <span className="brand-name">Kintsugi</span>
+          <Brand />
         </Link>
         <span className="brand-tag">Photograph what broke. Print what fits.</span>
         <span className="header-spacer" />
         <ProviderPill />
-        <a className="btn btn-sm btn-icon-sm" href={sheetPdfUrl} target="_blank" rel="noreferrer" title="Printable ArUco calibration sheet (letter, 100 mm bar)" aria-label="Calibration sheet (PDF)">
+        <a className="btn btn-sm btn-icon-sm" href={sheetPdfUrl} target="_blank" rel="noreferrer" aria-label="Calibration sheet (PDF)">
           <Download size={13} /> <span className="btn-text">Calibration sheet</span>
         </a>
-        <button className="btn btn-sm btn-icon-sm" onClick={llm.openSettings} title="Model provider, API key, models" aria-label="Settings">
+        <button className="btn btn-sm btn-icon-sm" onClick={llm.openSettings} aria-label="Settings">
           <Gear size={13} /> <span className="btn-text">Settings</span>
         </button>
         <UserChip />
@@ -437,9 +434,8 @@ export default function Home() {
                 className="btn btn-ghost btn-sm"
                 onClick={() => archiveInput.current?.click()}
                 disabled={importing}
-                title="Bring back a session archive (.zip) exported from any Kintsugi"
               >
-                {importing ? <Spinner size={11} /> : <Upload size={12} />} Import
+                {importing ? <Spinner size={11} /> : <Upload size={12} />} Import archive
               </button>
               <input
                 ref={archiveInput}
@@ -452,7 +448,7 @@ export default function Home() {
                   e.target.value = "";
                 }}
               />
-              <button className="btn btn-ghost btn-sm" onClick={loadSessions} title="Refresh the list">
+              <button className="btn btn-ghost btn-sm" onClick={loadSessions}>
                 Refresh
               </button>
             </div>
@@ -486,13 +482,13 @@ export default function Home() {
                         {s.imported_from && (
                           <>
                             <span aria-hidden="true">·</span>
-                            <span title={`imported from ${s.imported_from.id || "an archive"}${s.imported_from.app_version ? ` (Kintsugi ${s.imported_from.app_version})` : ""}`}>imported</span>
+                            <span>imported{s.imported_from.app_version ? ` from Kintsugi ${s.imported_from.app_version}` : ""}</span>
                           </>
                         )}
                         {auth.info?.mode === "easyauth" && s.owner && s.owner !== auth.info.user?.id && (
                           <>
                             <span aria-hidden="true">·</span>
-                            <span title={s.owner}>{s.owner_name || s.owner}</span>
+                            <span>{s.owner_name || s.owner}</span>
                           </>
                         )}
                       </span>
@@ -506,7 +502,6 @@ export default function Home() {
                         e.stopPropagation();
                         onDelete(s);
                       }}
-                      title={`Delete “${s.name || s.id}”`}
                       aria-label={`Delete ${s.name || s.id}`}
                     >
                       Delete

@@ -6,6 +6,7 @@ import EvidenceMap from "../components/EvidenceMap";
 import ImageZoom from "../components/ImageZoom";
 import StlViewer from "../components/StlViewer";
 import { useCustomizer } from "../customizer/context";
+import { useHoveredDim } from "../hover";
 import { Sliders } from "../icons";
 import { useLocal } from "../hooks";
 import { iterPath, useSession } from "../pages/session-context";
@@ -61,7 +62,7 @@ export default function CenterPane() {
     isLatest && cz.model?.available ? (
       <div className="viewer-pills">
         {draftShown && (
-          <span className="pill pill-blue" title="A quick compile of the current slider values — the checks have not run on it. Apply & verify for a checked iteration.">
+          <span className="pill pill-blue">
             <span className="pill-dot" /> draft · {cz.nChanged ? `${cz.nChanged} change${cz.nChanged === 1 ? "" : "s"}` : cz.renderTarget} · {(pv.durationS ?? 0).toFixed(pv.durationS && pv.durationS < 1 ? 2 : 1)} s
             {pv.stale ? " · updating…" : ""}
           </span>
@@ -78,26 +79,37 @@ export default function CenterPane() {
         )}
         {cz.hasDraft && (
           <div className="seg seg-xs" role="tablist" aria-label="Mesh shown">
-            <button role="tab" aria-selected={cz.viewMode === "verified"} className={`seg-btn${cz.viewMode === "verified" ? " active" : ""}`} onClick={() => cz.setViewMode("verified")} title="The last verified iteration">
+            <button role="tab" aria-selected={cz.viewMode === "verified"} className={`seg-btn${cz.viewMode === "verified" ? " active" : ""}`} onClick={() => cz.setViewMode("verified")}>
               verified
             </button>
-            <button role="tab" aria-selected={cz.viewMode === "draft"} className={`seg-btn${cz.viewMode === "draft" ? " active" : ""}`} onClick={() => cz.setViewMode("draft")} title="The current slider values (not checked yet)">
+            <button role="tab" aria-selected={cz.viewMode === "draft"} className={`seg-btn${cz.viewMode === "draft" ? " active" : ""}`} onClick={() => cz.setViewMode("draft")}>
               draft
             </button>
           </div>
         )}
         {draftShown && cz.nChanged > 0 && (
-          <button className="btn btn-xs btn-primary" onClick={() => cz.apply()} disabled={cz.applying || s.running || !!s.busy} title="Rewrite part.scad with these values and run the checks">
+          <button className="btn btn-xs btn-primary" onClick={() => cz.apply()} disabled={cz.applying || s.running || !!s.busy}>
             {cz.applying ? <Spinner size={10} /> : null} Apply &amp; verify
           </button>
         )}
         {!draftShown && cz.nChanged === 0 && d.stl && (
-          <button className="btn btn-xs" onClick={openCustomizer} title="Sliders and switches for every parameter">
+          <button className="btn btn-xs" onClick={openCustomizer}>
             <Sliders size={12} /> Customize
           </button>
         )}
       </div>
     ) : null;
+
+  // the dimension somebody is pointing at (a check row, a guide row, a bound slider) → the section it was measured on
+  const hovered = useHoveredDim();
+  const focus = useMemo(() => {
+    if (!hovered || !d.checks?.sections) return null;
+    const sec = d.checks.sections.find((x) => x.dims.includes(hovered));
+    if (!sec) return null;
+    const axis = (sec.plane_axis || "z").toLowerCase();
+    if (axis !== "x" && axis !== "y" && axis !== "z") return null;
+    return { axis: axis as "x" | "y" | "z", at: sec.at, label: hovered };
+  }, [hovered, d.checks]);
 
   const sheetUrl = it?.sheet ? fileUrl(s.sid, it.sheet, it.iteration) : null;
   const sectionsUrl = it?.sections ? fileUrl(s.sid, it.sections, it.iteration) : null;
@@ -150,13 +162,13 @@ export default function CenterPane() {
           >
             Sections
           </button>
-          <button role="tab" aria-selected={tab === "evidence"} className={`tab${tab === "evidence" ? " active" : ""}`} onClick={() => setTab("evidence")} title="what each dimension is known from">
+          <button role="tab" aria-selected={tab === "evidence"} className={`tab${tab === "evidence" ? " active" : ""}`} onClick={() => setTab("evidence")}>
             Evidence
           </button>
         </div>
         <div className="view-picker">
           {tab === "3d" && targets && targets.length > 1 && isLatest && (
-            <div className="seg seg-xs" role="tablist" aria-label="Render target" title="Which top-level object to preview: the part, the fit coupon or the assembly with its context">
+            <div className="seg seg-xs" role="tablist" aria-label="Render target">
               {targets.map((t) => (
                 <button key={t} role="tab" aria-selected={cz.renderTarget === t} className={`seg-btn${cz.renderTarget === t ? " active" : ""}`} onClick={() => cz.setRenderTarget(t)}>
                   {t}
@@ -180,7 +192,6 @@ export default function CenterPane() {
             }}
             disabled={views.length === 0}
             aria-label="Single view"
-            title="Open one rendered view"
           >
             <option value="">{views.length ? "Single view…" : "No views yet"}</option>
             {views.map((v) => (
@@ -203,6 +214,7 @@ export default function CenterPane() {
               contextOn={draftShown && cz.renderTarget === "assembly"}
               overlay={draftOverlay}
               units={cz.units}
+              focus={focus}
               placeholder="The 3D model appears here after the first iteration compiles. Run the designer, apply params or run code to create one."
             />
             {stlNote && (
@@ -242,16 +254,27 @@ export default function CenterPane() {
         ) : (
           <div className="chips" role="tablist" aria-label="Iterations">
             {d.iterations.map((x) => (
-              <button
-                key={x.iteration}
-                role="tab"
-                aria-selected={x.iteration === n}
-                className={`chip ${x.ok ? "pass" : "fail"}${x.iteration === n ? " active" : ""}`}
-                onClick={() => s.setSelected(x.iteration === s.latestIter?.iteration ? null : x.iteration)}
-                title={`${x.label || "iteration " + x.iteration}${x.failures.length ? "\nfailing: " + x.failures.join(", ") : ""}${x.compile_ok ? "" : "\ncompile error"}`}
-              >
-                it {x.iteration}
-              </button>
+              <span key={x.iteration} className="hover-anchor">
+                <button
+                  role="tab"
+                  aria-selected={x.iteration === n}
+                  className={`chip ${x.ok ? "pass" : "fail"}${x.iteration === n ? " active" : ""}`}
+                  onClick={() => s.setSelected(x.iteration === s.latestIter?.iteration ? null : x.iteration)}
+                  aria-describedby={`itcard-${x.iteration}`}
+                >
+                  it {x.iteration}
+                </button>
+                <span className="hover-card" role="tooltip" id={`itcard-${x.iteration}`}>
+                  <b>{x.label || `iteration ${x.iteration}`}</b>
+                  {!x.compile_ok ? (
+                    <span className="hover-card-line fail">compile error</span>
+                  ) : x.failures.length ? (
+                    <span className="hover-card-line fail">failing: {x.failures.join(", ")}</span>
+                  ) : (
+                    <span className="hover-card-line pass">all checks pass</span>
+                  )}
+                </span>
+              </span>
             ))}
           </div>
         )}
@@ -267,7 +290,7 @@ export default function CenterPane() {
             <button className="btn btn-xs" onClick={() => s.setSelected(null)}>
               Latest
             </button>
-            <button className="btn btn-xs btn-primary" onClick={branch} disabled={branching || s.running || !!s.busy} title="Restore this iteration's part.scad as the working copy">
+            <button className="btn btn-xs btn-primary" onClick={branch} disabled={branching || s.running || !!s.busy}>
               {branching ? <Spinner size={10} /> : null} Branch from here
             </button>
           </>

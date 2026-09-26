@@ -6,6 +6,7 @@ import { REFRESH_KINDS, useEvents } from "../events";
 import { useLocal } from "../hooks";
 import CenterPane from "../panes/CenterPane";
 import LeftPane from "../panes/LeftPane";
+import { ColumnHandle, useColumns } from "../panes/Resizer";
 import RightPane from "../panes/RightPane";
 import StageBar from "../panes/StageBar";
 import TopBar from "../panes/TopBar";
@@ -29,6 +30,9 @@ export default function Session() {
     window.addEventListener("kin:right-tab", onTab);
     return () => window.removeEventListener("kin:right-tab", onTab);
   }, [setPane]);
+  // desktop: the side panes are resizable and can fold away
+  const wsRef = useRef<HTMLDivElement>(null);
+  const columns = useColumns(wsRef);
   const refreshTimer = useRef<number | undefined>(undefined);
   const alive = useRef(true);
   const detailRef = useRef<SessionDetail | null>(null);
@@ -196,7 +200,11 @@ export default function Session() {
   return (
     <SessionCtx.Provider value={state}>
       <CustomizerProvider>
-        <div className={`ws ws--${pane}`}>
+        <div
+          className={`ws ws--${pane}${columns.cols.leftOpen ? "" : " ws--left-folded"}${columns.cols.rightOpen ? "" : " ws--right-folded"}`}
+          ref={wsRef}
+          style={{ "--left-w": `${columns.cols.leftOpen ? columns.cols.left : 0}px`, "--right-w": `${columns.cols.rightOpen ? columns.cols.right : 0}px` } as React.CSSProperties}
+        >
           <div className="ws-top">
             <TopBar />
             <StageBar />
@@ -204,9 +212,31 @@ export default function Session() {
           <div className="ws-left">
             <LeftPane />
           </div>
+          <ColumnHandle
+            side="left"
+            label="Guide"
+            width={columns.cols.left}
+            open={columns.cols.leftOpen}
+            min={columns.min.left}
+            max={columns.max.left}
+            onResize={(px) => columns.resize("left", px)}
+            onReset={() => columns.reset("left")}
+            onToggle={() => columns.toggle("left")}
+          />
           <div className="ws-center">
             <CenterPane />
           </div>
+          <ColumnHandle
+            side="right"
+            label="Details"
+            width={columns.cols.right}
+            open={columns.cols.rightOpen}
+            min={columns.min.right}
+            max={columns.max.right}
+            onResize={(px) => columns.resize("right", px)}
+            onReset={() => columns.reset("right")}
+            onToggle={() => columns.toggle("right")}
+          />
           <div className="ws-right">
             <RightPane />
           </div>

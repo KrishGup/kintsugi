@@ -134,10 +134,11 @@ export default function ChatPane({ header }: { header?: ReactNode }) {
             disabled={s.running}
             aria-label={waiting ? "Answer" : "Ask for a change"}
           />
-          <button className="btn btn-primary" onClick={() => send()} disabled={disabled || !text.trim()} title="Enter to send, Shift+Enter for a new line">
+          <button className="btn btn-primary" onClick={() => send()} disabled={disabled || !text.trim()}>
             {sending ? <Spinner size={11} /> : waiting ? "Answer" : "Send"}
           </button>
         </div>
+        {text.includes("\n") || text.length > 60 ? <div className="chat-hint">Enter sends · Shift+Enter for a new line</div> : null}
       </div>
     </div>
   );
@@ -169,10 +170,21 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
       const input = (ev.input || {}) as Record<string, string>;
       const arg = input.label || input.name || input.file_path || input.command || input.question || input.pattern || "";
       return (
-        <div className="card-tool" title={JSON.stringify(input)}>
+        <div className="card-tool hover-anchor">
           <Gear size={11} />
           <span className="tool-name">{toolName(String(ev.tool || ""))}</span>
           {arg && <span className="tool-arg">{arg}</span>}
+          {Object.keys(input).length > 0 && (
+            <span className="hover-card below tool-card" role="tooltip">
+              {Object.entries(input)
+                .slice(0, 8)
+                .map(([k, v]) => (
+                  <span key={k} className="mono">
+                    {k}: {String(v).slice(0, 160)}
+                  </span>
+                ))}
+            </span>
+          )}
         </div>
       );
     }
@@ -204,9 +216,8 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
             <button
               className="btn btn-ghost btn-xs"
               onClick={() => s.setSelected(n === s.latestIter?.iteration ? null : n)}
-              title="Show this iteration's sheet and mesh"
             >
-              View
+              View it {n}
             </button>
           </div>
         </div>
@@ -407,11 +418,16 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
       const serial = typeof ev.serial_s === "number" ? ev.serial_s : 0;
       return (
         <div className="card-sys">
-          <span title={cp ? `critical path: ${cp}` : undefined}>
+          <span className={cp ? "hover-anchor" : undefined}>
             {String(ev.graph)} graph {String(ev.status)}
             {wall ? ` · ${wall.toFixed(1)} s wall` : ""}
             {serial > wall * 1.05 ? ` (${(serial / wall).toFixed(1)}× parallel)` : ""}
             {ev.waiting_on ? ` · waiting on ${String(ev.waiting_on)}` : ""}
+            {cp && (
+              <span className="hover-card below" role="tooltip">
+                critical path: <span className="mono">{cp}</span>
+              </span>
+            )}
           </span>
         </div>
       );

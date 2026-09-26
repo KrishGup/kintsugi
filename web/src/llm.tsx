@@ -79,7 +79,7 @@ export function ProviderPill() {
   const s = llm.status;
   if (!s)
     return (
-      <button className="pill pill-neutral pill-btn" onClick={llm.openSettings} title="Model provider settings">
+      <button className="pill pill-neutral pill-btn" onClick={llm.openSettings} aria-label="Model settings">
         provider…
       </button>
     );
@@ -87,7 +87,7 @@ export function ProviderPill() {
   const text = !s.ready ? (llm.locked ? "No model configured" : "Add OpenAI API key") : s.provider === "fake" ? "Demo mode" : `${providerLabel(s.provider)} · ${s.models.designer || ""}`;
   const short = !s.ready ? (llm.locked ? "No model" : "No key") : s.provider === "fake" ? "Demo" : providerLabel(s.provider);
   return (
-    <button className={`pill pill-${tone} pill-btn`} onClick={llm.openSettings} title={`${s.reason}\nClick to change model settings`}>
+    <button className={`pill pill-${tone} pill-btn`} onClick={llm.openSettings} aria-label={`Model settings — ${s.reason}`}>
       <span className="pill-dot" />
       <span className="pill-long">{text}</span>
       <span className="pill-short">{short}</span>
@@ -247,11 +247,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 <label className="field">
                   <span className="field-label">
                     OpenAI API key{" "}
-                    {hasKey && (
-                      <Pill tone="pass" title="A key is already configured on the server">
-                        {info.openai_key_masked}
-                      </Pill>
-                    )}
+                    {hasKey && <Pill tone="pass">on the server: {info.openai_key_masked}</Pill>}
                   </span>
                   <div className="row">
                     <input

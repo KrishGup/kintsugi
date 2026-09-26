@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { fileUrl, kin } from "../api";
+import { hoverProps } from "../hover";
 import { useSession } from "../pages/session-context";
 import { useToast } from "../toast";
 import type { CaptureRequest, Photo, Readiness } from "../types";
@@ -26,7 +27,7 @@ export function ReadinessBar({ r }: { r: Readiness }) {
           <b className="num">{r.confirmed}</b> of <b className="num">{r.interface_dims}</b> fit dimension{r.interface_dims === 1 ? "" : "s"} confirmed
         </span>
       </div>
-      <div className="progress" title={`${pct}%`}>
+      <div className="progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
         <div className="progress-bar" style={{ width: "100%", transform: `scaleX(${Math.max(0.03, pct / 100)})`, background: r.ready ? "var(--pass)" : undefined }} />
       </div>
       <div className="small dim">{r.advice}</div>
@@ -68,7 +69,7 @@ export function RequestCard({ req, value, onChange }: { req: CaptureRequest; val
   return (
     <div className={`req req-${req.kind}${allConfirmed ? " req-done" : best ? (best.grade?.ok ? " req-ok" : " req-retake") : ""}`}>
       <div className="req-head">
-        <span className={`req-pri pri-${pri}`} title={pri === 0 ? "needed for the fit" : pri === 1 ? "should have" : "nice to have"}>
+        <span className={`req-pri pri-${pri}`} aria-label={pri === 0 ? "needed for the fit" : pri === 1 ? "should have" : "nice to have"}>
           {req.kind === "photo" ? <CameraIcon /> : req.kind === "measure" ? <RulerIcon /> : req.kind === "coupon" ? <CouponIcon /> : "?"}
         </span>
         <b>{req.title}</b>
@@ -79,7 +80,7 @@ export function RequestCard({ req, value, onChange }: { req: CaptureRequest; val
       {req.why && <div className="small dim">— {req.why}</div>}
       <div className="row-wrap" style={{ marginTop: 4 }}>
         {dimNodes.map((x) => (
-          <Pill key={x.dim} tone={x.spec === "confirmed" ? "pass" : x.spec === "estimated" ? "warn" : "neutral"} title={`status: ${x.spec}`}>
+          <Pill key={x.dim} tone={x.spec === "confirmed" ? "pass" : x.spec === "estimated" ? "warn" : "neutral"} {...hoverProps(x.dim)}>
             {x.dim}
           </Pill>
         ))}

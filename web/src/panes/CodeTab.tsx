@@ -75,18 +75,18 @@ export default function CodeTab() {
         {dirty && <Pill tone="warn">modified</Pill>}
         <span className="grow" />
         {d.scad && (
-          <a className="btn btn-ghost btn-xs" href={fileUrl(s.sid, "part.scad", s.stlVersion)} download="part.scad" title="Download part.scad">
-            Download
+          <a className="btn btn-ghost btn-xs" href={fileUrl(s.sid, "part.scad", s.stlVersion)} download="part.scad">
+            Download .scad
           </a>
         )}
-        <button className={`btn btn-ghost btn-xs${showDocs ? " active" : ""}`} onClick={() => setShowDocs((v) => !v)} title="Search the OpenSCAD + BOSL2 reference and guides the designer uses">
-          Reference
+        <button className={`btn btn-ghost btn-xs${showDocs ? " active" : ""}`} onClick={() => setShowDocs((v) => !v)} aria-pressed={showDocs}>
+          OpenSCAD reference
         </button>
-        <button className="btn btn-ghost btn-xs" onClick={reload} disabled={!dirty || running} title="Discard local edits">
-          Revert
+        <button className="btn btn-ghost btn-xs" onClick={reload} disabled={!dirty || running}>
+          Discard edits
         </button>
-        <button className="btn btn-primary btn-sm" onClick={run} disabled={disabled} title="Save part.scad and run compile + checks + blueprints (Ctrl/⌘+Enter)">
-          {running ? <Spinner size={11} /> : <PlayIcon />} Run
+        <button className="btn btn-primary btn-sm" onClick={run} disabled={disabled}>
+          {running ? <Spinner size={11} /> : <PlayIcon />} Save &amp; verify
         </button>
         <input
           className="input label-input"
@@ -102,8 +102,8 @@ export default function CodeTab() {
       {!d.scad && !text && (
         <div className="editor-note" style={{ background: "var(--blue-soft)" }}>
           <span>
-            No part.scad yet — the designer writes it on the first run. You can also paste OpenSCAD here and press <b>Run</b> to compile and
-            verify it against the spec.
+            No part.scad yet — the designer writes it on the first run. You can also paste OpenSCAD here and press <b>Save &amp; verify</b>{" "}
+            (Ctrl/⌘+Enter) to compile it and check it against the spec.
           </span>
         </div>
       )}

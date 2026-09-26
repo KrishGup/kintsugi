@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronRight, Cross, Gear } from "../icons";
 import { ApiError, fileUrl, kin, sheetPdfUrl } from "../api";
+import { hoverProps, useHoveredDim } from "../hover";
 import EvidenceMap from "../components/EvidenceMap";
 import { useLlm } from "../llm";
 import { useSession } from "../pages/session-context";
@@ -190,9 +191,18 @@ function IntakeStage() {
           {intake.standards && intake.standards.length > 0 && (
             <div className="row-wrap mt">
               {intake.standards.map((st) => (
-                <Pill key={st.id} tone="blue" title={`${Object.entries(st.dims).map(([k, v]) => `${k} ${v} mm`).join(", ")}${st.note ? ` — ${st.note}` : ""}`}>
-                  📖 {st.name}
-                </Pill>
+                <span key={st.id} className="hover-anchor">
+                  <Pill tone="blue">📖 {st.name}</Pill>
+                  <span className="hover-card below" role="tooltip">
+                    <b>{st.name}</b>
+                    {Object.entries(st.dims).map(([k, v]) => (
+                      <span key={k}>
+                        {k} <b className="num">{v} mm</b>
+                      </span>
+                    ))}
+                    {st.note && <span className="dim">{st.note}</span>}
+                  </span>
+                </span>
               ))}
               <span className="small dim">recognised standard sizes — used as estimates until a photo confirms them</span>
             </div>
@@ -386,8 +396,8 @@ function CaptureStage() {
         <button className="btn btn-primary" onClick={check} disabled={busy !== ""}>
           {busy === "check" ? <Spinner size={12} /> : null} {answered ? `Save ${answered} reading${answered === 1 ? "" : "s"} & ` : ""}Check what's still missing
         </button>
-        <button className="btn btn-ghost btn-sm" onClick={skip} disabled={busy !== ""} title="Design with the estimates; confirm the fit with the coupon afterwards">
-          {busy === "skip" ? <Spinner size={11} /> : null} Design anyway →
+        <button className="btn btn-ghost btn-sm" onClick={skip} disabled={busy !== ""}>
+          {busy === "skip" ? <Spinner size={11} /> : null} Design with the estimates →
         </button>
       </div>
       <div className="small dim">
@@ -643,8 +653,9 @@ function DimRow({ itf, name, dim, mates, fit }: { itf: string; name: string; dim
     }
   };
   const best = dim.estimates && dim.estimates.length ? dim.estimates[dim.estimates.length - 1] : null;
+  const hovered = useHoveredDim();
   return (
-    <div className="dimrow">
+    <div className={`dimrow${hovered === full ? " is-hovered" : ""}`} {...hoverProps(full)}>
       <div className="dimrow-main">
         <div className="row-wrap">
           <span className="dim-name">
@@ -718,7 +729,7 @@ function DesignStage() {
             <span className="grow" />
             <span className="num small">{fmtElapsed(p.elapsed)}</span>
           </div>
-          <div className="progress" title={p.budget ? `${p.iterations} of ${p.budget} iterations` : ""}>
+          <div className="progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={p.budget ? `${p.iterations} of ${p.budget} iterations` : "progress"}>
             <div className="progress-bar" style={{ width: "100%", transform: `scaleX(${Math.max(0.03, pct / 100)})` }} />
           </div>
           <div className="row-wrap small dim">

@@ -35,6 +35,10 @@
 
   /* action, selection, links */
   --blue: #155dd3;
+  /* the mark keeps its own colours in both themes: the brand square is always brand blue, the seam always gold */
+  --brand-square: #155dd3;
+  --brand-ring: #f3f7fe;
+  --brand-seam: #f2c14e;
   --blue-hover: #124fb4;
   --blue-soft: #e2ecfc;
   --pale: #bed4f9;
@@ -1090,11 +1094,17 @@ input[type="file"] {
 .brand-mark {
   width: 22px;
   height: 22px;
-  border-radius: 4px;
-  background: var(--blue);
+  border-radius: 5px;
+  background: var(--brand-square);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+.brand-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .brand-name {
   font-family: var(--font-head);
@@ -1121,6 +1131,9 @@ input[type="file"] {
   padding-left: 12px;
   border-left: 1px solid var(--rule);
   min-width: 0;
+}
+.user-role {
+  color: var(--ink-3);
 }
 .user-name {
   font-size: 12px;
@@ -1481,9 +1494,11 @@ input[type="file"] {
 
 .ws {
   display: grid;
-  grid-template-columns: var(--left-w) minmax(0, 1fr) var(--right-w);
+  /* pane · handle · pane · handle · pane — the handles are the 10px gutters, so nothing moves when they appear */
+  grid-template-columns: var(--left-w) 10px minmax(0, 1fr) 10px var(--right-w);
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 10px;
+  row-gap: 10px;
+  column-gap: 0;
   height: 100vh;
   padding: 10px;
 }
@@ -1497,6 +1512,25 @@ input[type="file"] {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  grid-row: 2;
+}
+/* explicit columns: a folded (display: none) pane must not shift its neighbours into the wrong tracks */
+.ws-left {
+  grid-column: 1;
+}
+.ws-handle--left {
+  grid-column: 2;
+  grid-row: 2;
+}
+.ws-center {
+  grid-column: 3;
+}
+.ws-handle--right {
+  grid-column: 4;
+  grid-row: 2;
+}
+.ws-right {
+  grid-column: 5;
 }
 .ws-left > .pane,
 .ws-center > .pane,
@@ -1504,13 +1538,130 @@ input[type="file"] {
   flex: 1 1 auto;
   height: 100%;
 }
+.ws--left-folded .ws-left,
+.ws--right-folded .ws-right {
+  display: none;
+}
+.ws--left-folded {
+  grid-template-columns: 0 22px minmax(0, 1fr) 10px var(--right-w);
+}
+.ws--right-folded {
+  grid-template-columns: var(--left-w) 10px minmax(0, 1fr) 22px 0;
+}
+.ws--left-folded.ws--right-folded {
+  grid-template-columns: 0 22px minmax(0, 1fr) 22px 0;
+}
+
+/* the grab strip between panes: invisible until hovered, focused or dragged */
+.ws-handle {
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ws-handle-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--blue);
+  opacity: 0;
+  transition: opacity 0.12s var(--ease);
+}
+.ws-handle:hover .ws-handle-line,
+.ws-handle:focus-visible .ws-handle-line,
+.ws-handle.dragging .ws-handle-line {
+  opacity: 1;
+}
+.ws-handle:focus-visible .ws-handle-line {
+  box-shadow: 0 0 0 3px var(--focus-halo);
+}
+.ws-handle-fold {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 34px;
+  margin: -17px 0 0 -9px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 9px;
+  background: var(--sheet);
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.12s var(--ease),
+    color 0.12s var(--ease),
+    border-color 0.12s var(--ease);
+}
+.ws-handle:hover .ws-handle-fold,
+.ws-handle:focus-within .ws-handle-fold,
+.ws-handle.folded .ws-handle-fold {
+  opacity: 1;
+}
+.ws-handle-fold:hover,
+.ws-handle-fold:focus-visible {
+  color: var(--blue);
+  border-color: var(--blue);
+  outline: none;
+}
+.ws-handle.folded {
+  cursor: default;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+.ws-handle.folded .ws-handle-line {
+  display: none;
+}
+.ws-handle.folded .ws-handle-fold {
+  position: static;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+.ws-handle-label {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg);
+  writing-mode: vertical-rl;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+body.is-resizing canvas,
+body.is-resizing iframe {
+  pointer-events: none;
+}
 
 /* phones and narrow tablets: one pane at a time, switched from a bar at the bottom (the thumb's reach) */
 .ws-switch {
   display: none;
 }
 @media (max-width: 980px) {
-  .ws {
+  .ws,
+  .ws--left-folded,
+  .ws--right-folded,
+  .ws--left-folded.ws--right-folded {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     height: 100dvh;
@@ -1519,6 +1670,9 @@ input[type="file"] {
   }
   .ws-top {
     grid-column: 1;
+  }
+  .ws-handle {
+    display: none;
   }
   .ws-left,
   .ws-center,
@@ -1830,6 +1984,21 @@ input[type="file"] {
   max-height: 120px;
   padding: 7px 8px;
 }
+.chat-hint {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.tool-card {
+  max-width: 360px;
+  font-family: var(--font-mono);
+}
+.tool-card .mono {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .timeline-end {
   height: 1px;
 }
@@ -1934,6 +2103,67 @@ input[type="file"] {
 .chip.active {
   outline: 2px solid var(--blue);
   outline-offset: 0;
+}
+
+/* ---- hover cards: what a native tooltip would say, drawn by us — instant, styled, keyboard-reachable ---- */
+.hover-anchor {
+  position: relative;
+  display: inline-flex;
+}
+.hover-card {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 160px;
+  max-width: 320px;
+  padding: 7px 9px;
+  background: var(--sheet);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition:
+    opacity 0.1s var(--ease),
+    transform 0.1s var(--ease);
+  white-space: normal;
+}
+.hover-card b {
+  font-weight: 600;
+}
+.hover-anchor:hover .hover-card,
+.hover-anchor:focus-within .hover-card {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.15s;
+}
+.hover-card-line.pass {
+  color: var(--pass);
+}
+.hover-card-line.fail {
+  color: var(--fail);
+}
+.hover-card.below {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+.hover-card.right {
+  left: auto;
+  right: 0;
+}
+@media (hover: none) {
+  .hover-card {
+    display: none;
+  }
 }
 
 .viewer {
@@ -2068,6 +2298,36 @@ input[type="file"] {
 .table-checks td:last-child,
 .table-checks th:last-child {
   padding-right: 10px;
+}
+.th-sub {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+/* rows that stand for a dimension: pointing at one shows its section on the model and lights the same row elsewhere */
+.table-checks tr.is-linked {
+  cursor: default;
+}
+.table-checks tr.is-linked td:first-child {
+  box-shadow: inset 2px 0 0 transparent;
+  transition: box-shadow 0.12s var(--ease);
+}
+.table-checks tr.is-hovered td {
+  background: var(--blue-soft);
+}
+.table-checks tr.is-hovered td:first-child {
+  box-shadow: inset 2px 0 0 var(--blue);
+}
+.table-checks tr:focus-visible {
+  outline: none;
+}
+.table-checks tr:focus-visible td {
+  background: var(--blue-soft);
 }
 .val-meas {
   font-family: var(--font-mono);
@@ -2722,6 +2982,15 @@ input[type="file"] {
   flex: 1 1 180px;
   min-width: 0;
 }
+.dimrow {
+  transition:
+    border-color 0.12s var(--ease),
+    background 0.12s var(--ease);
+}
+.dimrow.is-hovered {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
 .dimrow .input-num {
   width: 92px;
 }
@@ -3234,6 +3503,13 @@ input[type="file"] {
 .cz-param.disabled {
   opacity: 0.55;
 }
+.cz-param.is-hovered {
+  background: var(--blue-soft);
+  border-radius: var(--radius);
+  padding-left: 8px;
+  padding-right: 8px;
+  margin: 0 -8px;
+}
 .cz-param.assert-hit {
   background: var(--fail-soft);
   border-radius: var(--radius);
@@ -3497,6 +3773,26 @@ input[type="file"] {
 .cz-bind b {
   font-weight: 600;
 }
+.cz-bind {
+  position: relative;
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+.cz-bind:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-halo);
+}
+.cz-bind:hover {
+  color: var(--ink);
+}
+.cz-evidence-card {
+  min-width: 220px;
+}
+.cz-evidence-card .hover-card b {
+  font-weight: 600;
+}
+.cz-evidence-line {
+  display: block;
+}
 .cz-bind .mono {
   font-size: 10.5px;
   color: var(--ink-3);
@@ -3673,6 +3969,15 @@ input[type="file"] {
 .cz-derived-row.bad .cz-derived-lim {
   color: var(--fail);
 }
+.cz-derived-row {
+  flex-wrap: wrap;
+}
+.cz-derived-why {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--fail);
+  margin-top: -2px;
+}
 
 /* footer */
 .cz-footer {
@@ -3725,6 +4030,31 @@ input[type="file"] {
   display: flex;
   gap: 4px;
   align-items: center;
+}
+.cz-preset-card {
+  max-width: 260px;
+  max-height: 200px;
+  overflow: hidden;
+}
+.cz-preset-card .mono {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cz-command {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+  background: var(--sheet-2);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius-sm);
+  padding: 5px 7px;
+  max-height: 64px;
+  overflow: auto;
+  word-break: break-all;
+  user-select: all;
 }
 .cz-preset {
   flex: 1 1 auto;
@@ -3802,6 +4132,13 @@ input[type="file"] {
   white-space: nowrap;
   transition: opacity 0.15s;
   will-change: transform;
+}
+.dim-label.dim-focus {
+  background: var(--blue);
+  color: var(--on-accent);
+  border-color: var(--blue);
+  font-weight: 500;
+  z-index: 2;
 }
 .viewer-pills {
   position: absolute;

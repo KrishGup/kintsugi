@@ -64,9 +64,14 @@ export default function DocsSearch({ onInsert }: { onInsert?: (text: string) => 
       <div className="row-wrap small" style={{ marginTop: 4 }}>
         <span className="dim">guides:</span>
         {guides.map((g) => (
-          <a key={g.topic} href={`/api/guides/${g.topic}`} target="_blank" rel="noreferrer" title={g.about}>
-            {g.topic}
-          </a>
+          <span key={g.topic} className="hover-anchor">
+            <a href={`/api/guides/${g.topic}`} target="_blank" rel="noreferrer">
+              {g.topic}
+            </a>
+            <span className="hover-card below" role="tooltip">
+              {g.about}
+            </span>
+          </span>
         ))}
       </div>
       {hits.length > 0 && (
@@ -74,14 +79,14 @@ export default function DocsSearch({ onInsert }: { onInsert?: (text: string) => 
           {hits.map((h) => (
             <div key={`${h.source}:${h.name}`} className={`docs-hit${open === h.name ? " open" : ""}`}>
               <div className="row-wrap">
-                <button className="btn btn-ghost btn-xs mono" onClick={() => search(h.name)} title="full entry">
+                <button className="btn btn-ghost btn-xs mono" onClick={() => search(h.name)}>
                   {h.name}
                 </button>
                 <Pill tone={h.source === "openscad" ? "blue" : "neutral"}>{h.source === "openscad" ? "builtin" : h.source.replace(".scad", "")}</Pill>
                 <span className="dim">{h.synopsis}</span>
                 {onInsert && h.usage[0] && (
-                  <button className="btn btn-ghost btn-xs" onClick={() => onInsert(h.usage[0])} title="insert the usage line at the cursor">
-                    insert
+                  <button className="btn btn-ghost btn-xs" onClick={() => onInsert(h.usage[0])}>
+                    insert at cursor
                   </button>
                 )}
               </div>

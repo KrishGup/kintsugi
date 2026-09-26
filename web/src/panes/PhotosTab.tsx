@@ -106,18 +106,25 @@ function PhotoCard({ photo, selected, onOpen, onMeasure }: { photo: Photo; selec
         </div>
         {g ? (
           g.error ? (
-            <Pill tone="fail" title={g.error}>
-              grade failed
-            </Pill>
+            <>
+              <Pill tone="fail">grade failed</Pill>
+              <div className="small dim">{g.error}</div>
+            </>
           ) : (
-            <div className="photo-pills">
+            <div className="photo-pills hover-anchor">
+              <span className="hover-card below" role="tooltip">
+                sharpness <b className="num">{fmtNum(g.sharpness, 1)}</b>
+                {g.edge_width_px ? (
+                  <>
+                    {" "}
+                    · edge <b className="num">{fmtNum(g.edge_width_px, 1)} px</b>
+                  </>
+                ) : null}{" "}
+                · brightness <b className="num">{fmtNum(g.mean_brightness, 0)}</b>
+              </span>
               <Pill tone={g.ok ? "pass" : "fail"}>{g.ok ? "good capture" : "retake"}</Pill>
-              <Pill tone={g.sharpness_ok ? "pass" : "fail"} title={`sharpness ${fmtNum(g.sharpness, 1)}${g.edge_width_px ? `, edge ${fmtNum(g.edge_width_px, 1)} px` : ""}`}>
-                {g.sharpness_ok ? "sharp" : "blurry"}
-              </Pill>
-              <Pill tone={g.exposure_ok ? "pass" : "warn"} title={`mean brightness ${fmtNum(g.mean_brightness, 0)}`}>
-                {g.exposure_ok ? "exposed" : "exposure"}
-              </Pill>
+              <Pill tone={g.sharpness_ok ? "pass" : "fail"}>{g.sharpness_ok ? "sharp" : "blurry"}</Pill>
+              <Pill tone={g.exposure_ok ? "pass" : "warn"}>{g.exposure_ok ? "exposed" : "exposure"}</Pill>
               <Pill tone={typeof g.tilt_deg === "number" ? (g.tilt_ok ? "pass" : "fail") : "neutral"}>
                 tilt {typeof g.tilt_deg === "number" ? `${fmtNum(g.tilt_deg, 0)}°` : "—"}
               </Pill>

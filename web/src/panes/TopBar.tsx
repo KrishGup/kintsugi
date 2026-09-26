@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { archiveUrl, fileUrl, kin } from "../api";
 import { UserChip } from "../auth";
-import { Mark } from "../brand";
+import { Brand } from "../brand";
 import { useDismiss } from "../hooks";
 import { Download, Play, Stop } from "../icons";
 import { ProviderPill, useLlm } from "../llm";
@@ -67,11 +67,8 @@ export default function TopBar() {
 
   return (
     <div className="topbar" ref={ref}>
-      <Link to="/" className="brand" title="All sessions">
-        <span className="brand-mark">
-          <Mark />
-        </span>
-        <span className="brand-name">Kintsugi</span>
+      <Link to="/" className="brand">
+        <Brand />
       </Link>
       <span className="topbar-sep" />
       <div className="topbar-title">
@@ -87,23 +84,21 @@ export default function TopBar() {
           {typeof d.meta.cost_usd === "number" && d.meta.cost_usd > 0 ? (
             <>
               {" "}
-              · <b title="model spend so far, from the API's token counts">${d.meta.cost_usd.toFixed(2)}</b>
+              · <b>${d.meta.cost_usd.toFixed(2)}</b> spent
             </>
           ) : null}
         </span>
-        <Pill tone={statusTone(status, s.running)} dot={s.running} title={`status: ${d.meta.status}`}>
+        <Pill tone={statusTone(status, s.running)} dot={s.running}>
           {statusLabel(status, s.running)}
         </Pill>
         {s.running && (
-          <span className="topbar-progress num" title="iterations used / budget · model steps · elapsed">
+          <span className="topbar-progress num">
             it {p.iterations}
-            {p.budget ? `/${p.budget}` : ""} · step {p.step} · {fmtElapsed(p.elapsed)}
+            {p.budget ? ` of ${p.budget}` : ""} · step {p.step} · {fmtElapsed(p.elapsed)}
           </span>
         )}
         {!s.connected && (
-          <Pill tone="warn" title="Event stream disconnected; reconnecting">
-            offline
-          </Pill>
+          <Pill tone="warn">reconnecting…</Pill>
         )}
         {s.busy && <Spinner size={12} label={s.busy} />}
       </div>
@@ -120,7 +115,6 @@ export default function TopBar() {
             onClick={() => setPop(pop === "run" ? null : "run")}
             disabled={s.running}
             aria-expanded={pop === "run"}
-            title={s.running ? "A run is in progress" : "Start the designer agent"}
           >
             <Play size={11} /> Run designer
           </button>
@@ -168,7 +162,7 @@ export default function TopBar() {
             </div>
           )}
         </div>
-        <button className="btn btn-sm" onClick={s.stopRun} disabled={!s.running} title="Cancel the running designer">
+        <button className="btn btn-sm" onClick={s.stopRun} disabled={!s.running}>
           <Stop size={11} /> Stop
         </button>
         <span className="topbar-sep" />
@@ -306,9 +300,10 @@ function ExportPopover({ onExport }: { onExport: () => Promise<unknown> }) {
         </div>
       )}
       <div className="row mb">
-        <button className="btn btn-primary btn-sm" onClick={go} disabled={working || !canExport} title={canExport ? "" : "Nothing compiled yet"}>
+        <button className="btn btn-primary btn-sm" onClick={go} disabled={working || !canExport}>
           {working ? <Spinner size={11} /> : <ExportIcon />} {d.export.length ? "Re-export" : "Export"} last passing iteration
         </button>
+        {!canExport && <span className="small dim">nothing has compiled yet</span>}
       </div>
       {typeof d.meta.exported_iteration === "number" && (
         <div className="small dim mb">
@@ -341,13 +336,13 @@ function ExportPopover({ onExport }: { onExport: () => Promise<unknown> }) {
           href={s.running ? undefined : archiveUrl(s.sid)}
           download={`kintsugi-session-${s.sid}.zip`}
           aria-disabled={s.running}
-          title={s.running ? "Wait for the run to finish" : "Download the session archive (.zip)"}
           onClick={(e) => {
             if (s.running) e.preventDefault();
           }}
         >
-          <Download size={12} /> Download session archive
+          <Download size={12} /> Download session archive (.zip)
         </a>
+        {s.running && <span className="small dim">available when the run ends</span>}
       </div>
     </div>
   );

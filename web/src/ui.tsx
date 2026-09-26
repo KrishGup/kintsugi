@@ -2,9 +2,16 @@ import type { ReactNode } from "react";
 
 export type Tone = "pass" | "fail" | "warn" | "blue" | "neutral";
 
-export function Pill({ tone = "neutral", children, title, dot }: { tone?: Tone; children: ReactNode; title?: string; dot?: boolean }) {
+export function Pill({
+  tone = "neutral",
+  children,
+  title,
+  dot,
+  className,
+  ...rest
+}: { tone?: Tone; children: ReactNode; title?: string; dot?: boolean; className?: string } & React.HTMLAttributes<HTMLSpanElement>) {
   return (
-    <span className={`pill pill-${tone}`} title={title}>
+    <span className={`pill pill-${tone}${className ? ` ${className}` : ""}`} title={title} {...rest}>
       {dot && <span className="pill-dot" />}
       {children}
     </span>

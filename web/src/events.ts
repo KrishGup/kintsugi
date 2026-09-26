@@ -81,8 +81,21 @@ export function useEvents(sid: string | undefined, onEvent?: (ev: KinEvent) => v
     let closed = false;
     let lastId = 0;
     let retry: number | undefined;
+    let failures = 0;
     const seen = new Set<number>();
     setEvents([]);
+
+    // EventSource cannot see status codes: after repeated failures, ask whether the sign-in lapsed so the gate opens
+    // instead of a silent retry loop.
+    const probeAuth = async () => {
+      try {
+        const r = await fetch("/api/auth/me", { credentials: "same-origin" });
+        const info = (await r.json()) as { mode?: string; user?: unknown };
+        if (info.mode && info.mode !== "none" && !info.user) window.dispatchEvent(new CustomEvent("kin:unauthorized"));
+      } catch {
+        /* the server is down; the retry loop keeps knocking */
+      }
+    };
 
     const open = () => {
       if (closed) return;
@@ -106,13 +119,19 @@ export function useEvents(sid: string | undefined, onEvent?: (ev: KinEvent) => v
       for (const k of EVENT_KINDS) es.addEventListener(k, onMsg as EventListener);
       es.addEventListener("ping", () => setConnected(true));
       es.onmessage = onMsg;
-      es.onopen = () => setConnected(true);
+      es.onopen = () => {
+        failures = 0;
+        setConnected(true);
+      };
       es.onerror = () => {
         setConnected(false);
-        // EventSource would auto-reconnect with the same URL (since=0) and replay everything; do it ourselves.
+        // EventSource would auto-reconnect with the same URL (since=0) and replay everything; do it ourselves,
+        // backing off from 2 s to 30 s so a lapsed sign-in or a restarting server is not hammered.
         es?.close();
         es = null;
-        if (!closed) retry = window.setTimeout(open, 2000);
+        failures += 1;
+        if (failures === 2) probeAuth();
+        if (!closed) retry = window.setTimeout(open, Math.min(30000, 2000 * 2 ** Math.min(failures - 1, 4)));
       };
     };
     open();

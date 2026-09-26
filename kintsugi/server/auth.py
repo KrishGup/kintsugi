@@ -19,6 +19,7 @@ import hashlib
 import hmac
 import json
 import os
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -73,9 +74,49 @@ def cookie_value() -> str:
     return hmac.new(_secret(), b"kintsugi-auth-v1", hashlib.sha256).hexdigest()
 
 
+def _same(a: str, b: str) -> bool:
+    """Constant-time equality that tolerates any unicode (compare_digest on str insists on ASCII)."""
+    return hmac.compare_digest(a.encode("utf-8"), b.encode("utf-8"))
+
+
 def check_token(token: str) -> bool:
     expected = os.environ.get("KIN_ACCESS_TOKEN", "")
-    return bool(expected) and hmac.compare_digest(token.strip(), expected)
+    return bool(expected) and _same(token.strip(), expected)
+
+
+# ---- login throttle (token mode) ------------------------------------------------------------------------------------
+# A shared code is a password with no lockout; slow the guessing down without locking out the household after a typo.
+
+FAILS_ALLOWED = 8          # wrong codes per client before a cool-off
+FAIL_WINDOW_S = 600        # ...within this many seconds
+COOL_OFF_S = 60            # then every attempt from that client waits this long
+_fails: dict[str, list[float]] = {}
+
+
+def client_key(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for", "")
+    ip = fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "?")
+    return ip or "?"
+
+
+def throttle_check(key: str) -> float:
+    """Seconds the client must still wait before another login attempt is considered (0 = go ahead)."""
+    now = time.time()
+    hits = [t for t in _fails.get(key, []) if now - t < FAIL_WINDOW_S]
+    _fails[key] = hits
+    if len(hits) >= FAILS_ALLOWED:
+        return max(0.0, COOL_OFF_S - (now - hits[-1]))
+    return 0.0
+
+
+def throttle_fail(key: str) -> None:
+    _fails.setdefault(key, []).append(time.time())
+    if len(_fails) > 10000:            # never let the map grow without bound
+        _fails.clear()
+
+
+def throttle_clear(key: str) -> None:
+    _fails.pop(key, None)
 
 
 def _bearer(request: Request) -> str | None:
@@ -117,7 +158,7 @@ def resolve(request: Request) -> User | None:
         tok = _bearer(request)
         if tok is not None and check_token(tok):
             return SHARED
-        if hmac.compare_digest(request.cookies.get(COOKIE, ""), cookie_value()):
+        if _same(request.cookies.get(COOKIE, ""), cookie_value()):
             return SHARED
         return None
     return _easyauth_user(request)
@@ -148,7 +189,10 @@ def secure_cookie(request: Request) -> bool:
 async def middleware(request: Request, call_next):
     """Resolve the user; refuse API calls without one (except the public paths); expose it to the handlers."""
     path = request.url.path
-    user = resolve(request)
+    try:
+        user = resolve(request)
+    except Exception:          # noqa: BLE001 — a malformed header or cookie is "not signed in", never a 500
+        user = None
     needs_user = path.startswith("/api/") and not any(path.startswith(p) for p in PUBLIC_API)
     if needs_user and user is None:
         return JSONResponse({"detail": "sign in to use Kintsugi", "auth": describe(request)}, status_code=401)
