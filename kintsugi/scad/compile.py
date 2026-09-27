@@ -257,6 +257,28 @@ def compile_scad(
     env["OPENSCADPATH"] = os.pathsep.join(paths)
 
     t0 = time.time()
+    # never more than KIN_MAX_COMPILES OpenSCAD processes at once, whoever asks: a shared box stays responsive and a
+    # burst of previews queues instead of thrashing (a cancelled preview leaves the queue immediately)
+    # a cancellable compile (a preview) checks its cancel flag while it waits so a superseded draft never holds a slot
+    waited = 0.0
+    while not _compile_slots.acquire(timeout=0.25):
+        waited += 0.25
+        if cancel is not None and cancel.is_set():
+            return CompileResult(ok=False, out_path=None, format=fmt, duration_s=time.time() - t0,
+                                 errors=["cancelled (superseded by a newer preview)"], command=cmd, returncode=-1, cancelled=True)
+        if waited >= max(5.0, timeout_s):
+            return CompileResult(ok=False, out_path=None, format=fmt, duration_s=time.time() - t0,
+                                 errors=["the compile queue is full; try again in a moment"], command=cmd, returncode=-1)
+    try:
+        return _compile_now(cmd, env, scad_path, out_path, fmt, timeout_s, cancel, t0)
+    finally:
+        _compile_slots.release()
+
+
+_compile_slots = threading.BoundedSemaphore(max(1, int(os.environ.get("KIN_MAX_COMPILES", "4") or 4)))
+
+
+def _compile_now(cmd, env, scad_path, out_path, fmt, timeout_s, cancel, t0):
     cancelled = False
     if cancel is None:
         try:

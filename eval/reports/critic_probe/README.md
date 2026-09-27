@@ -1,6 +1,6 @@
 # Critic probe — does the code-blind critic catch what the numbers miss?
 
-Each variant injects one defect into the passing bottle-handle template. Every variant except one keeps all hard checks green, so the critic can only catch the defect from the drawings.
+Each variant injects one defect into the passing bottle-handle template. Three of the five variants keep every hard check green, so on those the critic can only catch the defect from the drawings; two (`thin_bridge`, `loop_too_thick_walls_ok`) also trip `footprint.overall_length`, so the numeric checks would have flagged them too — and on those the critic's finding cites the length overrun rather than the injected defect.
 
 | variant | injected defect | hard checks | verdict | caught |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@ Each variant injects one defect into the passing bottle-handle template. Every v
 | thin_bridge | the bridge between ring and loop is a 6 mm wide neck, far narrower than the loop it carries (thin neck in the load path) | FAIL: footprint.overall_length | revise | yes |
 | loop_too_thick_walls_ok | a 14 mm thick loop wall: heavy, over-built, wastes material and makes the grip bulky | FAIL: footprint.overall_length | revise | yes |
 
-**Catch rate: 4/5**; control verdict: pass.
+**Catch rate: 4/5 overall; 2/3 on the three defects the numbers cannot see** (missed `no_fillets`); control verdict: pass. Runs on the Agent provider (`opus`); to be repeated on GPT-6.
 
 ### control
 

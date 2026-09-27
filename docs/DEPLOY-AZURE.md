@@ -81,6 +81,9 @@ same list for local runs.
 | `KIN_ENV_FILE` | `/data/.env` | plain | Where the UI would persist settings (unused while locked). |
 | `KIN_SESSION_GIT` | `1` | plain | Per-iteration git history inside each session. Works on Azure Files with the `nobrl` mount; set `0` if runs feel slow — `history.json` still records every iteration. |
 | `KIN_MAX_IMPORT_MB` | `500` | plain | Largest archive the import endpoint accepts. |
+| `KIN_MAX_COST_USD` | `5` | plain | The most one design run may spend on model calls (the client's own token accounting); `0` = no cap. Set it on anything shared — the iteration budget bounds work, this bounds money. |
+| `KIN_RATE_PER_MIN` | `30` (public) · `0` (private) | plain | Heavy calls (run, iterate, coupon, export, params, code, photos, intake, import) per client per minute; `0` = off. |
+| `KIN_MAX_COMPILES` | `4` | plain | OpenSCAD processes at once across all sessions; previews queue and cancel each other. |
 | `KIN_AUTH` | `easyauth` · `token` · `none` | plain | Who may use it — [section 5](#5-sign-in-the-three-modes). |
 | `KIN_ADMIN_USERS` | `you@example.com,teammate@example.com` | plain | *easyauth*: lower-case ids (email for Microsoft/Google, login for GitHub) who see every session and may change settings. |
 | `KIN_EASYAUTH_PROVIDER` | `aad` · `github` · `google` | plain | *easyauth*: which `/.auth/login/<provider>` the sign-in gate links to. |

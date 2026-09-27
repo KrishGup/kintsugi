@@ -64,6 +64,7 @@ export default function Home() {
         if (ex.length && !specYaml) {
           setExample(ex[0].name);
           setSpecYaml(ex[0].yaml);
+          setName((n) => n || (ex[0].title || ex[0].name).replace(/_/g, " "));
         }
       })
       .catch((e) => error(e, "Could not load example specs"));
@@ -75,7 +76,7 @@ export default function Home() {
     const ex = examples.find((e) => e.name === n);
     if (ex) {
       setSpecYaml(ex.yaml);
-      if (!name) setName(ex.name.replace(/_/g, " "));
+      if (!name) setName((ex.title || ex.name).replace(/_/g, " "));
     }
   };
 
@@ -367,12 +368,32 @@ export default function Home() {
                   <span className="field-label">Example spec</span>
                   <select className="select" value={example} onChange={(e) => pickExample(e.target.value)}>
                     {examples.length === 0 && <option value="">(no examples found)</option>}
-                    {examples.map((ex) => (
-                      <option key={ex.name} value={ex.name}>
-                        {ex.name}
-                      </option>
-                    ))}
+                    <optgroup label="Parts with a vetted template (demo mode designs these)">
+                      {examples
+                        .filter((ex) => ex.group !== "reference")
+                        .map((ex) => (
+                          <option key={ex.name} value={ex.name}>
+                            {ex.title || ex.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    {examples.some((ex) => ex.group === "reference") && (
+                      <optgroup label="A/B reference specs (human-designed parts; need a real model)">
+                        {examples
+                          .filter((ex) => ex.group === "reference")
+                          .map((ex) => (
+                            <option key={ex.name} value={ex.name}>
+                              {ex.title || ex.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
                   </select>
+                  {llm.status?.provider === "fake" && examples.find((ex) => ex.name === example)?.group === "reference" && (
+                    <span className="field-hint">
+                      Demo mode has no template for this part: the run will show the checks failing, not a finished part. Pick one from the first group, or add an OpenAI key.
+                    </span>
+                  )}
                 </label>
               )}
 

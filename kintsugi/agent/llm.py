@@ -243,16 +243,18 @@ class LLM:
                         effort: str | None = None, max_steps: int = 60, stop_tools: tuple[str, ...] = ("finish", "ask_user"),
                         on_text: Callable[[str], None] | None = None, on_tool: Callable[[str, dict[str, Any]], None] | None = None,
                         on_step: Callable[[int], None] | None = None, followups: list[str] | None = None,
-                        role: str = "designer") -> ToolLoopResult:
-        """Run the model against `tools` until it stops calling them, calls a stop tool, or hits max_steps."""
+                        role: str = "designer", cost_limit_usd: float | None = None) -> ToolLoopResult:
+        """Run the model against `tools` until it stops calling them, calls a stop tool, hits max_steps, or — when
+        `cost_limit_usd` is set — has spent that much (by the client's own token accounting) in this loop."""
         model = model or self.models[role]
         if self.provider == "openai":
-            return await self._openai_loop(system, parts, tools, model, effort or self.effort, max_steps, stop_tools, on_text, on_tool, on_step)
+            return await self._openai_loop(system, parts, tools, model, effort or self.effort, max_steps, stop_tools, on_text, on_tool, on_step, cost_limit_usd)
         if self.provider == "fake":
-            return await self._openai_loop(system, parts, tools, model, "none", max_steps, stop_tools, on_text, on_tool, on_step)
+            return await self._openai_loop(system, parts, tools, model, "none", max_steps, stop_tools, on_text, on_tool, on_step, cost_limit_usd)
         raise NotImplementedError("the Agent designer runs through the Agent SDK path in designer.py")
 
-    async def _openai_loop(self, system, parts, tools, model, effort, max_steps, stop_tools, on_text, on_tool, on_step) -> ToolLoopResult:
+    async def _openai_loop(self, system, parts, tools, model, effort, max_steps, stop_tools, on_text, on_tool, on_step,
+                           cost_limit_usd: float | None = None) -> ToolLoopResult:
         """The Responses-API tool loop.
 
         Stateful mode (default): the conversation lives on OpenAI's side and each step sends only the new tool outputs with
@@ -275,8 +277,13 @@ class LLM:
         truncations = 0
         images_split = os.environ.get("KIN_OPENAI_IMAGES_AS_MESSAGE", "").lower() in ("1", "true", "yes")
         max_out = int(os.environ.get("KIN_MAX_OUTPUT_TOKENS", "32000"))
+        cost_start = self.usage.cost_usd
         step = 0
         while step < max_steps:
+            if cost_limit_usd is not None and self.usage.cost_usd - cost_start >= cost_limit_usd:
+                error = f"spend cap reached: ${self.usage.cost_usd - cost_start:.2f} of ${cost_limit_usd:.2f} for this run"
+                stopped_by = "cost_cap"
+                break
             step += 1
             steps = step
             if on_step:

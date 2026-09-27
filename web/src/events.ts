@@ -15,6 +15,7 @@ export const EVENT_KINDS = [
   "answer",
   "run_end",
   "error",
+  "cost_cap",
   "photo",
   "estimate",
   "dim_confirmed",

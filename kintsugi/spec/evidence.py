@@ -290,8 +290,11 @@ def plan_round(spec: PartSpec, miss: list[MissingDim] | None = None, photos: lis
         name = m.dim.split(".")[-1].replace("_", " ")
         pri = 0 if (m.importance == "interface" and m.reason in ("unknown", "conflict", "low_confidence")) else (1 if m.importance == "interface" else 2)
         hint = f" The photos suggest about {m.target:g} mm." if m.target is not None else ""
+        # "the ring height of the ring height": the feature name often *is* the dimension name — say it once
+        feat = (m.feature or "").strip()
+        of_feature = f" of the {feat}" if feat and feat.lower() != name.lower() and name.lower() not in feat.lower() else ""
         reqs.append(Request(f"r{round_no}_measure_{m.dim.replace('.', '_')}", "measure", [m.dim], f"Measure the {name}",
-                            f"With a ruler or caliper, read the {name}" + (f" of the {m.feature}" if m.feature else "") + f" in mm.{hint}",
+                            f"With a ruler or caliper, read the {name}{of_feature} in mm.{hint}",
                             "a height or length cannot be read from a top-down photo", pri, feature=m.feature))
     # 3. a coupon when the only doubt left is the fit itself
     soft = [m for m in miss if m.importance == "interface" and m.reason == "estimated" and m.fit in ("press", "snap", "sliding")]

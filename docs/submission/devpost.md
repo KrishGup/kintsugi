@@ -92,9 +92,9 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 
 ### Accomplishments that we're proud of
 
-- The loop converges: the bottle handle in 1, 1, 1, 2 and 7 iterations over five runs†.
-- The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed every check, two human parts failed wall or topology checks, and a blind judge preferred Kintsugi's part in 4 of 5.
-- The critic probe†: five defects injected into a passing part, four of which no numeric check can see; the code-blind critic caught 4 of 5 with a clean control.
+- The loop converges: the bottle handle in 1, 1, 1 and 7 iterations across the four kept runs (`eval/runs/handle_repeats/`)†.
+- The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written by us from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed every check, two human parts failed wall or topology checks (thresholds their designers never targeted), and a blind judge — the same model family as the designer, reading the sheets and the check tables — preferred Kintsugi's part in 4 of 5. One run per part; the caveats are in `eval/reports/ab_templates.md`.
+- The critic probe†: five defects injected into a passing part. Three are invisible to the numeric checks and the code-blind critic caught 2 of those 3 (it missed the missing fillets); the other two also tripped a footprint check. Control: pass.
 - Verified on known geometry before any model was involved: circle fits within 0.05 mm, interference volumes within 3 %, measurement within 0.5 mm on synthetic photos, every template against its spec, every OpenSCAD guide example compiled. The UI was driven end to end in a browser after every change, on a phone and a desktop, light and dark; `docs/REVIEW.md` walks the deployment journeys through the code.
 - The follow-up loop: the system asks for the *photo* it needs, measures it automatically, and stops asking when it knows enough.
 - The customizer: the finished part is not a file, it is a parametric designer with the evidence attached — the bottle handle previews in 0.1 s per slider move, and "overall length 118.8 mm ✗ ≤ 110" shows up before the person applies anything.

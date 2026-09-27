@@ -56,11 +56,12 @@ class RunState:
     cost_usd: float = 0.0
     turns: int = 0
     error: str | None = None
+    cost_capped: bool = False
 
 
 @dataclass
 class RunOutcome:
-    status: str  # done | waiting_user | budget_exhausted | stopped | error
+    status: str  # done | waiting_user | budget_exhausted | cost_capped | stopped | error
     state: RunState
     session: Session
     duration_s: float
@@ -140,9 +141,22 @@ def _status(state: RunState) -> str:
         return "done"
     if state.error:
         return "error"
+    if state.cost_capped:
+        return "cost_capped"
     if state.last_result and state.last_result.budget_left == 0:
         return "budget_exhausted"
     return "stopped"
+
+
+def spend_cap_usd() -> float | None:
+    """KIN_MAX_COST_USD: the most one run may spend on model calls (the client's own token accounting); unset or 0 = no cap.
+    A shared or public deployment should set it — the iteration budget bounds work, this bounds money."""
+    raw = os.environ.get("KIN_MAX_COST_USD", "").strip()
+    try:
+        v = float(raw) if raw else 0.0
+    except ValueError:
+        v = 0.0
+    return v if v > 0 else None
 
 
 # ---- OpenAI runtime ------------------------------------------------------------------------------------
@@ -160,6 +174,11 @@ async def _run_openai(session, spec, state, model, budget, critic_rounds, user_m
     parts = [text_part(prompt)]
     cost0 = llm.usage.cost_usd
     calls0 = llm.usage.calls
+    cap = spend_cap_usd()
+
+    def left() -> float | None:
+        """what this run may still spend (KIN_MAX_COST_USD is per run; a resumed run counts from its own start)"""
+        return None if cap is None else max(0.0, cap - (llm.usage.cost_usd - cost0))
 
     def on_text(t: str):
         emit("assistant", text=t.strip()[:4000])
@@ -172,9 +191,12 @@ async def _run_openai(session, spec, state, model, budget, critic_rounds, user_m
         emit("step", n=n)
 
     res = await llm.run_tools(system=system, parts=parts, tools=tools, model=model, max_steps=max_turns, on_text=on_text,
-                              on_tool=on_tool, on_step=on_step)
+                              on_tool=on_tool, on_step=on_step, cost_limit_usd=left())
     state.turns += res.steps
-    if res.error:
+    if res.stopped_by == "cost_cap":
+        state.cost_capped = True
+        emit("cost_cap", message=res.error or "spend cap reached", cap_usd=cap)
+    elif res.error:
         state.error = res.error
         emit("error", message=res.error)
     if not state.finished and not state.question and not res.error and res.stopped_by is None and state.last_result and state.last_result.ok:
@@ -183,15 +205,18 @@ async def _run_openai(session, spec, state, model, budget, critic_rounds, user_m
         nudge = [text_part("You stopped without calling finish, but your last iteration passed every check. Read part.scad and the latest "
                            "iterations/iter_NN/summary.txt; if the design is complete call finish(narration=...), otherwise continue iterating.")]
         res = await llm.run_tools(system=system, parts=nudge, tools=tools, model=model, max_steps=max(10, max_turns // 5),
-                                  on_text=on_text, on_tool=on_tool, on_step=on_step)
+                                  on_text=on_text, on_tool=on_tool, on_step=on_step, cost_limit_usd=left())
         state.turns += res.steps
-        if res.error:
+        if res.stopped_by == "cost_cap":
+            state.cost_capped = True
+            emit("cost_cap", message=res.error or "spend cap reached", cap_usd=cap)
+        elif res.error:
             state.error = res.error
             emit("error", message=res.error)
     rounds = 0
     followup_parts: list[dict[str, Any]] | None = None
     # the critic loop: the designer continues in a fresh tool loop that carries the critic's verdict
-    while not state.question and state.finished and run_critic and rounds < critic_rounds and not state.error:
+    while not state.question and state.finished and run_critic and rounds < critic_rounds and not state.error and not state.cost_capped:
         rounds += 1
         verdict = await _run_critic(session, spec, state, critic_model, photos, emit, llm)
         state.critic_verdicts.append(verdict)
@@ -207,9 +232,12 @@ async def _run_openai(session, spec, state, model, budget, critic_rounds, user_m
         followup_parts = [text_part(CRITIC_FOLLOWUP.format(verdict=verdict.summary_for_model())
                                     + "\n\nRead part.scad first (it is the current design), then make the changes.")]
         res = await llm.run_tools(system=system, parts=followup_parts, tools=tools, model=model, max_steps=max_turns,
-                                  on_text=on_text, on_tool=on_tool, on_step=on_step)
+                                  on_text=on_text, on_tool=on_tool, on_step=on_step, cost_limit_usd=left())
         state.turns += res.steps
-        if res.error:
+        if res.stopped_by == "cost_cap":
+            state.cost_capped = True
+            emit("cost_cap", message=res.error or "spend cap reached", cap_usd=cap)
+        elif res.error:
             state.error = res.error
             emit("error", message=res.error)
     state.cost_usd += llm.usage.cost_usd - cost0

@@ -366,7 +366,8 @@ def test_designer_critic_revise_round(tmp_path, monkeypatch):
     assert out.status == "done", out.to_dict()
     evs = [json.loads(line) for line in (s.dir / "events.jsonl").read_text().splitlines()]
     kinds = [e["kind"] for e in evs]
-    assert kinds.count("critic") == 2 and "critic_followup" in kinds and kinds.count("iteration") == 2
+    # the scripted bottle-handle design is two iterations (the caught-and-fixed loop) plus one re-verify after the critic
+    assert kinds.count("critic") == 2 and "critic_followup" in kinds and kinds.count("iteration") == 3
     assert [e["verdict"] for e in evs if e["kind"] == "critic"] == ["revise", "pass"]
     assert kinds.index("critic_followup") < kinds.index("run_end") and s.meta["critic_rounds"] == 2
 

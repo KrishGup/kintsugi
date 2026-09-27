@@ -33,5 +33,5 @@ For a 5–7 minute live walkthrough (a call with the organisers, a judging sessi
 ## Things not to say
 
 - Don't promise sub-0.1 mm on real photos; say "within half a millimetre on synthetic ground truth; the coupon confirms the fit".
-- Don't call the critic "always right"; quote the probe (4/5, missed the fillets).
+- Don't call the critic "always right"; quote the probe (2 of 3 drawing-only defects, missed the fillets).
 - Don't quote the A/B numbers until they are re-run on GPT-6.

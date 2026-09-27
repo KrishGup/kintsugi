@@ -284,9 +284,17 @@ def guide_text(topic: str):
 
 @app.get("/api/specs/examples")
 def example_specs():
+    """The example specs: the hero (bottle handle) first, then the other parts with a vetted template, then the A/B
+    reference specs (human-designed parts from public repositories; demo mode has no template for them)."""
+    from kintsugi.agent.fake import template_for
     out = []
     for p in sorted((REPO_DIR / "eval" / "specs").glob("*.yaml")):
-        out.append({"name": p.stem, "yaml": p.read_text(encoding="utf-8")})
+        ref = p.stem.startswith("ab_")
+        out.append({"name": p.stem, "yaml": p.read_text(encoding="utf-8"),
+                    "group": "reference" if ref else "example",
+                    "template": None if ref else template_for(p.stem),
+                    "title": p.stem[3:].replace("_", " ") if ref else p.stem.replace("_", " ")})
+    out.sort(key=lambda e: (e["group"] != "example", e["name"] != "bottle_handle", e["name"]))
     return out
 
 
@@ -461,7 +469,8 @@ def session_detail(sid: str):
     from kintsugi.graph.flow import derive_stage, open_transitions
     flow_state = {"meta": meta, "running": sid in RUNS and not RUNS[sid].done(), "has_intake": intake_data is not None,
                   "has_spec": bool(spec.interfaces or spec.requirements), "ready": bool(rd.get("ready")), "iterations": bool(hist),
-                  "has_passing_iteration": any(e.get("ok") for e in hist)}
+                  "has_passing_iteration": any(e.get("ok") for e in hist),
+                  "latest_ok": bool(hist[-1].get("ok")) if hist else None, "latest_iteration": int(hist[-1].get("iteration", 0)) if hist else 0}
     stage = derive_stage(flow_state)
     photos = []
     by_photo: dict[str, list[dict[str, Any]]] = {}

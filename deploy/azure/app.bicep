@@ -41,6 +41,8 @@ param googleClientId string
 param googleClientSecret string
 param sessionGit bool
 param maxImportMb int
+param maxCostUsd string
+param ratePerMin int
 
 // ---- secrets: only the ones this configuration needs ----------------------------------------------------------------
 
@@ -101,6 +103,8 @@ var envBase = [
   { name: 'KIN_SETTINGS_LOCK', value: settingsLock ? '1' : '0' }
   { name: 'KIN_SESSION_GIT', value: sessionGit ? '1' : '0' }
   { name: 'KIN_MAX_IMPORT_MB', value: string(maxImportMb) }
+  { name: 'KIN_MAX_COST_USD', value: maxCostUsd }
+  { name: 'KIN_RATE_PER_MIN', value: string(ratePerMin) }
   { name: 'KIN_AUTH', value: authMode }
   { name: 'KIN_ADMIN_USERS', value: adminUsers }
   { name: 'KIN_EASYAUTH_PROVIDER', value: easyauthProvider }

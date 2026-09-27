@@ -288,9 +288,9 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     mono(s, 0.5, 5.0, 2.75, 0.2, "human — trailer jack cap", { size: 8 });
     mono(s, 3.45, 5.0, 2.75, 0.2, "kintsugi — same spec, 2 iterations", { size: 8 });
     dimLine(s, 6.5, 1.35, 3.0, "5/5 pass · 4/5 preferred†", "A/B vs human-designed repair parts", { size: 11.5 });
-    dimLine(s, 6.5, 2.35, 3.0, "4 / 5 caught †", "critic probe: injected defects invisible to the checks; control passes", { size: 13 });
+    dimLine(s, 6.5, 2.35, 3.0, "2 / 3 caught †", "critic probe: defects the numeric checks cannot see; control passes", { size: 13 });
     dimLine(s, 6.5, 3.45, 3.0, "≤ 0.05 mm", "the toolchain on known geometry: circle fits, interference ≤3 %, measurement ≤0.5 mm — before any model", { size: 13 });
-    dimLine(s, 6.5, 4.55, 3.0, "1·1·1·2·7", "iterations to converge, five bottle-handle runs †", { size: 13 });
+    dimLine(s, 6.5, 4.55, 3.0, "1·1·1·7", "iterations to converge, four bottle-handle runs †", { size: 13 });
     s.addNotes("Every number here has a file behind it in eval/reports and tests/. The dagger marks numbers produced on the previous model provider; they are re-run on GPT-6 before submission and replaced.");
   }
 

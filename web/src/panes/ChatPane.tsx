@@ -312,6 +312,15 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
           <div className="mono small">{String(ev.message || "")}</div>
         </div>
       );
+    case "cost_cap":
+      return (
+        <div className="card-sys">
+          <span>
+            spend cap reached — {String(ev.message || "")}
+            {typeof ev.cap_usd === "number" ? ` (cap $${ev.cap_usd.toFixed(2)} per run)` : ""}
+          </span>
+        </div>
+      );
     case "photo":
       return (
         <div className="card-sys">

@@ -19,6 +19,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -186,6 +187,35 @@ def secure_cookie(request: Request) -> bool:
     return proto == "https"
 
 
+# ---- per-client rate limit for the endpoints that cost CPU or money ------------------------------------------------
+# KIN_RATE_PER_MIN (default 0 = off): how many heavy calls one client may make per minute. A public demo box wants
+# something like 30; a personal server does not need it. Previews are exempt (they are latest-wins and cancel each other).
+
+HEAVY = re.compile(r"^/api/sessions/(?:import$|[^/]+/(?:run|iterate|coupon|coupon/result|export|params|code|photos|intake|followup)$)")
+_hits: dict[str, list[float]] = {}
+
+
+def rate_per_min() -> int:
+    try:
+        return max(0, int(os.environ.get("KIN_RATE_PER_MIN", "0") or 0))
+    except ValueError:
+        return 0
+
+
+def rate_check(key: str, limit: int) -> float:
+    """Seconds until the client may call a heavy endpoint again (0 = now)."""
+    now = time.time()
+    hits = [t for t in _hits.get(key, []) if now - t < 60]
+    if len(hits) >= limit:
+        _hits[key] = hits
+        return max(0.0, 60 - (now - hits[0]))
+    hits.append(now)
+    _hits[key] = hits
+    if len(_hits) > 10000:
+        _hits.clear()
+    return 0.0
+
+
 async def middleware(request: Request, call_next):
     """Resolve the user; refuse API calls without one (except the public paths); expose it to the handlers."""
     path = request.url.path
@@ -196,6 +226,12 @@ async def middleware(request: Request, call_next):
     needs_user = path.startswith("/api/") and not any(path.startswith(p) for p in PUBLIC_API)
     if needs_user and user is None:
         return JSONResponse({"detail": "sign in to use Kintsugi", "auth": describe(request)}, status_code=401)
+    limit = rate_per_min()
+    if limit and request.method in ("POST", "PUT") and HEAVY.match(path):
+        wait = rate_check(client_key(request), limit)
+        if wait > 0:
+            return JSONResponse({"detail": f"slow down: {limit} of these calls per minute; try again in {int(wait) + 1} s"},
+                                status_code=429, headers={"Retry-After": str(int(wait) + 1)})
     token = _current.set(user)
     try:
         return await call_next(request)

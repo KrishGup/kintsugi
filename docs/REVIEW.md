@@ -95,3 +95,28 @@ No Azure subscription and no Docker daemon exist in the build environment: the B
 Bicep CLI, the scripts are syntax-checked and their parameter generation was run, the container's runtime layout
 (`/data`, proxy headers, health path) is the one the app was run with locally — the first `deploy.sh` run is the
 real test of the platform plumbing.
+
+## After the judge (2026-09-27)
+
+An impartial judge agent graded the repo as a hackathon entry (43/60, top 5–8 of ~40 as it stood). What it found
+that could be fixed from here was fixed in the same day; what needs the owner is listed in `HANDOFF.md`.
+
+- **Demo mode now shows the loop and tells the truth.** The scripted designer reads the spec, picks the vetted
+  template for that part class, and — for the bottle handle — first writes a plausible-but-wrong version (a 60 mm
+  loop, 127 mm overall against the 110 mm envelope), reads the check table that catches it, narrows the loop and
+  passes: iteration 1 red, iteration 2 green, in ~10 s. Other template parts go straight through. A spec with no
+  template (the A/B references) gets an honest message, the nearest template so the checks show the gap, and no
+  false "all hard checks pass" — the guide explains why the run ended. The example picker leads with the bottle
+  handle and groups the A/B references separately with a hint in demo mode.
+- **The stage bar follows the newest iteration**: a failing apply after an export drops the session back to Design
+  instead of leaving "Print — bundle ready" up.
+- **Rough edges**: the print card's parameter table renders as a table; the mating-object proxy no longer floats over
+  the empty viewer; "read the ring height of the ring height" is gone; a typed reading that is more than 2× off what
+  the spec expects (or looks like inches) asks before it becomes "confirmed"; clicking a check pins its section plane
+  (touch users get it too).
+- **Guardrails for a shared box**: `KIN_MAX_COST_USD` caps what one run may spend (status `cost_capped`, a timeline
+  event and a guide banner), `KIN_RATE_PER_MIN` limits heavy calls per client, `KIN_MAX_COMPILES` bounds OpenSCAD
+  processes across all sessions (previews queue and cancel each other). All three are in the Bicep and `.env.example`.
+- **Claims match the files**: the critic probe is stated as 2 of the 3 drawing-only defects (two variants also
+  tripped a footprint check); the convergence claim is the four runs on disk (1, 1, 1, 7); the A/B caveats sit next to
+  the headline; the measurement wording says homography < 0.1 mm and diameters within 0.5 mm, on synthetic photos.

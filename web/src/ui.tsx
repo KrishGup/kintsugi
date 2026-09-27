@@ -45,6 +45,7 @@ export function statusTone(status: string | undefined, running?: boolean): Tone 
       return "pass";
     case "waiting_user":
     case "budget_exhausted":
+    case "cost_capped":
       return "warn";
     case "error":
       return "fail";
@@ -60,6 +61,8 @@ export function statusLabel(status: string | undefined, running?: boolean): stri
       return "waiting for you";
     case "budget_exhausted":
       return "budget exhausted";
+    case "cost_capped":
+      return "spend cap reached";
     case "intake_done":
       return "intake done";
     case undefined:
@@ -146,13 +149,37 @@ export function Markdown({ text }: { text: string }) {
             </ol>
           );
         if (b.type === "h") return <div key={i} className="md-h">{inline(b.lines.join(" "))}</div>;
+        if (b.type === "table") {
+          const rows = b.lines.map((l) => l.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((c) => c.trim()));
+          const [head, ...body] = rows;
+          return (
+            <table key={i} className="md-table">
+              <thead>
+                <tr>
+                  {head.map((c, j) => (
+                    <th key={j}>{inline(c)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {body.map((r, j) => (
+                  <tr key={j}>
+                    {r.map((c, k) => (
+                      <td key={k} className={/^[-+]?[\d.]+(\s*\S+)?$/.test(c) ? "num" : undefined}>{inline(c)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          );
+        }
         return <p key={i}>{inline(b.lines.join(" "))}</p>;
       })}
     </div>
   );
 }
 
-type Block = { type: "p" | "ul" | "ol" | "code" | "h"; lines: string[] };
+type Block = { type: "p" | "ul" | "ol" | "code" | "h" | "table"; lines: string[] };
 
 function splitBlocks(text: string): Block[] {
   const out: Block[] = [];
@@ -182,6 +209,16 @@ function splitBlocks(text: string): Block[] {
     const ul = /^\s*[-*•]\s+(.*)$/.exec(line);
     const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
     const h = /^\s*#{1,4}\s+(.*)$/.exec(line);
+    const tableRow = /^\s*\|.*\|\s*$/.test(line);
+    if (tableRow) {
+      if (/^\s*\|?\s*:?-{2,}/.test(line.replace(/\|/g, "|"))) continue;   // the |---|---| separator row
+      if (!cur || cur.type !== "table") {
+        cur = { type: "table", lines: [] };
+        out.push(cur);
+      }
+      cur.lines.push(line);
+      continue;
+    }
     if (ul) {
       if (!cur || cur.type !== "ul") {
         cur = { type: "ul", lines: [] };
@@ -224,4 +261,27 @@ function inline(s: string): ReactNode[] {
   }
   if (last < s.length) parts.push(s.slice(last));
   return parts;
+}
+
+/** The value a spec dimension currently believes (target, else the latest estimate), for sanity-checking a typed reading. */
+export function dimReference(d: { target?: number | null; estimates?: Array<{ value: number }> } | undefined | null): number | null {
+  if (!d) return null;
+  if (typeof d.target === "number" && Number.isFinite(d.target)) return d.target;
+  const last = d.estimates && d.estimates.length ? d.estimates[d.estimates.length - 1] : null;
+  return last && Number.isFinite(last.value) ? last.value : null;
+}
+
+/**
+ * A reading that disagrees with what the spec believes by more than 2× (either way) is more often a typo, the wrong
+ * feature, or inches for millimetres than a measurement — say so before it becomes "confirmed".
+ */
+export function implausibleReading(value: number, ref: number | null): string | null {
+  if (ref === null || !Number.isFinite(value) || ref <= 0) return null;
+  if (value <= 0) return "A dimension of 0 or less is not a measurement.";
+  const ratio = value / ref;
+  if (ratio > 2 || ratio < 0.5) {
+    const inch = Math.abs(value * 25.4 - ref) / ref < 0.08 ? " — that is about the same number in inches; the spec is in millimetres" : "";
+    return `${fmtNum(value)} mm is ${ratio > 1 ? `${fmtNum(ratio, 1)}× more` : `${fmtNum(1 / ratio, 1)}× less`} than the ${fmtNum(ref)} mm the spec currently expects${inch}.`;
+  }
+  return null;
 }

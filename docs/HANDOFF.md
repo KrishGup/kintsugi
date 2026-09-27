@@ -1,5 +1,18 @@
 # Hand-off notes — what to try, what to expect, what is rough
 
+## What only you can do before submitting
+
+1. **Close the loop for real, once.** Real phone photos of the snapped handle → intake → capture round → design on
+   `gpt-6-astra` → coupon → printed part on the bottle. Keep that session folder as the demo session (`kin archive`
+   it) and film the fit. Nothing else moves the score as much.
+2. **Re-run the evals on GPT-6**: `eval/ab_eval.py` (5 parts) and `eval/critic_probe.py`; replace every † number in
+   `docs/submission/devpost.md`, the deck and `eval/reports/`; drop any number a run cannot reproduce.
+3. **Fill the form**: push the public repo, deploy (`deploy/azure/deploy.sh …` or the Docker one-liner on any VM) and
+   test the link from a phone, record the ≤ 3-minute video from `docs/submission/video-script.md`, swap the slide-2
+   placeholder for the real photo.
+4. **A real photo of a shiny ring on the sheet** is the first thing to try in intake; the measurement code has only
+   seen synthetic renders.
+
 ## Try this first
 
 0. **Windows setup** (PowerShell, from the repo folder): `py -3.11 -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e ".[dev]"`, install OpenSCAD (`winget install OpenSCAD.OpenSCAD`; the default install folder is found automatically, or set `KIN_OPENSCAD_BIN`), then `cd web; npm install; npm run build; cd ..`.

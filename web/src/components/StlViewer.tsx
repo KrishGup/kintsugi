@@ -82,7 +82,8 @@ export default function StlViewer({ url, placeholder, ghostUrl, ghostLabel, cont
   const [showDims, setShowDims] = useLocal<boolean>("kin.viewer.dims", true);
   const [showGhost, setShowGhost] = useLocal<boolean>("kin.viewer.ghost", true);
   const [showContext, setShowContext] = useLocal<boolean>("kin.viewer.context", true);
-  const contextVisible = !!contextUrl && (contextOn || showContext);
+  // the mating object only makes sense around a part: never draw it over the "no mesh yet" empty state
+  const contextVisible = !!contextUrl && !!url && (contextOn || showContext);
   const unitsRef = useRef(units);
   unitsRef.current = units;
 

@@ -75,6 +75,13 @@ def derive_stage(state: dict[str, Any]) -> str:
     explicit = meta.get("stage")
     if state.get("running"):
         return "design"
+    latest_ok = state.get("latest_ok")
+    latest_n = state.get("latest_iteration") or 0
+    exported_n = meta.get("exported_iteration") or 0
+    if explicit in ("export", "review") and state.get("iterations") and latest_ok is False:
+        return "design"                      # the newest iteration fails: the part is back on the bench, whatever was exported before
+    if explicit == "export" and latest_n > exported_n:
+        return "review"                      # a newer passing iteration than the one in the bundle: review it, then export again
     if explicit in STAGES:
         return explicit
     if not state.get("has_spec"):

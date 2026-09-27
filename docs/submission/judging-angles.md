@@ -13,7 +13,7 @@ Sources: [Devpost page](https://hack47-offgrid.devpost.com/), [rules](https://ha
 ## What this panel is likely to reward
 
 1. **It runs.** A hacker-house crowd will click the demo link before reading the story. The 60-second path must work on a phone and need no key (Demo mode). Everything else is secondary.
-2. **Evidence over adjectives.** They said "you don't need the most complicated project". We win Execution and Technical Depth with *measured* claims: check tables, the A/B against human designs, the critic probe, the measurement accuracy, the test count. Every number in the submission should have a file behind it in the repo.
+2. **Evidence over adjectives.** They said "you don't need the most complicated project". We win Execution and Technical Depth with *measured* claims: check tables, the A/B against human designs, the critic probe, the measurement accuracy. Every number in the submission should have a file behind it in the repo.
 3. **Build in the open.** The repo already reads like a daily log: 36 commits, a design document (rev B), a hand-off doc, eval reports with caveats. Say so; link the commit history in the build-process field.
 4. **"Build what you want to exist."** Lead with the personal story (the handle snapped) and the OFFGRID reading: a phone and a printer instead of a supply chain.
 5. **Sponsor fit without pandering.** See below.
@@ -83,7 +83,7 @@ Sources: [Devpost page](https://hack47-offgrid.devpost.com/), [rules](https://ha
 - *Why OpenSCAD and not a mesh/CSG library?* Parametric text is what a customizer slider and a diff need; the model reasons about it well; the STL is verified independently anyway.
 - *How accurate is the photo measurement?* Within 0.5 mm on synthetic ground truth to 35° tilt; on real photos the calibration sheet and the neck-on-sheet trick keep it in the same range, and a ruler or the coupon confirms before printing.
 - *What happens when the model is wrong?* The checker fails the iteration with the number; the critic sends it back with a location on the drawing; after the budget it asks the user a specific question or for a specific photo. It cannot pass without measuring.
-- *Why a second model as critic?* The designer grades itself generously; a fresh context that never sees the code catches intent and load-path problems the numbers cannot (4/5 in the probe).
+- *Why a second model as critic?* The designer grades itself generously; a fresh context that never sees the code catches intent and load-path problems the numbers cannot (2 of the 3 drawing-only defects in the probe; it missed the missing fillets).
 - *Cost per part?* $0.35–$1.30 per design run in the A/B†; the coupon and the print are the expensive part.
 - *What would you do with $10k of credits?* Scale the benchmark to 50 real broken objects, run each 5×, measure convergence and cost per model/effort, and publish the results with the parts.
 - *Is this just for bottles?* The templates cover ring/loop handles, brackets, snap clips, D-shaft knobs, hooks, spacers and threaded caps; the spec language covers bores, bosses, slots, hole patterns, snaps and threads; the standards base covers pipes, shafts, fasteners, batteries, rails and bike parts.

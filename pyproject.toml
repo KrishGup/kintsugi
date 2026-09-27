@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kintsugi"
-version = "0.1.0"
+version = "0.2.0"
 description = "Photograph what broke. Print what fits. An agent that turns photos of a broken object into a verified, parametric, printable replacement part."
 readme = "README.md"
 requires-python = ">=3.11"

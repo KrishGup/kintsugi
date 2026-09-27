@@ -8,7 +8,7 @@ import { useSession } from "../pages/session-context";
 import { fmtElapsed, useRunProgress } from "../progress";
 import { useToast } from "../toast";
 import type { AnswerBody, CaptureShot, Dim, EvidenceGraph, IntakeQuestion, Photo, Stage } from "../types";
-import { Markdown, Pill, Spinner, fmtNum, type Tone } from "../ui";
+import { Markdown, Pill, Spinner, dimReference, fmtNum, implausibleReading, type Tone } from "../ui";
 import { CameraIcon as ReqCameraIcon, ReadinessBar, RequestCard, photosFor } from "./CaptureRound";
 
 export const STAGES: Array<{ id: Stage; label: string; short: string }> = [
@@ -285,6 +285,13 @@ function CaptureStage() {
   const [busy, setBusy] = useState<"" | "check" | "skip">("");
   const readiness = d.readiness;
 
+  const findDim = (qual: string): Dim | undefined => {
+    const [head, name] = qual.split(".");
+    for (const itf of d.spec.interfaces || []) if (itf.id === head && itf.dims && itf.dims[name]) return itf.dims[name];
+    for (const r of d.spec.requirements || []) if (r.id === head && r.derived && r.derived[name]) return r.derived[name] as Dim;
+    return undefined;
+  };
+
   const collect = (): AnswerBody[] => {
     const body: AnswerBody[] = [];
     if (round) {
@@ -306,10 +313,21 @@ function CaptureStage() {
     return body;
   };
 
+  const readingsLookRight = (body: AnswerBody[]): boolean => {
+    const doubts: string[] = [];
+    for (const a of body) {
+      if ((a.kind !== "measure" && a.kind !== "number") || !a.dim || typeof a.value !== "number") continue;
+      const why = implausibleReading(a.value, dimReference(findDim(a.dim)));
+      if (why) doubts.push(`${a.dim}: ${why}`);
+    }
+    return doubts.length === 0 || window.confirm(`${doubts.join("\n")}\n\nSave ${doubts.length === 1 ? "this reading" : "these readings"} anyway?`);
+  };
+
   const check = async () => {
+    const body = collect();
+    if (!readingsLookRight(body)) return;
     setBusy("check");
     try {
-      const body = collect();
       if (body.length) await kin.answers(s.sid, body, false);
       const fu = await kin.followup(s.sid);
       setAnswers({});
@@ -326,9 +344,10 @@ function CaptureStage() {
   };
 
   const skip = async () => {
+    const body = collect();
+    if (!readingsLookRight(body)) return;
     setBusy("skip");
     try {
-      const body = collect();
       if (body.length) await kin.answers(s.sid, body, true);
       else await kin.setStage(s.sid, "spec");
       await s.refresh();
@@ -640,6 +659,8 @@ function DimRow({ itf, name, dim, mates, fit }: { itf: string; name: string; dim
   const confirm = async () => {
     const val = Number(v);
     if (!Number.isFinite(val)) return;
+    const why = implausibleReading(val, dimReference(dim));
+    if (why && !window.confirm(`${why}\n\nSave ${fmtNum(val)} mm as the measured ${full} anyway?`)) return;
     setBusy(true);
     try {
       await kin.confirm(s.sid, full, val, "user_ruler");
@@ -833,6 +854,9 @@ function DesignStage() {
 
   const st = d.meta.status;
   const last = s.latestIter;
+  // why a run says "stopped": the person pressed Stop, the server restarted, or the designer ran out of turns
+  const lastEnd = [...s.events].reverse().find((e) => e.kind === "run_end");
+  const stopReason = lastEnd && String(lastEnd.reason || "").includes("restarted") ? "restart" : s.events.some((e) => e.kind === "run_end" && e.status === "stopped" && e.iterations === undefined) ? "user" : "ended";
   return (
     <div className="stack">
       {st === "error" && (
@@ -840,7 +864,28 @@ function DesignStage() {
           <span>The last run hit an error — see the timeline for details. Fix the cause (usually the API key or a spec typo) and run again.</span>
         </div>
       )}
-      {st === "stopped" && <div className="small dim">The run was stopped. The last compiled iteration is kept; run again to continue.</div>}
+      {st === "stopped" && (
+        <div className="banner banner-warn">
+          <span>
+            {stopReason === "restart"
+              ? "The server restarted during the run, so it ended early."
+              : stopReason === "user"
+                ? "The run was stopped."
+                : d.llm?.provider === "fake"
+                  ? "Demo mode ended without a finished part: it designs from the vetted template catalog, and this spec's checks did not pass with the nearest template. Pick a part with a template on the home page, or add an OpenAI key to design it for real."
+                  : "The designer ended the run without finishing the part."}{" "}
+            {last ? "The last compiled iteration is kept — see its checks below." : ""} {stopReason !== "restart" && d.llm?.provider !== "fake" ? "Run again to continue." : ""}
+          </span>
+        </div>
+      )}
+      {st === "cost_capped" && (
+        <div className="banner banner-warn">
+          <span>
+            The run reached this server's spend cap for one run (KIN_MAX_COST_USD) before finishing. The last compiled iteration is kept; run again to
+            continue from it, or raise the cap.
+          </span>
+        </div>
+      )}
       {st === "budget_exhausted" && (
         <div className="banner banner-warn">
           <span>The designer used its iteration budget without passing every check. Review what's failing, then run again with a note or a bigger budget.</span>

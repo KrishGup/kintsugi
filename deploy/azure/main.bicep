@@ -121,6 +121,12 @@ param sessionGit bool = true
 @description('Largest session archive the import endpoint accepts, MB.')
 param maxImportMb int = 500
 
+@description('The most one design run may spend on model calls, USD (0 = no cap). Set it on anything shared.')
+param maxCostUsd string = '5'
+
+@description('Heavy calls (run, iterate, export, photos, import…) per client per minute; 0 = off. A public demo box wants ~30.')
+param ratePerMin int = 0
+
 // ---- derived names -------------------------------------------------------------------------------------------------
 
 var suffix = uniqueString(resourceGroup().id)
@@ -326,6 +332,8 @@ module app 'app.bicep' = if (deployApp) {
     googleClientSecret: googleClientSecret
     sessionGit: sessionGit
     maxImportMb: maxImportMb
+    maxCostUsd: maxCostUsd
+    ratePerMin: ratePerMin
   }
   dependsOn: [
     acrPull

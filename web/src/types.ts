@@ -474,6 +474,10 @@ export interface AnswerBody {
 export interface ExampleSpec {
   name: string;
   yaml: string;
+  /** example = has a vetted template (demo mode can design it); reference = an A/B reference spec (needs a real model) */
+  group?: "example" | "reference";
+  template?: string | null;
+  title?: string;
 }
 
 export interface IntakeResult {

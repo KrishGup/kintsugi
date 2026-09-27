@@ -1,4 +1,4 @@
-import { hoverProps, useHoveredDim } from "../hover";
+import { hoverProps, pinnedDim, useHoveredDim } from "../hover";
 import { useSession } from "../pages/session-context";
 import type { CheckItem } from "../types";
 import { Empty, Pill, fmtNum } from "../ui";
@@ -93,9 +93,9 @@ export default function ChecksTab() {
           {c.items.map((it) => (
             <tr
               key={it.id}
-              className={`${sectioned.has(it.id) ? "is-linked" : ""}${hovered === it.id ? " is-hovered" : ""}`}
+              className={`${sectioned.has(it.id) ? "is-linked" : ""}${hovered === it.id ? " is-hovered" : ""}${pinnedDim() === it.id ? " is-pinned" : ""}`}
               tabIndex={sectioned.has(it.id) ? 0 : undefined}
-              {...hoverProps(it.id)}
+              {...hoverProps(it.id, { pin: sectioned.has(it.id) })}
             >
               <td>
                 <div className="check-id">{breakable(it.id)}</div>
@@ -120,7 +120,7 @@ export default function ChecksTab() {
       </table>
       {c.sections && c.sections.length > 0 && (
         <div className="small muted mt">
-          Point at a check to see its section on the model. Sections:{" "}
+          Point at a check to see its section on the model; click to keep it there. Sections:{" "}
           {c.sections.map((x) => `${x.plane_axis} = ${fmtNum(x.at, 1)}${x.dims.length ? ` (${x.dims.join(", ")})` : ""}`).join(" · ")}
         </div>
       )}
