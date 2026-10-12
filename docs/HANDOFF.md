@@ -3,6 +3,25 @@
 Working on this with the coding assistant? `NOTES.md` at the root is the standing brief; `docs/HANDOFF-NOTES.md` is the
 one-time hand-off from the cloud session, with the first prompt to paste.
 
+## State on 2026-10-12 (night before the owner's review)
+
+- **Live:** https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — Azure Container Apps (resource group
+  `kintsugi-rg`, eastus2), demo mode, no sign-in, scales to zero (1 vCPU / 2 GiB when awake), `KIN_MAX_COST_USD=1.5`,
+  `KIN_RATE_PER_MIN=30`, settings locked. The OpenAI key is in Key Vault, unused while the provider is `fake`.
+  `scripts/walk.py --base <url>` passes every expectation against it. A $30/month budget alert (`kintsugi-monthly`)
+  e-mails the owner at 50/80/100 % and on a 100 % forecast.
+- **Blocked on the owner: OpenAI credits.** The key works but the account has no balance (`insufficient_quota`), so the
+  real GPT-6 run (hand-off step 2) and the eval re-runs (step 4) have not happened. Add credits, then
+  `kin design <session> --budget 8 --critic-rounds 2` on `eval/specs/bottle_handle.yaml`; `.env` has
+  `KIN_MAX_COST_USD=3` while the account limit is $10.
+- **Devpost:** the draft is filled (overview, story, built-with, links, eight captioned gallery images, the prize
+  opted in) and saved at step 4/5. Not submitted. Missing: the video link, the repo (the link points at
+  `github.com/KrishGup/kintsugi`, which does not exist yet), the terms checkbox and *Submit*. Devpost allows edits after
+  submitting until the deadline (Oct 15 00:00 EDT, i.e. the night of Oct 14).
+- **Deck:** a 13-slide presentation with speaker notes (a Agent artifact, private until shared); slide 2 has a
+  placeholder for the photo of the snapped handle; the † numbers carry their footnote.
+- **Eligibility:** the Devpost sidebar says "Students only"; the rules text says anyone. Confirm before submitting.
+
 ## What only you can do before submitting
 
 1. **Close the loop for real, once.** Real phone photos of the snapped handle → intake → capture round → design on
@@ -106,11 +125,12 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - Auth (`kintsugi/server/auth.py`): `KIN_AUTH=none|token|easyauth`. Token mode = `KIN_ACCESS_TOKEN` + an HMAC cookie; easyauth reads the `X-MS-CLIENT-PRINCIPAL-*` headers Azure sets and scopes sessions to their `owner` (`KIN_ADMIN_USERS` see all). `KIN_SETTINGS_LOCK=1` makes `/api/settings` read-only. The UI gate lives in `web/src/auth.tsx`.
 - Data: `KIN_DATA_DIR` (container: `/data`) holds `sessions/` and the settings `.env`; `KIN_SESSION_GIT=0` drops the per-session git history for slow shares.
 - Archives (`kintsugi/session/archive.py`): `GET /api/sessions/{id}/archive` ↔ `POST /api/sessions/import`, `kin archive` / `kin import`, manifest + file hashes, zip-slip and size checks; schemas in `docs/schemas/` (regenerate with `kin schema … -o`), served at `/api/schemas/…`. This is also the backup/migration path.
-- Not done yet: a real deployment. The owner's dev box has the `az` CLI (2.91) signed in to the *Hackathon*
-  subscription (tenant *Default Directory*, which needs `az login --tenant 28adeeb8-3880-418f-9b18-3691d70f862d` for
-  MFA), with `AZURE_CONFIG_DIR=X:\Tools\azure` so its profile, Bicep (0.48.1) and extensions stay off C:. The
-  resource providers the stack needs (`Microsoft.App`, `ContainerRegistry`, `KeyVault`, `OperationalInsights`,
-  `Storage`) were not registered yet on 2026-10-11. The first `deploy.sh` run is the test.
+- Deployed 2026-10-12 with `deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth none --provider fake
+  --min-replicas 0 --cpu 1.0 --memory 2Gi --max-cost 1.5 --rate 30 --no-session-git` (the budget shape in
+  `DEPLOY-AZURE.md §3`). The owner's dev box has the `az` CLI (2.91) signed in to the *Hackathon* subscription (tenant
+  *Default Directory*: `az login --tenant 28adeeb8-3880-418f-9b18-3691d70f862d` for MFA), with
+  `AZURE_CONFIG_DIR=X:\Tools\azure` so its profile, Bicep (0.48.1) and extensions stay off C:. What the first real
+  deploy turned up is in `docs/REVIEW.md`.
 - `docs/REVIEW.md` is the review record: the deployment journeys walked through the code (what each turned up and what was fixed — scoping on `/stop`, import off the event loop, unicode archive names, non-ASCII codes, login throttling, SSE back-off and auth probe, stale-run reconciliation at startup, the hash route through platform sign-in).
 
 ## The workspace (resizable panes, hover linking, no tooltips)

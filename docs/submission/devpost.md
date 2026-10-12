@@ -1,6 +1,6 @@
-# Devpost submission — draft 1
+# Devpost submission — draft 2
 
-Everything below maps to the HACK47: OFFGRID submission form (Project Name, Short Description, Problem Statement, Solution, Demo Link, Source Code, Demo Video, Tech Stack, Build Process) plus the standard Devpost story sections. Text in `[brackets]` is a placeholder to fill in before submitting. Numbers marked † were measured on the Agent-provider runs before the switch to OpenAI and must be re-run on GPT-6 (`eval/ab_eval.py`, `eval/critic_probe.py`) before submission.
+Everything below maps to the HACK47: OFFGRID submission form (Project Name, Short Description, Problem Statement, Solution, Demo Link, Source Code, Demo Video, Tech Stack, Build Process) plus the standard Devpost story sections. Text in `[brackets]` is a placeholder to fill in before submitting. Numbers marked † were measured on the Agent-provider runs before the switch to OpenAI and must be re-run on GPT-6 (`eval/ab_eval.py`, `eval/critic_probe.py`) before submission; until then the form carries them with the † and the footnote below, or they are dropped.
 
 ---
 
@@ -20,7 +20,7 @@ Pick one:
 
 ## Problem statement
 
-Things break at the one part that mattered: the handle, the clip, the knob, the cap. The object still works; the part that fits it does not exist any more. Replacement means shipping a whole new thing (or nothing, off-grid), and 3D printing — the obvious answer — stalls at the step nobody enjoys: measuring the mating geometry precisely enough and modelling a part that actually fits. "Ask an LLM for the OpenSCAD" produces plausible code and a part that is 1.5 mm out, because the model never sees what it built.
+Things break at the one part that mattered: the handle, the clip, the knob, the cap. The object still works; the part that fits it does not exist any more. Replacement means shipping a whole new thing (or nothing, off-grid), and 3D printing — the obvious answer — stalls at the step nobody enjoys: measuring the mating geometry precisely enough and modelling a part that actually fits. "Ask an LLM for the OpenSCAD" produces plausible code and a part that is a millimetre or two out at the one dimension that has to fit, because the model never sees what it built.
 
 ## Solution
 
@@ -37,9 +37,9 @@ Everything runs as typed dataflow graphs: independent steps in parallel, people 
 
 ## Demo link
 
-`[http://<host>:8000 — a hosted instance, or the local instructions below]`
+https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — hosted on Azure Container Apps, running in **demo mode**: a scripted designer with the real OpenSCAD compiles, mesh checks, blueprints and export, so it needs no key and costs nothing to try. Pick the bottle handle, *Create session*, *Design this part*: iteration 1 fails the footprint check, iteration 2 passes. It scales to zero when idle, so the first visit takes a moment to wake.
 
-Judges without a key: Settings → **Demo mode** runs the whole pipeline with a scripted designer in about a minute (intake → capture round → measurement on a sample photo → design → checks → blueprints → export).
+Locally with your own key: `docker run -p 8000:8000 -e OPENAI_API_KEY=sk-… <image>` or the README's setup; Settings switches between OpenAI and demo mode.
 
 ## Source code
 
@@ -51,11 +51,11 @@ Judges without a key: Settings → **Demo mode** runs the whole pipeline with a 
 
 ## Tech stack ("Built with")
 
-OpenAI GPT-6 (gpt-6-astra for design, critic and vision; gpt-6-sol optional) via the **OpenAI Responses API** (function tools with image outputs, `previous_response_id` chaining, reasoning effort, JSON mode) · Python 3.11 · OpenSCAD 2021 + BOSL2 · trimesh + manifold3d + shapely (mesh measurement) · OpenCV (ArUco calibration sheet, homography rectification, sub-pixel circle fitting) · NumPy software z-buffer renderer (hidden-line views, hatched sections, mesh-derived dimension lines) · FastAPI + SSE · React + Vite + three.js + Monaco · pydantic Part Spec · a home-grown dataflow-graph runtime · a use-case review record (`docs/REVIEW.md`) and a regression net that needs no model · Docker · Azure Container Apps (Bicep, Easy Auth, one command)
+OpenAI GPT-6 (gpt-6-astra for design, critic and vision; gpt-6-sol optional) via the **OpenAI Responses API** (function tools with image outputs, `previous_response_id` chaining, reasoning effort, JSON mode) · Python 3.11+ · OpenSCAD 2021 + BOSL2 · trimesh + manifold3d + shapely (mesh measurement) · OpenCV (ArUco calibration sheet, homography rectification, sub-pixel circle fitting) · NumPy software z-buffer renderer (hidden-line views, hatched sections, mesh-derived dimension lines) · FastAPI + SSE · React + Vite + three.js + Monaco · pydantic Part Spec · a home-grown dataflow-graph runtime · a use-case review record (`docs/REVIEW.md`) and a regression net that needs no model · Docker · Azure Container Apps (Bicep, Easy Auth, one command)
 
 ## Build process (short version for the form)
 
-Built solo over the OFFGRID window, in the open, in ~36 commits. Order of work: (1) the verification toolchain first — headless OpenSCAD compile, mesh checks, the blueprint renderer, the Part Spec with measurement recipes — all tested on known geometry before any model was involved; (2) the design loop with the code-blind critic and an iteration policy, validated on the bottle-handle benchmark and an A/B study against five human-designed OpenSCAD repair parts; (3) the measurement core (calibration sheet, rectification, circle/outline fitting) validated on synthetic photos with known ground truth; (4) the web workspace; (5) the port to the OpenAI Responses API with a scripted provider so the whole loop is testable without a key; (6) graph engineering: the dataflow runtime, the evidence graph and the capture loop. Every stage has a headless test; the UI was walked end to end in a headless browser after each change.
+Built solo over the OFFGRID window, in the open (the commit history starts on 25 September 2026). Order of work: (1) the verification toolchain first — headless OpenSCAD compile, mesh checks, the blueprint renderer, the Part Spec with measurement recipes — all tested on known geometry before any model was involved; (2) the design loop with the code-blind critic and an iteration policy, validated on the bottle-handle benchmark and an A/B study against five human-designed OpenSCAD repair parts; (3) the measurement core (calibration sheet, rectification, circle/outline fitting) validated on synthetic photos with known ground truth; (4) the web workspace; (5) the port to the OpenAI Responses API with a scripted provider so the whole loop is testable without a key; (6) graph engineering: the dataflow runtime, the evidence graph and the capture loop. Every stage has a headless test; the UI was walked end to end in a headless browser after each change.
 
 ---
 
@@ -76,7 +76,7 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 - **The spec is a contract.** Every dimension carries its evidence (estimates with source and confidence) and a *measure recipe* that tells the checker how to read it off the finished mesh (`circle_fit_inner` at z = 3, `hole_extent` along x, `gap`, `notch_mouth`, …). Verification is executable, not interpretive.
 - **The model never grades its own homework.** Dimension lines on the sheets are computed from the mesh; the critic sees drawings and numbers, never code.
 - **A measurement core that earns its numbers.** ArUco sheet → homography → metric top-down image at 0.1 mm/px → RANSAC circle candidates refined by radial edge profiles. On synthetic photos with known ground truth: diameters within 0.5 mm to 35° of camera tilt, centres within 0.3 mm.
-- **Graph engineering.** Each stage is a typed dataflow graph: nodes declare inputs and outputs, independent nodes run in parallel, humans are nodes that suspend the run, every run is traced with its critical path. The iteration pipeline got 1.6–1.7× faster on two cores just by declaring what depends on what.
+- **Graph engineering.** Each stage is a typed dataflow graph: nodes declare inputs and outputs, independent nodes run in parallel, humans are nodes that suspend the run, every run is traced with its critical path. The iteration pipeline renders its sheets while the checks run, just by declaring what depends on what, and every run reports how much of it ran in parallel.
 - **The evidence graph** decides what to ask for next; a knowledge base of standard interfaces (bottle finishes, pipe ODs, shafts, fasteners, batteries, extrusions, bearings, bike parts) seeds estimates from the object's identity.
 - **A customizer that knows its evidence.** The parameter block becomes sliders with units, switches that fold their dependents, option cards, presets and undo; each change compiles a draft with `-D` overrides (a burst of drags kills the stale compile and keeps the newest), the 3D view ghosts the verified mesh behind the draft with the overall dimensions drawn on the model, and a slider bound to a measured spec dimension carries the measurement, its sources and its tolerance band — moving it moves the spec with it, so the checks verify what the person chose.
 - **OpenAI Responses API, used the way it wants to be used:** function tools whose outputs are images (the model looks at its own blueprints), `previous_response_id` so each sheet is uploaded once, reasoning effort per role, JSON mode for the critic and intake, vision for the capture agent.
@@ -93,11 +93,13 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 ### Accomplishments that we're proud of
 
 - The loop converges: the bottle handle in 1, 1, 1 and 7 iterations across the four kept runs (`eval/runs/handle_repeats/`)†.
-- The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written by us from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed every check, two human parts failed wall or topology checks (thresholds their designers never targeted), and a blind judge — the same model family as the designer, reading the sheets and the check tables — preferred Kintsugi's part in 4 of 5. One run per part; the caveats are in `eval/reports/ab_templates.md`.
+- The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written by us from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed its checks, two human parts failed wall or topology checks (thresholds their designers never targeted), and a blind judge — the same model family as the designer, reading the sheets and the check tables — preferred Kintsugi's part in 4 of 5. One run per part; the caveats are in `eval/reports/ab_templates.md`.
 - The critic probe†: five defects injected into a passing part. Three are invisible to the numeric checks and the code-blind critic caught 2 of those 3 (it missed the missing fillets); the other two also tripped a footprint check. Control: pass.
 - Verified on known geometry before any model was involved: circle fits within 0.05 mm, interference volumes within 3 %, measurement within 0.5 mm on synthetic photos, every template against its spec, every OpenSCAD guide example compiled. The UI was driven end to end in a browser after every change, on a phone and a desktop, light and dark; `docs/REVIEW.md` walks the deployment journeys through the code.
 - The follow-up loop: the system asks for the *photo* it needs, measures it automatically, and stops asking when it knows enough.
 - The customizer: the finished part is not a file, it is a parametric designer with the evidence attached — the bottle handle previews in 0.1 s per slider move, and "overall length 118.8 mm ✗ ≤ 110" shows up before the person applies anything.
+
+† Measured during development with the Agent provider; the GPT-6 re-run is pending.
 
 ### What we learned
 
@@ -118,7 +120,7 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 
 ## Disclosure (paste into the form's "third-party technologies" field)
 
-OpenAI GPT-6 models through the official `openai` Python SDK (Responses API). OpenSCAD (GPL-2.0, invoked as a separate process). BOSL2 (BSD-2, vendored). OpenCV, trimesh, manifold3d, shapely, NumPy, Pillow, reportlab, pydantic, FastAPI, sse-starlette, uvicorn, React, Vite, three.js, Monaco. The A/B references are cloned at evaluation time from their authors' public repositories and are not redistributed. All application code, the renderer, the checker, the measurement core, the graph runtime, the prompts and the templates were written for OFFGRID during the hackathon window; AI coding assistants were used throughout, as the rules allow.
+OpenAI GPT-6 models through the official `openai` Python SDK (Responses API). OpenSCAD (GPL-2.0, invoked as a separate process). BOSL2 (BSD-2, vendored). OpenCV, trimesh, manifold3d, shapely, NumPy, Pillow, reportlab, pydantic, FastAPI, sse-starlette, uvicorn, React, Vite, three.js, Monaco. The A/B references are cloned at evaluation time from their authors' public repositories and are not redistributed. All application code, the renderer, the checker, the measurement core, the graph runtime, the prompts and the templates were written for OFFGRID during the hackathon window; AI coding assistants were used throughout, as the rules allow: Agent (the vendor) wrote and reviewed much of the code with me, first in a cloud session and then in the coding assistant locally. During development the A/B study and the critic probe (the numbers marked †) were run through the project's opt-in Agent provider; the product itself runs on the OpenAI API.
 
 ## Assets checklist
 

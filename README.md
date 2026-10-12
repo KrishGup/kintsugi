@@ -104,7 +104,7 @@ deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth easyauth --admin you@exa
 
 Every stage runs as a typed dataflow graph (`kintsugi/graph`): a node declares the state keys it needs and the keys it produces, edges follow from that, and the runtime starts a node the moment its inputs exist. Independent nodes run in parallel (blocking algorithms in threads, model calls as coroutines), `after=` gives ordering without data, guards skip nodes, optional nodes may fail without stopping the run, and a **human node** suspends the run with a request — the graph resumes when the answer is in the state. Each run leaves a trace with per‑node timing, the critical path and the serial‑vs‑wall time, which the UI draws live in the *Graph* tab.
 
-- **Iteration**: `params ∥ compile → mesh → checks ∥ views ∥ context → sections ∥ assembly → compose` — the sheets no longer wait for the checks to finish before rendering; ~1.6–1.7× faster per iteration on two cores, more on a desktop.
+- **Iteration**: `params ∥ compile → mesh → checks ∥ views ∥ context → sections ∥ assembly → compose` — the sheets no longer wait for the checks to finish before rendering; each iteration's trace reports its wall time and how much of it ran in parallel.
 - **Intake & capture**: `grade ∥ standards → vision → spec → auto‑measure → evidence → follow‑up → capture (you)`, repeated per round.
 - **Export**: coupon compile ∥ 3MF ∥ blueprint PDF ∥ print card ∥ session log → zip.
 - **Session flow**: the stages as a state graph with guarded transitions (`kintsugi/graph/flow.py`); the stepper and the "open moves" come from it, and the loops (another capture round, a designer's photo request, a coupon result) are explicit edges.

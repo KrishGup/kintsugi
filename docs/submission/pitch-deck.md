@@ -12,7 +12,7 @@ dimension line with the measured number in the middle.
 | 3 | What it does | six steps: intake → capture rounds → design loop → code-blind critic → fit coupon → export | six cards |
 | 4 | Key idea | the model never grades its own homework: measured on the mesh, drawn from the measurement, reviewed without the code | Section A-A with the green dimension line |
 | 5 | Capture loop | it asks for the photo it needs, not a number; evidence graph; ≤ 0.5 mm; one round for the handle | guide column + evidence map |
-| 6 | Graph engineering (dark) | every stage is a typed dataflow graph; people are nodes; critical path; 1.6–1.7× | live pipeline graph |
+| 6 | Graph engineering (dark) | every stage is a typed dataflow graph; people are nodes; critical path | live pipeline graph |
 | 7 | Built on OpenAI | two models, two jobs; Responses API features used natively | designer → checker → critic diagram + feature chips |
 | 8 | Proof | measured, not claimed: A/B table, critic probe (2/3 drawing-only), geometry checks, convergence (1·1·1·7) († = re-run on GPT-6 pending) | A/B sheet pair |
 | 9 | Product | a guide, not a console — and a part you can change: the customizer (sliders that know their evidence, live draft, the object in place); phone capture; coupon; demo mode | customizer screenshot (`img/customizer.png`) |

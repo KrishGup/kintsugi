@@ -166,3 +166,48 @@ reading every screenshot. Everything the cloud sandbox (Linux, UTF-8 locale) cou
 the part; every expectation holds, the server log has no errors, and the screenshots read as the journey should:
 it 1 red → it 2 green with the footprint check named, the section plane on hover, the print card, the stage dropping
 back after a bad apply, the honest stop on a reference spec, the phone layout.
+
+## The first real GPT-6 attempt and the first Azure deploy (2026-10-12)
+
+**The real run** (`kin new --spec eval/specs/bottle_handle.yaml`, `kin design … --budget 8 --critic-rounds 2` on
+gpt-6-astra) never reached the model: the account has no prepaid balance, and the first `responses.create` came back
+`429 insufficient_quota` ("You have no credits remaining"). Cost $0.00, 0 iterations. The Responses wire format (image
+tool outputs, `previous_response_id`, reasoning effort, JSON mode) is still verified only against the mock transport;
+it is the first thing to run once credits are added. The attempt still found three things:
+
+- **Found: 28 s of silence before the error.** The SDK retries every 429 with back-off unless the server says not to;
+  an empty balance never succeeds on retry. → an httpx response hook marks `insufficient_quota` responses
+  `x-should-retry: false`; the same failure now surfaces in about 4 s.
+- **Found: the guide hid it.** A run that dies before its first iteration leaves the stage at the spec, so the guide
+  opened on *Confirm the fit* and the error banner (inside *Design & verify*) was never on screen; when it was, it said
+  "see the timeline". → a failed run opens the design step, and the banner says what happened in the person's words
+  for the errors people will actually meet (no credits, a rejected key, a model the account cannot use, rate limits),
+  falling back to the first 160 characters of the message.
+- **Found: a redeploy could leave a blank page.** `index.html` was served without `Cache-Control`, so browsers kept a
+  stale shell pointing at hashed bundles the new image no longer has (seen locally: the old bundle survived a rebuild).
+  → the shell is `no-cache`; `assets/*` are `immutable` (Starlette hands Windows paths with `\` to the check).
+
+**The first deploy** (`deploy/azure/deploy.sh`, from Git Bash on Windows, budget shape: scale to zero, 1 vCPU / 2 GiB,
+demo provider, no sign-in, per-run cap and rate limit) — every step of it had only ever been syntax-checked:
+
+- `python3` is the Microsoft Store stub on Windows → the script picks the first of `python3`/`python`/`py` that runs.
+- `--parameters "@/tmp/…"`: Git Bash converts arguments that *start* with `/`, not ones behind `@` → `cygpath -m`.
+  The parameters file (it carries the key) is written under `TMPDIR` on the project drive and removed on exit.
+- The Windows `az` runs its Python isolated, prints through cp1252 and crashed on `≈`/`→` in Bicep descriptions and on
+  Vite's `✓` in the streamed build log (the build itself carried on and succeeded in Azure) → the Bicep files are
+  ASCII; on Windows the image build is awaited with `--no-logs` and its status checked.
+- `minReplicas: 1` was hard-coded (≈ $50/month idle at the default size) → `--min-replicas 0|1`, plus `--max-cost`,
+  `--rate`, `--no-session-git` flags; the cost table and §3 *On a small budget* say what each costs.
+- Container Apps rejected the SMB mount option `actimeo` (preflight validation) → removed.
+- ACR Tasks timed out reaching Docker Hub once (transient; re-run). The Container Apps environment took about 55
+  minutes to provision in a fresh subscription.
+- `.dockerignore` now keeps `.env`, `.venv`, `.cache` and `scratch` out of the upload; the context sent was 8 MiB.
+
+`scripts/walk.py --base https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io` holds every expectation on
+the deployed app (desktop and phone, the honest stop, no page errors); the two sessions it made were deleted so the
+shared list starts empty. `/api/health` reports OpenSCAD 2021.01, the demo provider and locked settings.
+
+**Claims checked against the files while writing the submission:** the video script said the critic "caught four of
+five" — the report's headline is 2 of the 3 defects the numbers cannot see (the other two also trip a check), now said
+that way; the README's "~1.6–1.7× faster per iteration" had no measurement behind it in the repo and was dropped; "every
+Kintsugi part passed every check" became "passed its checks" (the A/B table records hard checks).

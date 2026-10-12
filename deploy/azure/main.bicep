@@ -1,13 +1,13 @@
-// Kintsugi on Azure Container Apps — the whole stack in one deployment.
+// Kintsugi on Azure Container Apps - the whole stack in one deployment.
 //
 //   resource group
 //   ├─ Log Analytics workspace           container logs (kin serve, uvicorn, OpenSCAD)
 //   ├─ Storage account + Azure Files     /data: sessions, the settings file, previews
 //   ├─ Container Registry (Basic)        the image, built with `az acr build`
 //   ├─ User-assigned managed identity    pulls the image, reads the Key Vault secret
-//   ├─ Key Vault (RBAC)                  OPENAI_API_KEY — never in a file on the share
+//   ├─ Key Vault (RBAC)                  OPENAI_API_KEY - never in a file on the share
 //   ├─ Container Apps environment        with the file share attached as a storage
-//   └─ Container App "kintsugi"          1 replica, 2 vCPU / 4 GiB, HTTPS ingress → :8000, /data mounted
+//   └─ Container App "kintsugi"          1 replica, 2 vCPU / 4 GiB, HTTPS ingress -> :8000, /data mounted
 //        └─ authConfigs/current          Easy Auth (Microsoft Entra / GitHub / Google) when authMode == 'easyauth'
 //
 // `deployApp=false` provisions everything but the app (so the registry exists before the first `az acr build`);
@@ -35,11 +35,15 @@ param image string = ''
 @allowed(['1.0', '1.5', '2.0', '3.0', '4.0'])
 param cpu string = '2.0'
 
-@description('Memory for the one replica. Pair with cpu: 1.0→2Gi, 2.0→4Gi, 4.0→8Gi.')
+@description('Replicas kept warm: 1 = always on (~ $50/month idle at 2 vCPU), 0 = scale to zero when idle (pennies idle; the first request waits for a cold start). Never more than one: runs live in it.')
+@allowed([0, 1])
+param minReplicas int = 1
+
+@description('Memory for the one replica. Pair with cpu: 1.0->2Gi, 2.0->4Gi, 4.0->8Gi.')
 @allowed(['2Gi', '3Gi', '4Gi', '6Gi', '8Gi'])
 param memory string = '4Gi'
 
-@description('Quota of the Azure Files share in GiB (sessions with photos and sheets run 20–80 MB each).')
+@description('Quota of the Azure Files share in GiB (sessions with photos and sheets run 20-80 MB each).')
 @minValue(1)
 @maxValue(5120)
 param shareQuotaGb int = 100
@@ -102,7 +106,7 @@ param entraClientSecret string = ''
 @description('Tenant that issues Entra sign-ins. "common" allows any Microsoft account; a tenant id restricts to that organisation.')
 param entraTenantId string = tenant().tenantId
 
-@description('Extra Entra object ids (users/groups) — informational; restrict sign-in with "assignment required" on the enterprise app instead.')
+@description('Extra Entra object ids (users/groups) - informational; restrict sign-in with "assignment required" on the enterprise app instead.')
 param entraAllowedAudiences array = []
 
 param githubClientId string = ''
@@ -124,7 +128,7 @@ param maxImportMb int = 500
 @description('The most one design run may spend on model calls, USD (0 = no cap). Set it on anything shared.')
 param maxCostUsd string = '5'
 
-@description('Heavy calls (run, iterate, export, photos, import…) per client per minute; 0 = off. A public demo box wants ~30.')
+@description('Heavy calls (run, iterate, export, photos, import...) per client per minute; 0 = off. A public demo box wants ~30.')
 param ratePerMin int = 0
 
 // ---- derived names -------------------------------------------------------------------------------------------------
@@ -305,6 +309,7 @@ module app 'app.bicep' = if (deployApp) {
     image: image
     cpu: cpu
     memory: memory
+    minReplicas: minReplicas
     environmentId: env.id
     storageLinkName: envStorage.name
     identityId: identity.id

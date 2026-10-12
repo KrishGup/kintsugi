@@ -167,9 +167,10 @@ class LLM:
             from kintsugi.agent.fake import FakeResponsesClient
             self._client = FakeResponsesClient()
             return self._client
-        from openai import AsyncOpenAI
+        from openai import AsyncOpenAI, DefaultAsyncHttpxClient
         self._client = AsyncOpenAI(max_retries=int(os.environ.get("KIN_OPENAI_RETRIES", "6")),
-                                   timeout=float(os.environ.get("KIN_OPENAI_TIMEOUT_S", "900")))
+                                   timeout=float(os.environ.get("KIN_OPENAI_TIMEOUT_S", "900")),
+                                   http_client=DefaultAsyncHttpxClient(event_hooks={"response": [_final_when_out_of_credit]}))
         return self._client
 
     # ---- one-turn completion -----------------------------------------------------------------------
@@ -492,6 +493,16 @@ def get_llm(reset: bool = False) -> LLM:
 def set_llm(llm: LLM) -> None:
     global _LLM
     _LLM = llm
+
+
+async def _final_when_out_of_credit(response) -> None:
+    """A 429 for an empty balance (`insufficient_quota`) cannot succeed on retry, but the SDK backs off and retries every
+    429 unless the server says otherwise: ~30 s of silence before the person learns the account has no credits. Say
+    otherwise, so the error reaches them at once."""
+    if response.status_code == 429:
+        await response.aread()
+        if b"insufficient_quota" in response.content:
+            response.headers["x-should-retry"] = "false"
 
 
 async def with_timeout(coro, seconds: float, what: str = "model call"):

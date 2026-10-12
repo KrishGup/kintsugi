@@ -9,6 +9,7 @@ param tags object
 param image string
 param cpu string
 param memory string
+param minReplicas int
 param environmentId string
 param storageLinkName string
 param identityId string
@@ -203,11 +204,11 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           storageType: 'AzureFile'
           storageName: storageLinkName
           // nobrl: byte-range locks off (git + SQLite-style writes on SMB); mfsymlinks: git-friendly symlinks
-          mountOptions: 'dir_mode=0777,file_mode=0777,uid=0,gid=0,mfsymlinks,nobrl,cache=strict,actimeo=1'
+          mountOptions: 'dir_mode=0777,file_mode=0777,uid=0,gid=0,mfsymlinks,nobrl,cache=strict'
         }
       ]
       scale: {
-        minReplicas: 1
+        minReplicas: minReplicas
         maxReplicas: 1
       }
     }
@@ -216,7 +217,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
 
 // ---- Easy Auth -----------------------------------------------------------------------------------------------------
 // The platform authenticates; the app still serves its shell and static assets to everyone and answers 401 (JSON) on
-// /api/* without a signed-in principal — that is what draws the sign-in gate. So: AllowAnonymous here, enforcement in
+// /api/* without a signed-in principal - that is what draws the sign-in gate. So: AllowAnonymous here, enforcement in
 // kintsugi/server/auth.py. Identity arrives in X-MS-CLIENT-PRINCIPAL-* headers.
 
 var idpEntra = entraClientId != '' ? {

@@ -20,6 +20,20 @@ export const STAGES: Array<{ id: Stage; label: string; short: string }> = [
   { id: "export", label: "Print it", short: "Print" },
 ];
 
+/** What a failed run's error means for the person, in their words; the raw message stays in the timeline. */
+export function explainRunError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("insufficient_quota") || m.includes("no credits"))
+    return "OpenAI says this account has no credits left, so the designer could not start. Add credits in the OpenAI billing settings (platform.openai.com → Settings → Billing), then run again.";
+  if (m.includes("invalid_api_key") || m.includes("incorrect api key") || m.includes("401"))
+    return "OpenAI rejected the API key. Check it in Settings, then run again.";
+  if (m.includes("model_not_found") || m.includes("does not exist") || m.includes("do not have access to the model"))
+    return "This OpenAI account cannot use the configured model. Pick another in Settings → Models & reasoning effort, then run again.";
+  if (m.includes("rate limit") || m.includes("rate_limit"))
+    return "OpenAI is rate-limiting this account right now. Wait a minute and run again.";
+  return "The last run hit an error" + (message ? `: ${message.slice(0, 160)}${message.length > 160 ? "…" : ""}` : "") + " — the timeline has the full message. Fix the cause and run again.";
+}
+
 export function stageIndex(stage: string | undefined): number {
   const i = STAGES.findIndex((s) => s.id === stage);
   return i < 0 ? 2 : i;
@@ -48,7 +62,9 @@ function dimText(d: Dim): string {
 export default function GuidePane() {
   const s = useSession();
   const d = s.detail!;
-  const cur = s.running ? "design" : (d.stage as Stage);
+  // a run that died before its first iteration leaves the stage at the spec; open the design step so its error shows
+  const failedRun = d.meta.status === "error" && stageIndex(d.stage) >= stageIndex("spec") && stageIndex(d.stage) <= stageIndex("design");
+  const cur = s.running || failedRun ? "design" : (d.stage as Stage);
   const curIdx = stageIndex(cur);
   const [openStage, setOpenStage] = useState<Stage | null>(null);
   const shown = openStage ?? cur;
@@ -861,7 +877,7 @@ function DesignStage() {
     <div className="stack">
       {st === "error" && (
         <div className="banner banner-fail">
-          <span>The last run hit an error — see the timeline for details. Fix the cause (usually the API key or a spec typo) and run again.</span>
+          <span>{explainRunError(String([...s.events].reverse().find((e) => e.kind === "error")?.message || ""))}</span>
         </div>
       )}
       {st === "stopped" && (

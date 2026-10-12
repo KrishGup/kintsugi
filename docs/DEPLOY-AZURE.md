@@ -40,7 +40,7 @@ What you get at the end:
 
 | # | Service | SKU / size | Why it is there | ≈ cost / month |
 |---|---------|-----------|-----------------|----------------|
-| 1 | **Azure Container Apps** environment + app | Consumption profile, min = max = 1 replica, 2 vCPU / 4 GiB | Runs the container with HTTPS ingress, a managed certificate, health probes, log shipping and built-in authentication. Single revision mode. | ≈ $50 mostly idle (idle rate) → ≈ $155 if busy 24 h/day |
+| 1 | **Azure Container Apps** environment + app | Consumption profile, min = max = 1 replica, 2 vCPU / 4 GiB (`--min-replicas 0` scales to zero; see §3 *On a small budget*) | Runs the container with HTTPS ingress, a managed certificate, health probes, log shipping and built-in authentication. Single revision mode. | ≈ $50 mostly idle (idle rate) → ≈ $155 if busy 24 h/day |
 | 2 | **Azure Files** (Storage account, Standard LRS) | one SMB share `kintsugi-data`, 100 GiB quota | `/data` in the container: `sessions/` (photos, spec, every iteration, sheets, exports, git history) and the settings file `.env`. Survives restarts, image rolls and region evacuation of the replica. 14-day soft delete on the share. | ≈ $1–6 (used GiB + transactions) |
 | 3 | **Azure Container Registry** | Basic | The image, built *in Azure* by `az acr build` (no Docker on your machine). Pulled with the managed identity — no admin password. | ≈ $5 |
 | 4 | **Key Vault** | Standard, RBAC | `openai-api-key`. The app's identity has *Key Vault Secrets User*; the Container App secret is a Key Vault reference, so rotation = update the secret + restart. | ≈ $0 |
@@ -219,6 +219,32 @@ deploy/azure/deploy.sh -g kintsugi-rg --cpu 4.0 --memory 8Gi       # bigger repl
 deploy/azure/deploy.sh -g kintsugi-rg --openai-base-url https://myres.openai.azure.com/openai/v1/
 ```
 
+### On a small budget (what the hackathon box runs)
+
+The stack above keeps one 2 vCPU replica warm: about $50 a month before any traffic. For a demo link on a capped card,
+scale to zero and shrink the replica — idle costs pennies (the registry, about $5 a month, is the floor), and the first
+request after a quiet spell waits for the container to start:
+
+```bash
+deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth none --provider fake   --min-replicas 0 --cpu 1.0 --memory 2Gi --max-cost 1.5 --rate 30 --no-session-git
+```
+
+That is a public scripted demo: no sign-in, no model spend, real OpenSCAD compiles and mesh checks. The OpenAI key
+still goes to Key Vault (from `./.env`), so turning real runs on later is one command — and should come with sign-in,
+because with `--auth none` anyone with the link spends from your OpenAI account (bounded by `--max-cost` per run and by
+the account's own limit):
+
+```bash
+deploy/azure/deploy.sh -g kintsugi-rg --no-infra --no-build --tag <tag> --auth token --provider openai   --min-replicas 0 --cpu 1.0 --memory 2Gi --max-cost 1.5 --rate 30 --no-session-git      # prints the access code
+```
+
+A subscription budget with e-mail alerts (`az consumption budget create`, or Cost Management → Budgets) is the other
+half of a capped card.
+
+From Windows (Git Bash): the script picks a Python that runs (`python3` is often the Store stub), hands `az` native
+paths, and waits for the image build instead of streaming it (the Windows `az` dies printing the build log's first
+non-ASCII character while the build carries on). Keep the Bicep files ASCII for the same reason.
+
 ### By hand (the same thing without the script)
 
 ```bash
@@ -389,6 +415,9 @@ everything on it stay; ≈ $8/month). To delete: `az group delete -n kintsugi-rg
 | Import answers 413 | Over `KIN_MAX_IMPORT_MB` (default 500). Raise it, or `kin import` on the share directly. |
 | Import answers 422 *"unsafe path"* | The zip was hand-made with `../` or absolute paths; archives from Kintsugi never contain them. |
 | `az acr build` fails at `npm ci` | Network hiccup inside ACR Tasks; re-run. |
+| `az acr build` fails at `FROM node:…` with *"request canceled while waiting for connection"* | ACR Tasks could not reach Docker Hub; re-run with `--no-infra`. |
+| *"MountOptions 'actimeo' … are not supported by azure file share"* | Container Apps accepts a fixed set of SMB mount options; `app.bicep` no longer sets `actimeo`. |
+| `az` crashes with `UnicodeEncodeError: 'charmap'` on Windows | The CLI printing non-ASCII to a cp1252 console (a Bicep description, the build log). The script avoids both; by hand, add `--no-logs` to `az acr build`. |
 
 ---
 

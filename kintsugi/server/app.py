@@ -1085,7 +1085,20 @@ _dist = REPO_DIR / "web" / "dist"
 if _dist.exists():
     import mimetypes
     mimetypes.add_type("application/manifest+json", ".webmanifest")   # the PWA manifest (Python's table lacks it)
-    app.mount("/", StaticFiles(directory=str(_dist), html=True), name="ui")
+
+    class _UiFiles(StaticFiles):
+        """The shell (index.html) must be revalidated on every load: a cached copy after an image roll points at hashed
+        bundles that no longer exist, and the page comes up blank. The hashed files under assets/ never change."""
+
+        async def get_response(self, path, scope):
+            resp = await super().get_response(path, scope)
+            if path.replace("\\", "/").startswith("assets/"):
+                resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif resp.media_type == "text/html" or path in ("", ".", "index.html"):
+                resp.headers["Cache-Control"] = "no-cache"
+            return resp
+
+    app.mount("/", _UiFiles(directory=str(_dist), html=True), name="ui")
 else:
     @app.get("/")
     def index():
