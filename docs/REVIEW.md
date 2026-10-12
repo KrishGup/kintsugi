@@ -120,3 +120,49 @@ that could be fixed from here was fixed in the same day; what needs the owner is
 - **Claims match the files**: the critic probe is stated as 2 of the 3 drawing-only defects (two variants also
   tripped a footprint check); the convergence claim is the four runs on disk (1, 1, 1, 7); the A/B caveats sit next to
   the headline; the measurement wording says homography < 0.1 mm and diameters within 0.5 mm, on synthetic photos.
+
+## First run on the Windows dev box (2026-10-11)
+
+The hand-off's step 1, walked on the owner's machine (Windows 11, Python 3.13 from the `py` launcher, Node 24, a fresh
+portable OpenSCAD 2021.01 under `X:\Tools\OpenSCAD`): `scripts/bootstrap.ps1` → `kin serve` → `scripts/walk.py`,
+reading every screenshot. Everything the cloud sandbox (Linux, UTF-8 locale) could not show turned up here.
+
+- **Found: bootstrap said "Ready." with nothing installed.** PowerShell names are case-insensitive, so the flag
+  `$py = [bool]$Py` overwrote the Python command with `True`; `venv` then failed as "the term 'True' is not
+  recognized", which `Run` did not notice because it only looked at native exit codes. → the flag is `$havePy`, `Run`
+  fails on any PowerShell error that is not native stderr, and the final import check throws instead of printing an
+  empty "ok".
+- **Found: a copied `.env` switched off OpenSCAD discovery and session isolation.** `.env.example` carried
+  `KIN_OPENSCAD_BIN=openscad`, `KIN_DATA_DIR=.` and `KIN_SESSIONS_DIR=./sessions` as live values; the env var beats
+  every other lookup, so the portable build beside the checkout was never found (and the toolchain tests skipped as
+  "openscad not installed"), and `walk.py`'s throwaway data directory still wrote its sessions into the repo's
+  `sessions/` — the home page of the next walk listed the previous walk's parts. → those three are commented out
+  (they restate the defaults); the walk's home page now shows "No parts yet".
+- **Found: on Windows the designer never saw its own check table.** Path `read_text`/`write_text` and text-mode
+  subprocesses used the locale code page (cp1252). `iterations/iter_NN/summary.txt` contains `≥`, so writing it raised
+  `UnicodeEncodeError` inside the `iterate` tool: the model got an error instead of the check results. In demo mode
+  this showed as iteration 2 green in the check table while the scripted designer said "a check still fails" and the
+  run ended `stopped`; with GPT-6 every iteration would have been blind. Customize → *Apply & verify* was a 500 for the
+  same reason. → every such call (66, in `kintsugi/`, `eval/`) names `encoding="utf-8"`; subprocess output (Git Bash,
+  OpenSCAD) decodes as UTF-8 with `errors="replace"`. The prompts and knowledge base were already read as UTF-8.
+- **Found: the live preview URL had a backslash** (`files/preview%5Cpreview.stl`) — `preview.py` built it with
+  `str(relative_path)`. → `.as_posix()`. Archives already did.
+- **Found: demo mode claimed money and a model.** `KIN_DESIGNER_MODEL=gpt-6-astra` from `.env` overrode the fake
+  provider's own label, so the scripted run said "run started · gpt-6-astra", "8 model calls · $0.16" and
+  "$0.16 spent" in the top bar — the placeholder token counts priced at GPT-6 rates. → the fake provider ignores the
+  `KIN_*_MODEL` settings; the timeline says "run started · scripted demo" and "8 scripted steps · no model, no cost";
+  the top bar shows no spend.
+- **Found: choosing another example kept the first example's name** — the A/B cabinet plug became a session called
+  "bottle handle". → the name follows the picked example until someone types their own.
+- Environment, not code: Playwright's downloader stalls on this network (30 s socket timeouts on every attempt while
+  curl pulls the same file at 12 MB/s; IPv6 is broken here, but preferring IPv4 did not cure it). The four archives it
+  lists in `playwright install --dry-run chromium` were fetched with curl into `.cache\ms-playwright` with their
+  `INSTALLATION_COMPLETE` markers. Python reaches `api.openai.com` over IPv4 directly, so the OpenAI path is not
+  affected. Ruff 0.17 widened its default rules; `pyproject.toml` now pins the four families the code was written
+  against. A test that spawned the CLI with only `PATH` failed on Windows (no `SYSTEMROOT` → Winsock cannot start);
+  it now passes `SYSTEMROOT` too.
+
+`walk.py` now also expects that demo mode shows no spend or model in the top bar and that picking an example renames
+the part; every expectation holds, the server log has no errors, and the screenshots read as the journey should:
+it 1 red → it 2 green with the footprint check named, the section plane on hover, the print card, the stage dropping
+back after a bad apply, the honest stop on a reference spec, the phone layout.

@@ -165,7 +165,7 @@ def _dispatch(args) -> int:
         spec = PartSpec.load(args.spec)
         s = Session.create(args.name or spec.part.name, spec, sessions_dir=Path(args.sessions) if args.sessions else None)
         if args.scad:
-            s.scad_path.write_text(Path(args.scad).read_text())
+            s.scad_path.write_text(Path(args.scad).read_text(encoding="utf-8"), encoding="utf-8")
             s.commit("initial part.scad")
         print(s.dir)
         return 0
@@ -220,7 +220,7 @@ def _dispatch(args) -> int:
 
     if args.cmd == "params":
         from kintsugi.scad.customizer import parse_customizer
-        print(json.dumps([p.to_dict() for p in parse_customizer(Path(args.scad).read_text())], indent=2))
+        print(json.dumps([p.to_dict() for p in parse_customizer(Path(args.scad).read_text(encoding="utf-8"))], indent=2))
         return 0
 
     if args.cmd == "sheet":

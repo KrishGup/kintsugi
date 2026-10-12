@@ -36,7 +36,7 @@ class Session:
         for sub in ("photos", "iterations", "sheets", "export", "critic", "measure"):
             (d / sub).mkdir(parents=True, exist_ok=True)
         meta = {"id": sid, "name": name, "created": time.time(), "status": "new", "iteration": 0, "critic_rounds": 0}
-        (d / "session.json").write_text(json.dumps(meta, indent=2))
+        (d / "session.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
         s = cls(d)
         if spec is not None:
             spec.save(d / "spec.yaml")
@@ -44,7 +44,7 @@ class Session:
             s._git(["init", "-q"])
             s._git(["config", "user.email", "kintsugi@local"])
             s._git(["config", "user.name", "kintsugi"])
-        (d / ".gitignore").write_text("*.stl\n*.3mf\n__pycache__/\n")
+        (d / ".gitignore").write_text("*.stl\n*.3mf\n__pycache__/\n", encoding="utf-8")
         s.commit("session created")
         return s
 
@@ -62,13 +62,13 @@ class Session:
 
     @property
     def meta(self) -> dict[str, Any]:
-        return json.loads((self.dir / "session.json").read_text())
+        return json.loads((self.dir / "session.json").read_text(encoding="utf-8"))
 
     def update_meta(self, **kw) -> dict[str, Any]:
         m = self.meta
         m.update(kw)
         m["updated"] = time.time()
-        (self.dir / "session.json").write_text(json.dumps(m, indent=2))
+        (self.dir / "session.json").write_text(json.dumps(m, indent=2), encoding="utf-8")
         return m
 
     @property
@@ -116,7 +116,7 @@ class Session:
     # ---- git -------------------------------------------------------------------------------------
     def _git(self, args: list[str]) -> subprocess.CompletedProcess:
         # safe.directory: a session on a mounted volume is often owned by another uid; git would refuse it otherwise
-        return subprocess.run(["git", "-c", "safe.directory=*", "-C", str(self.dir)] + args, capture_output=True, text=True)
+        return subprocess.run(["git", "-c", "safe.directory=*", "-C", str(self.dir)] + args, capture_output=True, text=True, encoding="utf-8", errors="replace")
 
     def commit(self, message: str) -> str | None:
         if not git_enabled() or not (self.dir / ".git").exists():
@@ -158,7 +158,7 @@ class Session:
             p = d / "session.json"
             if p.exists():
                 try:
-                    out.append(json.loads(p.read_text()))
+                    out.append(json.loads(p.read_text(encoding="utf-8")))
                 except json.JSONDecodeError:
                     continue
         return out

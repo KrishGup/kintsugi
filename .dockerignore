@@ -1,4 +1,12 @@
 .git
+# `az acr build` uploads everything not listed here: the local key file, the venv and the caches must never travel
+.env
+.env.*
+!.env.example
+.venv
+.cache
+scratch
+*.log
 sessions
 eval/runs
 eval/references/src

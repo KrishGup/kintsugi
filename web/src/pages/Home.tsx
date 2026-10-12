@@ -12,6 +12,8 @@ import { Empty, Pill, Spinner, relTime, statusLabel, statusTone } from "../ui";
 
 type Mode = "spec" | "photos";
 
+const exampleName = (ex: ExampleSpec) => (ex.title || ex.name).replace(/_/g, " ");
+
 export default function Home() {
   const nav = useNavigate();
   const { toast, error } = useToast();
@@ -64,7 +66,7 @@ export default function Home() {
         if (ex.length && !specYaml) {
           setExample(ex[0].name);
           setSpecYaml(ex[0].yaml);
-          setName((n) => n || (ex[0].title || ex[0].name).replace(/_/g, " "));
+          setName((n) => n || exampleName(ex[0]));
         }
       })
       .catch((e) => error(e, "Could not load example specs"));
@@ -72,11 +74,13 @@ export default function Home() {
   }, []);
 
   const pickExample = (n: string) => {
+    const prev = examples.find((e) => e.name === example);
     setExample(n);
     const ex = examples.find((e) => e.name === n);
     if (ex) {
       setSpecYaml(ex.yaml);
-      if (!name) setName((ex.title || ex.name).replace(/_/g, " "));
+      // the name follows the example until someone types their own
+      if (!name || (prev && name === exampleName(prev))) setName(exampleName(ex));
     }
   };
 

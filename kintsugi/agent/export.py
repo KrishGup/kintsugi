@@ -22,7 +22,7 @@ def last_passing_iteration(session: Session) -> int | None:
     hist = session.dir / "history.json"
     if hist.exists():
         try:
-            h = json.loads(hist.read_text())
+            h = json.loads(hist.read_text(encoding="utf-8"))
             oks = [e["iteration"] for e in h if e.get("ok")]
             if oks:
                 return oks[-1]
@@ -142,7 +142,7 @@ def blueprint_pdf(session: Session, n: int, dest: Path) -> str | None:
 
 def write_print_card(session: Session, spec: PartSpec, n: int, dest: Path) -> str:
     it = session.iteration_dir(n)
-    checks = json.loads((it / "checks.json").read_text()) if (it / "checks.json").exists() else None
+    checks = json.loads((it / "checks.json").read_text(encoding="utf-8")) if (it / "checks.json").exists() else None
     src = (it / "part.scad").read_text(encoding="utf-8")
     coupon_possible = "render_target" in src and "module coupon" in src
     from kintsugi.scad.customizer import customizer_model, presets_from_openscad
@@ -198,7 +198,7 @@ def export_bundle(session: Session, iteration: int | None = None) -> dict[str, A
     # the zip must contain everything, so name it with the part name
     g.nodes["bundle"].fn = lambda s: {"bundle": zip_bundle(Path(s["out_dir"]), spec.part.name)}
     trace = run_sync(g, state, emit=lambda kind, **d: session.emit(kind, **d))
-    (out / "export_graph.json").write_text(json.dumps(trace.to_dict(), indent=2))
+    (out / "export_graph.json").write_text(json.dumps(trace.to_dict(), indent=2), encoding="utf-8")
     files: dict[str, str] = dict(state.get("copies") or {})
     for key, sk in (("3mf", "mf3"), ("coupon", "coupon"), ("blueprint", "pdf"), ("print_card", "card"), ("session_log", "log"), ("bundle", "bundle")):
         if state.get(sk):
@@ -216,14 +216,14 @@ def session_log(session: Session) -> str:
     hist = session.dir / "history.json"
     if hist.exists():
         lines.append("## Iterations")
-        for e in json.loads(hist.read_text()):
+        for e in json.loads(hist.read_text(encoding="utf-8")):
             lines.append(f"- {e['iteration']:02d}: {'pass' if e.get('ok') else ('compile error' if not e.get('compile_ok') else 'fail: ' + ', '.join(e.get('failures', [])))}"
                          + (f" — {e['label']}" if e.get("label") else ""))
     crit = sorted((session.dir / "critic").glob("*.json"))
     if crit:
         lines += ["", "## Critic"]
         for c in crit:
-            d = json.loads(c.read_text())
+            d = json.loads(c.read_text(encoding="utf-8"))
             lines.append(f"- {c.stem}: {d.get('verdict')} — {d.get('summary')}")
             for disc in d.get("discrepancies", []):
                 lines.append(f"  - [{disc.get('severity')}] {disc.get('where')}: {disc.get('suggestion')}")

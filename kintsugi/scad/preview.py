@@ -92,7 +92,7 @@ class PreviewEngine:
             if comp.ok and comp.out_path:
                 final = out_dir / "preview.stl"
                 os.replace(comp.out_path, final)
-                result["file"] = str(final.relative_to(out_dir.parent)) if out_dir.parent in final.parents else str(final)
+                result["file"] = final.relative_to(out_dir.parent).as_posix() if out_dir.parent in final.parents else str(final)
                 st.durations = (st.durations + [result["duration_s"]])[-5:]
             else:
                 try:

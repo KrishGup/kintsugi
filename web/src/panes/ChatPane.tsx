@@ -152,7 +152,7 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
       return (
         <div className="card-sys">
           <span>
-            run started · {String(ev.model || "")} · budget {String(ev.budget ?? "")} · {t}
+            run started · {ev.model === "fake" ? "scripted demo" : String(ev.model || "")} · budget {String(ev.budget ?? "")} · {t}
           </span>
         </div>
       );
@@ -475,10 +475,14 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
       const cost = typeof ev.cost_usd === "number" ? ev.cost_usd : 0;
       return (
         <div className="card-sys">
-          <span>
-            {String(ev.calls ?? "")} model calls · ${cost.toFixed(2)}
-            {ev.model ? ` · ${String(ev.model)}` : ""}
-          </span>
+          {ev.model === "fake" ? (
+            <span>{String(ev.calls ?? "")} scripted steps · no model, no cost</span>
+          ) : (
+            <span>
+              {String(ev.calls ?? "")} model calls · ${cost.toFixed(2)}
+              {ev.model ? ` · ${String(ev.model)}` : ""}
+            </span>
+          )}
         </div>
       );
     }

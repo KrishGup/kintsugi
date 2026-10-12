@@ -25,7 +25,7 @@ from kintsugi.scad.compile import compile_scad  # noqa: E402
 from kintsugi.spec.model import PartSpec  # noqa: E402
 
 OUT = ROOT / "eval" / "reports" / "critic_probe"
-BASE = (TEMPLATES_DIR / "ring_loop_handle.scad").read_text()
+BASE = (TEMPLATES_DIR / "ring_loop_handle.scad").read_text(encoding="utf-8")
 
 VARIANTS = {
     "control": {"scad": BASE, "defect": None, "keywords": []},
@@ -67,7 +67,7 @@ async def main() -> None:
     for name, v in VARIANTS.items():
         d = OUT / name
         d.mkdir(exist_ok=True)
-        (d / "part.scad").write_text(v["scad"])
+        (d / "part.scad").write_text(v["scad"], encoding="utf-8")
         comp = compile_scad(d / "part.scad", d / "part.stl", {"render_target": "part"})
         if not comp.ok:
             results.append({"variant": name, "error": comp.errors})
@@ -84,7 +84,7 @@ async def main() -> None:
         entry = {"variant": name, "defect": v["defect"], "hard_checks_pass": rep.all_hard_pass,
                  "hard_failures": [i.id for i in rep.hard_failures], "verdict": verdict.verdict, "summary": verdict.summary,
                  "discrepancies": verdict.discrepancies, "caught": caught}
-        (d / "critic.json").write_text(json.dumps(entry, indent=2))
+        (d / "critic.json").write_text(json.dumps(entry, indent=2), encoding="utf-8")
         results.append(entry)
         print(f"{name}: checks_pass={rep.all_hard_pass} verdict={verdict.verdict} caught={caught} — {verdict.summary[:120]}")
     defects = [r for r in results if r.get("defect")]
@@ -93,7 +93,7 @@ async def main() -> None:
     summary = {"variants": results, "defects": len(defects), "caught": len(caught),
                "catch_rate": round(len(caught) / len(defects), 2) if defects else None,
                "control_verdict": control[0]["verdict"] if control else None}
-    (OUT / "summary.json").write_text(json.dumps(summary, indent=2))
+    (OUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     lines = ["# Critic probe — does the code-blind critic catch what the numbers miss?", "",
              "Each variant injects one defect into the passing bottle-handle template. Every variant except one keeps all hard checks green, "
              "so the critic can only catch the defect from the drawings.", "",
@@ -111,7 +111,7 @@ async def main() -> None:
         for disc in r["discrepancies"]:
             lines.append(f"- [{disc.get('severity')}] {disc.get('where')}: {disc.get('observed')} → {disc.get('suggestion')}")
         lines.append("")
-    (OUT / "README.md").write_text("\n".join(lines))
+    (OUT / "README.md").write_text("\n".join(lines), encoding="utf-8")
     print(json.dumps({k: v for k, v in summary.items() if k != "variants"}, indent=2))
 
 

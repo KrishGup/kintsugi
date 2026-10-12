@@ -40,7 +40,7 @@ REPORTS = EVAL / "reports"
 
 
 def manifest() -> list[dict]:
-    return yaml.safe_load((EVAL / "references.yaml").read_text())["references"]
+    return yaml.safe_load((EVAL / "references.yaml").read_text(encoding="utf-8"))["references"]
 
 
 # ---- fetch -----------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ async def design(names: list[str] | None, mode: str, model: str | None, budget: 
         run_dir = RUNS / mode
         run_dir.mkdir(parents=True, exist_ok=True)
         summary = run_dir / f"{ref['name']}.json"
-        if summary.exists() and json.loads(summary.read_text()).get("status") == "done":
+        if summary.exists() and json.loads(summary.read_text(encoding="utf-8")).get("status") == "done":
             print(f"skip {ref['name']} (done)")
             continue
         spec = PartSpec.load(ROOT / ref["spec"])
@@ -114,7 +114,7 @@ async def design(names: list[str] | None, mode: str, model: str | None, budget: 
         d = out.to_dict()
         d["duration_s"] = round(time.time() - t0, 1)
         d["session"] = str(sess_dir)
-        summary.write_text(json.dumps(d, indent=2))
+        summary.write_text(json.dumps(d, indent=2), encoding="utf-8")
         print(f"  -> {d['status']} in {d['duration_s']}s, {d['iterations']} iterations, ${d['cost_usd']}", flush=True)
 
 
@@ -222,13 +222,13 @@ async def compare(names: list[str] | None, mode: str, judge_model: str | None, w
             print(f"skip {name}: missing reference or run")
             continue
         if summary_p.exists():
-            summary = json.loads(summary_p.read_text())
+            summary = json.loads(summary_p.read_text(encoding="utf-8"))
         else:  # run still in progress or interrupted: summarize from the session files
-            meta = json.loads((sess / "session.json").read_text()) if (sess / "session.json").exists() else {}
+            meta = json.loads((sess / "session.json").read_text(encoding="utf-8")) if (sess / "session.json").exists() else {}
             summary = {"status": meta.get("status", "in_progress"), "iterations": meta.get("iteration"), "cost_usd": meta.get("cost_usd"),
                        "duration_s": None, "session": str(sess), "critic": [], "narration": meta.get("narration", "")}
         sess = Path(summary["session"])
-        hist = json.loads((sess / "history.json").read_text()) if (sess / "history.json").exists() else []
+        hist = json.loads((sess / "history.json").read_text(encoding="utf-8")) if (sess / "history.json").exists() else []
         oks = [h["iteration"] for h in hist if h.get("ok")]
         last = oks[-1] if oks else (hist[-1]["iteration"] if hist else None)
         if last is None:
@@ -268,7 +268,7 @@ async def compare(names: list[str] | None, mode: str, judge_model: str | None, w
         prev_p0 = REPORTS / f"ab_{mode}.json"
         if not with_judge and prev_p0.exists():
             try:
-                old = {r["name"]: r for r in json.loads(prev_p0.read_text())}.get(name)
+                old = {r["name"]: r for r in json.loads(prev_p0.read_text(encoding="utf-8"))}.get(name)
                 if old and old.get("judge"):
                     entry["judge"] = old["judge"]
             except json.JSONDecodeError:
@@ -289,7 +289,7 @@ async def compare(names: list[str] | None, mode: str, judge_model: str | None, w
     prev_p = REPORTS / f"ab_{mode}.json"
     if prev_p.exists():
         try:
-            prev = {r["name"]: r for r in json.loads(prev_p.read_text())}
+            prev = {r["name"]: r for r in json.loads(prev_p.read_text(encoding="utf-8"))}
         except json.JSONDecodeError:
             prev = {}
         done = {r["name"] for r in results}
@@ -297,7 +297,7 @@ async def compare(names: list[str] | None, mode: str, judge_model: str | None, w
         merged = {**prev, **{r["name"]: r for r in results}}
         results = [merged[n] for n in order if n in merged] + [r for n, r in merged.items() if n not in order]
         del done
-    prev_p.write_text(json.dumps(results, indent=2, default=str))
+    prev_p.write_text(json.dumps(results, indent=2, default=str), encoding="utf-8")
     write_report(results, mode)
 
 
@@ -344,7 +344,7 @@ def write_report(results: list[dict], mode: str) -> None:
               "- *silhouette IoU*: overlap of top/front/right silhouettes at the same scale and frame; low values mean a different body shape, which is allowed (only interfaces are specified).",
               "- *Chamfer*: mean surface-to-surface distance (mm) between the two meshes; a shape-difference measure, not a quality measure.",
               "- *blind judge*: the critic model scoring both sheets without knowing which is human-designed."]
-    (REPORTS / f"ab_{mode}.md").write_text("\n".join(lines) + "\n")
+    (REPORTS / f"ab_{mode}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"wrote {REPORTS / f'ab_{mode}.md'}")
 
 

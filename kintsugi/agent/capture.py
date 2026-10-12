@@ -41,7 +41,7 @@ def session_photos(session: Session) -> list[dict[str, Any]]:
         if p.suffix.lower() in IMAGE_EXT:
             g = p.with_suffix(p.suffix + ".grade.json")
             try:
-                grade = json.loads(g.read_text()) if g.exists() else None
+                grade = json.loads(g.read_text(encoding="utf-8")) if g.exists() else None
             except json.JSONDecodeError:
                 grade = None
             out.append({"file": f"photos/{p.name}", "grade": grade, "path": p})
@@ -53,13 +53,13 @@ def load_intake(session: Session) -> dict[str, Any]:
     if not p.exists():
         return {}
     try:
-        return json.loads(p.read_text())
+        return json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
 
 
 def save_intake(session: Session, data: dict[str, Any]) -> None:
-    (session.dir / "intake.json").write_text(json.dumps(data, indent=2, default=str))
+    (session.dir / "intake.json").write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
 
 
 def _label_of(name: str, intake: dict[str, Any] | None = None) -> str:
@@ -108,7 +108,7 @@ def measure_photo_circles(session: Session, photo: Path, min_d: float = 4.0, max
     with _lock_for(str(cache)):
         if cache.exists():
             try:
-                cached = json.loads(cache.read_text())
+                cached = json.loads(cache.read_text(encoding="utf-8"))
                 lo, hi = cached.get("range", [4.0, 140.0])
                 if lo <= min_d + 1e-9 and hi >= max_d - 1e-9:
                     return cached
@@ -142,7 +142,7 @@ def _measure_photo_circles(session: Session, photo: Path, cache: Path, min_d: fl
             cv2.imwrite(str(rect_path), rect.img)
             res["rectified"] = f"measure/{rect_path.name}"
     cache.parent.mkdir(exist_ok=True)
-    cache.write_text(json.dumps(res, indent=2))
+    cache.write_text(json.dumps(res, indent=2), encoding="utf-8")
     return res
 
 
@@ -214,7 +214,7 @@ def evidence_snapshot(session: Session, spec: PartSpec | None = None) -> dict[st
     cp = session.dir / "checks.json"
     if cp.exists():
         try:
-            checks = json.loads(cp.read_text())
+            checks = json.loads(cp.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             checks = None
     photos = [{"file": p["file"], "grade": p["grade"]} for p in session_photos(session)]

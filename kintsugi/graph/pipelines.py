@@ -30,7 +30,7 @@ def iteration_graph(*, wall_samples: int = 1500) -> Graph:
     def n_compile(s: dict[str, Any]) -> dict[str, Any]:
         it_dir = Path(s["it_dir"])
         comp = compile_scad(Path(s["scad_path"]), it_dir / "part.stl", {"render_target": "part"} if s.get("render_target") else None, timeout_s=240)
-        (it_dir / "compile.json").write_text(json.dumps(comp.to_dict(), indent=2))
+        (it_dir / "compile.json").write_text(json.dumps(comp.to_dict(), indent=2), encoding="utf-8")
         out: dict[str, Any] = {"compile": comp}
         if comp.ok:
             out["stl_path"] = str(it_dir / "part.stl")

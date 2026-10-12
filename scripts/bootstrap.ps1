@@ -27,9 +27,19 @@ Write-Host "Kintsugi at $Root" -ForegroundColor Cyan
 
 # Native tools (pip, npm, OpenSCAD) write warnings to stderr; Windows PowerShell 5.1 turns those into terminating
 # errors under "Stop". Run every native command through here: stderr flows through, the exit code is what counts.
+# A PowerShell error that is not native stderr (a command that does not exist) leaves $LASTEXITCODE alone, so it is
+# caught separately; otherwise the script would carry on and say "Ready." with nothing installed.
 function Run([string]$what, [scriptblock]$cmd) {
   $ErrorActionPreference = "Continue"
-  & $cmd 2>&1 | ForEach-Object { if ($_ -is [System.Management.Automation.ErrorRecord]) { $_.ToString() } else { $_ } }
+  $global:LASTEXITCODE = 0
+  $script:runError = $null
+  & $cmd 2>&1 | ForEach-Object {
+    if ($_ -is [System.Management.Automation.ErrorRecord]) {
+      if ($_.Exception -isnot [System.Management.Automation.RemoteException]) { $script:runError = $_.ToString() }
+      $_.ToString()
+    } else { $_ }
+  }
+  if ($script:runError) { throw "$what failed: $script:runError" }
   if ($LASTEXITCODE -ne 0) { throw "$what failed (exit $LASTEXITCODE)" }
 }
 function Need($name, $exe, $probe, $hint) {
@@ -64,8 +74,9 @@ foreach ($cand in @(@("py", "-3.11"), @("py", "-3.12"), @("py", "-3.13"), @("pyt
   $ErrorActionPreference = "Stop"
   if ($ver -and [version]$ver -ge [version]"3.11") { $Py = @($cand[0]) + @($cand[1] | Where-Object { $_ }); Write-Host "  ok   Python $ver  ($($Py -join ' '))"; break }
 }
-$py = [bool]$Py
-if (-not $py) { Write-Host "  MISSING Python 3.11+ - winget install Python.Python.3.11 (or 3.12)" -ForegroundColor Yellow }
+# (PowerShell names are case-insensitive: a `$py` flag here would overwrite the `$Py` command above)
+$havePy = [bool]$Py
+if (-not $havePy) { Write-Host "  MISSING Python 3.11+ - winget install Python.Python.3.11 (or 3.12)" -ForegroundColor Yellow }
 $node = Need "Node 22" "node" { node --version } "winget install OpenJS.NodeJS.LTS"
 $git = Need "Git" "git" { git --version } "winget install Git.Git (Git Bash is used for the designer's shell tool)"
 $Drive = (Split-Path -Qualifier $Root)                      # a portable OpenSCAD lives on the same drive as the checkout
@@ -78,7 +89,7 @@ elseif ($Portable) {
   $scad = Need "OpenSCAD (portable)" $Portable { & $Portable --version } ""
 }
 else { Write-Host "  MISSING OpenSCAD - unzip the 2021.01 portable build to $Drive\Tools\OpenSCAD (keeps C: clean; the app finds it there by itself) or 'winget install OpenSCAD.OpenSCAD'; set KIN_OPENSCAD_BIN if it is somewhere else" -ForegroundColor Yellow }
-if (-not ($py -and $node -and $git)) { throw "install the missing prerequisites and run again" }
+if (-not ($havePy -and $node -and $git)) { throw "install the missing prerequisites and run again" }
 
 # ---- python ----------------------------------------------------------------------------------------------------------
 Write-Host "Python environment (.venv on this drive)" -ForegroundColor Cyan
@@ -90,10 +101,15 @@ if (-not (Test-Path $VPy)) {
 }
 Run "pip upgrade" { & $VPy -m pip install --upgrade pip --quiet --disable-pip-version-check }
 Run "pip install" { & $VPy -m pip install -e ".[dev,tools]" --quiet --disable-pip-version-check }
+# Playwright downloads with Node, which tries IPv6 first and does not fall back; on a network with broken IPv6 every
+# attempt times out at 30 s while curl succeeds. Prefer IPv4 for this step.
+$env:NODE_OPTIONS = "--dns-result-order=ipv4first"
 Run "playwright chromium" { & $VPy -m playwright install chromium }
+Remove-Item Env:NODE_OPTIONS
 $ErrorActionPreference = "Continue"
 $kinVer = (& $VPy -c "import sys, kintsugi; print('kintsugi on Python ' + sys.version.split()[0])" 2>&1 | Out-String).Trim()
 $ErrorActionPreference = "Stop"
+if (-not $kinVer.StartsWith("kintsugi on Python")) { throw "the package does not import: $kinVer" }
 Write-Host "  ok   $kinVer"
 
 # ---- web -------------------------------------------------------------------------------------------------------------

@@ -228,12 +228,12 @@ async def set_settings(body: Settings):
     if body.persist and changed:
         env_path = ENV_FILE
         env_path.parent.mkdir(parents=True, exist_ok=True)
-        lines = env_path.read_text().splitlines() if env_path.exists() else []
+        lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
         for k, v in changed.items():
             val = os.environ[k]
             lines = [ln for ln in lines if not ln.startswith(k + "=")]
             lines.append(f"{k}={val}")
-        env_path.write_text("\n".join(lines) + "\n")
+        env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     llm = get_llm(reset=True)
     probe = None
     if llm.provider == "openai" and os.environ.get("OPENAI_API_KEY") and (body.openai_api_key or body.designer_model or body.provider):
@@ -447,9 +447,9 @@ def session_detail(sid: str):
     s = _session(sid)
     meta = s.meta
     spec = s.spec() if s.spec_path.exists() else PartSpec()
-    params = json.loads((s.dir / "params.json").read_text()) if (s.dir / "params.json").exists() else []
-    checks = json.loads((s.dir / "checks.json").read_text()) if (s.dir / "checks.json").exists() else None
-    hist = json.loads((s.dir / "history.json").read_text()) if (s.dir / "history.json").exists() else []
+    params = json.loads((s.dir / "params.json").read_text(encoding="utf-8")) if (s.dir / "params.json").exists() else []
+    checks = json.loads((s.dir / "checks.json").read_text(encoding="utf-8")) if (s.dir / "checks.json").exists() else None
+    hist = json.loads((s.dir / "history.json").read_text(encoding="utf-8")) if (s.dir / "history.json").exists() else []
     iterations = []
     for e in hist:
         n = e["iteration"]
@@ -461,10 +461,10 @@ def session_detail(sid: str):
     critic = []
     for p in sorted((s.dir / "critic").glob("*.json")):
         try:
-            critic.append({"file": p.stem, **json.loads(p.read_text())})
+            critic.append({"file": p.stem, **json.loads(p.read_text(encoding="utf-8"))})
         except json.JSONDecodeError:
             pass
-    intake_data = json.loads((s.dir / "intake.json").read_text()) if (s.dir / "intake.json").exists() else None
+    intake_data = json.loads((s.dir / "intake.json").read_text(encoding="utf-8")) if (s.dir / "intake.json").exists() else None
     rd = _readiness(spec)
     from kintsugi.graph.flow import derive_stage, open_transitions
     flow_state = {"meta": meta, "running": sid in RUNS and not RUNS[sid].done(), "has_intake": intake_data is not None,
@@ -481,7 +481,7 @@ def session_detail(sid: str):
     for p in sorted((s.dir / "photos").iterdir()) if (s.dir / "photos").exists() else []:
         if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp") and not p.name.endswith(".grade.json"):
             g = p.with_suffix(p.suffix + ".grade.json")
-            photos.append({"file": f"photos/{p.name}", "grade": json.loads(g.read_text()) if g.exists() else None,
+            photos.append({"file": f"photos/{p.name}", "grade": json.loads(g.read_text(encoding="utf-8")) if g.exists() else None,
                            "estimates": by_photo.get(f"photos/{p.name}", [])})
     return {
         "meta": meta, "spec": spec.model_dump(mode="json", exclude_none=True), "spec_yaml": spec.to_yaml(),
@@ -557,7 +557,7 @@ async def upload_photos(sid: str, files: list[UploadFile] = File(...), expect_sh
             g = grade_capture(img, expect_sheet=expect_sheet)
             grade = g.__dict__ if hasattr(g, "__dict__") else dict(g)
             grade = {k: (float(v) if isinstance(v, (np.floating,)) else v) for k, v in grade.items() if not k.startswith("_")}
-            dest.with_suffix(dest.suffix + ".grade.json").write_text(json.dumps(grade, default=lambda o: float(o) if hasattr(o, "__float__") else str(o)))
+            dest.with_suffix(dest.suffix + ".grade.json").write_text(json.dumps(grade, default=lambda o: float(o) if hasattr(o, "__float__") else str(o)), encoding="utf-8")
         except Exception as e:
             grade = {"error": str(e)}
         out.append({"file": f"photos/{dest.name}", "grade": grade, "path": dest})
@@ -682,15 +682,15 @@ def graphs(sid: str, iteration: int | None = None):
     out: dict[str, Any] = {}
     p = s.dir / "intake_graph.json"
     if p.exists():
-        out["intake"] = json.loads(p.read_text())
+        out["intake"] = json.loads(p.read_text(encoding="utf-8"))
     n = iteration or int(s.meta.get("iteration", 0))
     if n:
         q = s.dir / "iterations" / f"iter_{n:02d}" / "graph.json"
         if q.exists():
-            out["iteration"] = {"iteration": n, **json.loads(q.read_text())}
+            out["iteration"] = {"iteration": n, **json.loads(q.read_text(encoding="utf-8"))}
     e = s.dir / "export" / "export_graph.json"
     if e.exists():
-        out["export"] = json.loads(e.read_text())
+        out["export"] = json.loads(e.read_text(encoding="utf-8"))
     from kintsugi.graph.flow import describe as flow_describe
     from kintsugi.graph.pipelines import export_graph, iteration_graph
     out["shapes"] = {"iteration": iteration_graph().describe(), "export": export_graph().describe()}
@@ -875,7 +875,7 @@ def _last_echo_values(s: Session) -> dict[str, Any]:
         p = s.dir / "iterations" / f"iter_{k:02d}" / "compile.json"
         if p.exists():
             try:
-                d = json.loads(p.read_text())
+                d = json.loads(p.read_text(encoding="utf-8"))
                 if d.get("ok"):
                     return d.get("echo_values") or {}
             except json.JSONDecodeError:

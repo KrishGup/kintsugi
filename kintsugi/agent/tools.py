@@ -137,9 +137,9 @@ def make_file_tools(sandbox: Sandbox) -> list[ToolDef]:
         def _run():
             bash = shutil.which("bash") or (r"C:\Program Files\Git\bin\bash.exe" if os.name == "nt" and os.path.exists(r"C:\Program Files\Git\bin\bash.exe") else None)
             if bash:
-                return subprocess.run([bash, "-lc", cmd], cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env)
+                return subprocess.run([bash, "-lc", cmd], cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env, encoding="utf-8", errors="replace")
             # no bash (plain Windows): the platform shell
-            return subprocess.run(cmd, shell=True, cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env)
+            return subprocess.run(cmd, shell=True, cwd=str(root), capture_output=True, text=True, timeout=timeout, env=env, encoding="utf-8", errors="replace")
 
         try:
             proc = await loop.run_in_executor(None, _run)

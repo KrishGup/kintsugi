@@ -191,7 +191,7 @@ def import_archive(data: bytes | BinaryIO, sessions_dir: Path, *, max_bytes: int
         s._git(["config", "user.email", "kintsugi@local"])
         s._git(["config", "user.name", "kintsugi"])
         if not (dest / ".gitignore").exists():
-            (dest / ".gitignore").write_text("*.stl\n*.3mf\n__pycache__/\n")
+            (dest / ".gitignore").write_text("*.stl\n*.3mf\n__pycache__/\n", encoding="utf-8")
         s.commit(f"imported from archive ({old_id or 'unknown'})")
     s.emit("imported", from_id=old_id or None, files=len(manifest.get("files", [])))
     return s

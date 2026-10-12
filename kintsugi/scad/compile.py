@@ -116,7 +116,7 @@ def openscad_version() -> str | None:
     if binary in _VERSION_CACHE:
         return _VERSION_CACHE[binary]
     try:
-        out = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=30)
+        out = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace")
         text = (out.stdout + out.stderr).strip()
         m = re.search(r"version\s+([\w.\-]+)", text)
         found = m.group(1) if m else text
@@ -295,7 +295,7 @@ def _compile_now(cmd, env, scad_path, out_path, fmt, timeout_s, cancel, t0):
     cancelled = False
     if cancel is None:
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, env=env, cwd=str(scad_path.parent))
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s, env=env, cwd=str(scad_path.parent), encoding="utf-8", errors="replace")
             rc = proc.returncode
             stdout, stderr = proc.stdout, proc.stderr
         except subprocess.TimeoutExpired as e:
@@ -330,7 +330,7 @@ def _compile_now(cmd, env, scad_path, out_path, fmt, timeout_s, cancel, t0):
 
 def _run_cancellable(cmd: list[str], env: dict[str, str], cwd: str, timeout_s: float, cancel: threading.Event) -> tuple[int, str, str, bool]:
     """Run OpenSCAD in a subprocess that dies as soon as `cancel` is set (or the timeout passes)."""
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env, cwd=cwd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env, cwd=cwd, encoding="utf-8", errors="replace")
     chunks: dict[str, str] = {"out": "", "err": ""}
 
     def pump(stream, key):

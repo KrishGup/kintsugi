@@ -387,7 +387,7 @@ async def _run_critic(session: Session, spec: PartSpec, state: RunState, critic_
     emit("critic_start", iteration=res.iteration if res else None)
     verdict = await critique(spec, res.checks if res else None, sheets, prev_sheets=prev, photos=photos, model=critic_model, llm=llm)
     n = res.iteration if res else 0
-    (session.dir / "critic" / f"iter_{n:02d}.json").write_text(json.dumps(verdict.to_dict(), indent=2))
+    (session.dir / "critic" / f"iter_{n:02d}.json").write_text(json.dumps(verdict.to_dict(), indent=2), encoding="utf-8")
     session.update_meta(critic_rounds=int(session.meta.get("critic_rounds", 0)) + 1)
     session.commit(f"critic review of iteration {n}: {verdict.verdict}")
     emit("critic", iteration=n, verdict=verdict.verdict, summary=verdict.summary, discrepancies=verdict.discrepancies)

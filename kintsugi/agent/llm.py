@@ -132,10 +132,13 @@ class LLM:
         env = os.environ
         d = DEFAULT_MODELS[self.provider]
         fast = env.get("KIN_FAST", "").lower() in ("1", "true", "yes")
+        # The KIN_*_MODEL settings name real models. Demo mode ignores them: otherwise the scripted run is labelled
+        # gpt-6-astra and its placeholder token counts are priced as if a model had been paid for.
+        pick = (lambda key: None) if self.provider == "fake" else env.get
         self.models = {
-            "designer": env.get("KIN_DESIGNER_MODEL") or (d["fast"] if fast else d["designer"]),
-            "critic": env.get("KIN_CRITIC_MODEL") or (d["fast"] if fast else d["critic"]),
-            "vision": env.get("KIN_VISION_MODEL") or (d["fast"] if fast else d["vision"]),
+            "designer": pick("KIN_DESIGNER_MODEL") or (d["fast"] if fast else d["designer"]),
+            "critic": pick("KIN_CRITIC_MODEL") or (d["fast"] if fast else d["critic"]),
+            "vision": pick("KIN_VISION_MODEL") or (d["fast"] if fast else d["vision"]),
         }
         self.effort = env.get("KIN_REASONING_EFFORT", "high")
         self.usage = Usage()

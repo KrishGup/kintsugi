@@ -22,7 +22,10 @@ one-time hand-off from the cloud session, with the first prompt to paste.
    package with the `dev` and `tools` extras, builds the web app, checks for OpenSCAD (a portable build under
    `X:\Tools\OpenSCAD` is picked up; otherwise `winget install OpenSCAD.OpenSCAD` or set `KIN_OPENSCAD_BIN`), and keeps
    the pip/npm/Playwright caches under `.cache` on this drive. Then `python scripts\walk.py` drives the whole UI in a
-   headless browser in demo mode and leaves screenshots in `scratch\walk\`.
+   headless browser in demo mode and leaves screenshots in `scratch\walk\`. On the owner's machine (Python 3.13 via
+   `py`, Node 24) this runs clean; Playwright's own downloader stalls on that network, so if `playwright install`
+   times out, fetch the archives `playwright install --dry-run chromium` lists with curl into `.cache\ms-playwright\<name>`
+   and add an empty `INSTALLATION_COMPLETE` (what happened there is in `docs/REVIEW.md`, "First run on the Windows dev box").
 1. **Run the tests** (no model needed): `pip install -e ".[dev]" && pytest -q`. About four minutes; all green means OpenSCAD, the geometry stack, the measurement core, the agent runtime (scripted provider) and the web API work on your machine.
 2. **Start the app**: `(cd web && npm install && npm run build)` once, then `kin serve` and open http://localhost:8000. The header pill says which model provider is active. Click **Settings**, paste your OpenAI API key, tick "remember on this server" — it is written to `.env`, never leaves the machine except to OpenAI.
 3. **Walk the demo without a key**: Settings → *Demo mode*. The scripted designer builds the bottle handle from the template so every screen (guide, 3D, sheets, checks, sliders, export) can be seen in a minute.
@@ -103,7 +106,11 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - Auth (`kintsugi/server/auth.py`): `KIN_AUTH=none|token|easyauth`. Token mode = `KIN_ACCESS_TOKEN` + an HMAC cookie; easyauth reads the `X-MS-CLIENT-PRINCIPAL-*` headers Azure sets and scopes sessions to their `owner` (`KIN_ADMIN_USERS` see all). `KIN_SETTINGS_LOCK=1` makes `/api/settings` read-only. The UI gate lives in `web/src/auth.tsx`.
 - Data: `KIN_DATA_DIR` (container: `/data`) holds `sessions/` and the settings `.env`; `KIN_SESSION_GIT=0` drops the per-session git history for slow shares.
 - Archives (`kintsugi/session/archive.py`): `GET /api/sessions/{id}/archive` ↔ `POST /api/sessions/import`, `kin archive` / `kin import`, manifest + file hashes, zip-slip and size checks; schemas in `docs/schemas/` (regenerate with `kin schema … -o`), served at `/api/schemas/…`. This is also the backup/migration path.
-- Not done here: a real deployment (no Azure subscription in the build environment). The Bicep compiles cleanly with the Bicep CLI and the scripts are syntax-checked; the first `deploy.sh` run is the test.
+- Not done yet: a real deployment. The owner's dev box has the `az` CLI (2.91) signed in to the *Hackathon*
+  subscription (tenant *Default Directory*, which needs `az login --tenant 28adeeb8-3880-418f-9b18-3691d70f862d` for
+  MFA), with `AZURE_CONFIG_DIR=X:\Tools\azure` so its profile, Bicep (0.48.1) and extensions stay off C:. The
+  resource providers the stack needs (`Microsoft.App`, `ContainerRegistry`, `KeyVault`, `OperationalInsights`,
+  `Storage`) were not registered yet on 2026-10-11. The first `deploy.sh` run is the test.
 - `docs/REVIEW.md` is the review record: the deployment journeys walked through the code (what each turned up and what was fixed — scoping on `/stop`, import off the event loop, unicode archive names, non-ASCII codes, login throttling, SSE back-off and auth probe, stale-run reconciliation at startup, the hash route through platform sign-in).
 
 ## The workspace (resizable panes, hover linking, no tooltips)

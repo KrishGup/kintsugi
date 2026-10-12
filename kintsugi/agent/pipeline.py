@@ -86,7 +86,7 @@ def run_iteration(session: Session, *, scad_text: str | None = None, spec: PartS
     state: dict[str, Any] = {"scad_path": str(session.scad_path), "it_dir": str(it_dir), "iteration": n, "spec": spec,
                              "render_target": _has_render_target(session.scad_path)}
     trace = run_sync(iteration_graph(wall_samples=wall_samples), state, emit=lambda kind, **d: session.emit(kind, iteration=n, **d))
-    (it_dir / "graph.json").write_text(json.dumps(trace.to_dict(), indent=2))
+    (it_dir / "graph.json").write_text(json.dumps(trace.to_dict(), indent=2), encoding="utf-8")
     comp: CompileResult = state["compile"]
     checks: CheckReport | None = state.get("checks")
     bp: BlueprintResult | None = state.get("blueprint")
@@ -105,8 +105,8 @@ def run_iteration(session: Session, *, scad_text: str | None = None, spec: PartS
             signals.append(f"blueprint failed to render: {trace.nodes['compose'].error}")
         params = state.get("params")
         if params is not None:
-            (it_dir / "params.json").write_text(json.dumps(params, indent=2))
-            (session.dir / "params.json").write_text(json.dumps(params, indent=2))
+            (it_dir / "params.json").write_text(json.dumps(params, indent=2), encoding="utf-8")
+            (session.dir / "params.json").write_text(json.dumps(params, indent=2), encoding="utf-8")
             if not params:
                 signals.append("no customizer parameters found: put user-facing dimensions in a parameter block with // [min:step:max] annotations")
             else:
@@ -133,8 +133,8 @@ def run_iteration(session: Session, *, scad_text: str | None = None, spec: PartS
     new_status = "iterating" if status in ("new", "intake_done", "iterating", "running") else status
     session.update_meta(iteration=n, status=new_status, last_ok=entry["ok"])
     res = IterationResult(n, comp, checks, bp, it_dir, time.time() - t0, signals, budget_left)
-    (it_dir / "iteration.json").write_text(json.dumps(res.to_dict(), indent=2, default=str))
-    (it_dir / "summary.txt").write_text(res.summary_for_model())
+    (it_dir / "iteration.json").write_text(json.dumps(res.to_dict(), indent=2, default=str), encoding="utf-8")
+    (it_dir / "summary.txt").write_text(res.summary_for_model(), encoding="utf-8")
     session.commit(f"iteration {n}: {'pass' if res.ok else 'fail'}" + (f" — {label}" if label else ""))
     session.emit("iteration", iteration=n, ok=res.ok, compile_ok=comp.ok, failures=entry["failures"], label=label,
                  sheet=str(bp.sheet_path) if bp else None, sections=str(bp.sections_path) if bp and bp.sections_path else None,
@@ -155,14 +155,14 @@ def _load_history(session: Session) -> list[dict]:
     p = session.dir / "history.json"
     if p.exists():
         try:
-            return json.loads(p.read_text())
+            return json.loads(p.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             return []
     return []
 
 
 def _save_history(session: Session, hist: list[dict]) -> None:
-    (session.dir / "history.json").write_text(json.dumps(hist, indent=2, default=str))
+    (session.dir / "history.json").write_text(json.dumps(hist, indent=2, default=str), encoding="utf-8")
 
 
 def _policy_signals(hist: list[dict]) -> list[str]:

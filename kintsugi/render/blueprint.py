@@ -177,7 +177,7 @@ def compose_blueprint(mesh_path: str | Path, spec: PartSpec, report: CheckReport
         sheet2.save(sections_path)
 
     res = BlueprintResult(sheet_path, sections_path, view_paths, sections.get("paths", {}), assembly.get("paths", {}), scale)
-    (out_dir / f"iter_{iteration:02d}_blueprint.json").write_text(json.dumps(res.to_dict(), indent=2))
+    (out_dir / f"iter_{iteration:02d}_blueprint.json").write_text(json.dumps(res.to_dict(), indent=2), encoding="utf-8")
     return res
 
 

@@ -236,7 +236,7 @@ async def run_intake(session: Session, text: str, photos: list[Path], model: str
             try:
                 gr = grade_capture(img, expect_sheet=True)
                 d = {k: (float(v) if isinstance(v, np.floating) else v) for k, v in gr.__dict__.items() if not k.startswith("_")}
-                g.write_text(json.dumps(d, default=lambda o: float(o) if hasattr(o, "__float__") else str(o)))
+                g.write_text(json.dumps(d, default=lambda o: float(o) if hasattr(o, "__float__") else str(o)), encoding="utf-8")
                 graded += 1
             except Exception:
                 continue
@@ -300,7 +300,7 @@ async def run_intake(session: Session, text: str, photos: list[Path], model: str
     ])
     state: dict[str, Any] = {"text": text, "photos": list(photos)}
     trace = await g.run(state, emit=lambda kind, **d: session.emit(kind, **d))
-    (session.dir / "intake_graph.json").write_text(json.dumps(trace.to_dict(), indent=2))
+    (session.dir / "intake_graph.json").write_text(json.dumps(trace.to_dict(), indent=2), encoding="utf-8")
     if "intake" not in state:
         err = trace.nodes["vision"].error or "intake failed"
         raise RuntimeError(err)

@@ -295,10 +295,17 @@ def test_archive_blocked_while_running(api, monkeypatch):
 
 # ---- the CLI and the plumbing --------------------------------------------------------------------------------------
 
+def _bare_env() -> dict[str, str]:
+    """A child environment without the developer's KIN_* settings. Windows needs SYSTEMROOT as well as PATH: without
+    it the child cannot initialise Winsock and `import asyncio` fails (WinError 10106)."""
+    import os
+    return {k: os.environ[k] for k in ("PATH", "SYSTEMROOT") if k in os.environ}
+
+
 def test_cli_archive_import_schema(tmp_path):
     s = Session.create("cli part", PartSpec.load(SPEC), sessions_dir=tmp_path / "s")
     _populate(s)
-    env = {"PATH": __import__("os").environ["PATH"], "KIN_SESSIONS_DIR": str(tmp_path / "s2")}
+    env = {**_bare_env(), "KIN_SESSIONS_DIR": str(tmp_path / "s2")}
     out = subprocess.run([sys.executable, "-m", "kintsugi.cli", "archive", str(s.dir), "-o", str(tmp_path / "a.zip")], capture_output=True, text=True, env=env)
     assert out.returncode == 0 and (tmp_path / "a.zip").exists(), out.stderr
     out = subprocess.run([sys.executable, "-m", "kintsugi.cli", "import", str(tmp_path / "a.zip")], capture_output=True, text=True, env=env)
@@ -336,7 +343,7 @@ def test_data_dir_and_env_file(tmp_path, monkeypatch):
             "import kintsugi, kintsugi.session.workspace as w\n"
             "print(kintsugi.DATA_DIR); print(kintsugi.ENV_FILE); print(w.DEFAULT_SESSIONS_DIR)")
     out = subprocess.run([sys.executable, "-c", code, str(tmp_path / "data")], capture_output=True, text=True,
-                         env={"PATH": os.environ["PATH"]})
+                         env=_bare_env())
     lines = out.stdout.strip().splitlines()
     assert lines == [str((tmp_path / "data").resolve()), str((tmp_path / "data" / ".env").resolve()), str((tmp_path / "data" / "sessions").resolve())], out.stderr
 

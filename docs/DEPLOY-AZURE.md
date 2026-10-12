@@ -177,6 +177,8 @@ locally with `/data` on a volume.
 Prerequisites: an Azure subscription where you can create resource groups **and** app registrations (the Entra step
 needs *Application Developer* or better — or hand `--entra-client-id/--entra-client-secret` to the script), the
 [`az` CLI](https://aka.ms/azcli) ≥ 2.60 signed in (`az login`), Python 3 on PATH, `openssl` for generated codes. No Docker.
+On the Windows dev box `AZURE_CONFIG_DIR=X:\Tools\azure` (user environment) keeps the CLI's profile, Bicep and
+extensions off C:. `.dockerignore` keeps `.env`, `.venv` and `.cache` out of the context `az acr build` uploads.
 
 ```bash
 git clone https://github.com/KrishGup/kintsugi && cd kintsugi
