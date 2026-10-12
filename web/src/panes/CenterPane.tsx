@@ -69,7 +69,7 @@ export default function CenterPane() {
         )}
         {(pv.status === "running" || pv.status === "queued") && (
           <span className="pill pill-neutral">
-            <Spinner size={10} /> compiling preview…
+            <Spinner size={13} /> compiling preview…
           </span>
         )}
         {pv.status === "error" && (
@@ -89,12 +89,12 @@ export default function CenterPane() {
         )}
         {draftShown && cz.nChanged > 0 && (
           <button className="btn btn-xs btn-primary" onClick={() => cz.apply()} disabled={cz.applying || s.running || !!s.busy}>
-            {cz.applying ? <Spinner size={10} /> : null} Apply &amp; verify
+            {cz.applying ? <Spinner size={13} /> : null} Apply &amp; verify
           </button>
         )}
         {!draftShown && cz.nChanged === 0 && d.stl && (
           <button className="btn btn-xs" onClick={openCustomizer}>
-            <Sliders size={12} /> Customize
+            <Sliders size={16} /> Customize
           </button>
         )}
       </div>
@@ -218,7 +218,7 @@ export default function CenterPane() {
               placeholder="The 3D model appears here after the first iteration compiles. Run the designer, apply params or run code to create one."
             />
             {stlNote && (
-              <div style={{ position: "absolute", left: 10, top: 8 }}>
+              <div style={{ position: "absolute", left: 13, top: 10 }}>
                 <Pill tone="warn">{stlNote}</Pill>
               </div>
             )}
@@ -234,14 +234,14 @@ export default function CenterPane() {
             {ev ? (
               <>
                 <EvidenceMap graph={ev} />
-                <div className="small dim" style={{ padding: "6px 10px" }}>
+                <div className="small dim" style={{ padding: "8px 13px" }}>
                   Sources on the left (photos, ruler readings, recognised standards, open requests) → the estimates they produced → the spec's
                   dimensions → the checks that verify them on the designed mesh. Green = confirmed / passing, amber = estimated, red = unknown or
                   failing; thicker lines are more trusted sources, dashed lines are requests still open.
                 </div>
               </>
             ) : (
-              <div className="small dim" style={{ padding: 20 }}>Loading the evidence graph…</div>
+              <div className="small dim" style={{ padding: 26 }}>Loading the evidence graph…</div>
             )}
           </div>
         )}
@@ -291,7 +291,7 @@ export default function CenterPane() {
               Latest
             </button>
             <button className="btn btn-xs btn-primary" onClick={branch} disabled={branching || s.running || !!s.busy}>
-              {branching ? <Spinner size={10} /> : null} Branch from here
+              {branching ? <Spinner size={13} /> : null} Branch from here
             </button>
           </>
         )}

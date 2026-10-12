@@ -81,7 +81,7 @@ export default function GuidePane() {
         return (
           <section key={st.id} className={`gstep gstep-${state}${open ? " open" : ""}`}>
             <button className="gstep-head" onClick={() => setOpenStage(open && st.id !== cur ? null : st.id)} aria-expanded={open}>
-              <span className="gstep-n" aria-hidden="true">{state === "done" ? <Check size={11} /> : i + 1}</span>
+              <span className="gstep-n" aria-hidden="true">{state === "done" ? <Check size={14} /> : i + 1}</span>
               <span className="gstep-title">{st.label}</span>
               <span className="grow" />
               <StageSummary stage={st.id} />
@@ -272,7 +272,7 @@ function IntakeStage() {
       </label>
       <div className="row">
         <button className="btn btn-primary" onClick={analyze} disabled={busy !== ""}>
-          {busy ? <Spinner size={12} /> : <CameraIcon />} {busy === "upload" ? "Uploading…" : busy === "analyze" ? "Analyzing with GPT-6…" : intake ? "Analyze again" : "Analyze photos"}
+          {busy ? <Spinner size={16} /> : <CameraIcon />} {busy === "upload" ? "Uploading…" : busy === "analyze" ? "Analyzing with GPT-6…" : intake ? "Analyze again" : "Analyze photos"}
         </button>
         {intake && (
           <button className="btn btn-ghost btn-sm" onClick={() => kin.setStage(s.sid, "capture").then(() => s.refresh())}>
@@ -429,10 +429,10 @@ function CaptureStage() {
       )}
       <div className="row-wrap">
         <button className="btn btn-primary" onClick={check} disabled={busy !== ""}>
-          {busy === "check" ? <Spinner size={12} /> : null} {answered ? `Save ${answered} reading${answered === 1 ? "" : "s"} & ` : ""}Check what's still missing
+          {busy === "check" ? <Spinner size={16} /> : null} {answered ? `Save ${answered} reading${answered === 1 ? "" : "s"} & ` : ""}Check what's still missing
         </button>
         <button className="btn btn-ghost btn-sm" onClick={skip} disabled={busy !== ""}>
-          {busy === "skip" ? <Spinner size={11} /> : null} Design with the estimates →
+          {busy === "skip" ? <Spinner size={14} /> : null} Design with the estimates →
         </button>
       </div>
       <div className="small dim">
@@ -496,7 +496,7 @@ function ShotSlot({ shot, index, photos }: { shot: CaptureShot; index: number; p
         )}
         <div className="row-wrap" style={{ marginTop: 6 }}>
           <button className="btn btn-xs" onClick={() => input.current?.click()} disabled={busy}>
-            {busy ? <Spinner size={10} /> : <CameraIcon />} {best ? "Retake" : "Take / upload"}
+            {busy ? <Spinner size={13} /> : <CameraIcon />} {best ? "Retake" : "Take / upload"}
           </button>
           <input
             ref={input}
@@ -604,12 +604,12 @@ function SpecStage() {
       {ev && ev.nodes.some((n) => n.type === "estimate" || n.type === "photo") && (
         <div>
           <button className="btn btn-ghost btn-xs" onClick={() => setShowMap((v) => !v)}>
-            {showMap ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Evidence map
+            {showMap ? <ChevronDown size={16} /> : <ChevronRight size={16} />} Evidence map
           </button>
           {showMap && (
-            <div className="gcard" style={{ padding: 6 }}>
+            <div className="gcard" style={{ padding: 8 }}>
               <EvidenceMap graph={ev} compact />
-              <div className="small dim" style={{ padding: "0 4px" }}>
+              <div className="small dim" style={{ padding: "0 5px" }}>
                 photos, readings and standards on the left → the estimates they gave → the dimensions they support; thicker lines are more trusted
                 sources, dashed lines are requests still open.
               </div>
@@ -655,7 +655,7 @@ function SpecStage() {
           <span className="small dim">{budget} iterations max · 2 critic rounds</span>
         </div>
         <button className="btn btn-primary btn-lg" onClick={start} disabled={starting || s.running || dims.length === 0}>
-          {starting ? <Spinner size={13} /> : <PlayIcon />} {hasRun ? "Design again" : "Design this part"}
+          {starting ? <Spinner size={17} /> : <PlayIcon />} {hasRun ? "Design again" : "Design this part"}
         </button>
         <span className="small dim">
           {llm.status?.provider === "fake" ? "Demo mode: a scripted designer builds from the closest template." : `${llm.status?.models.designer || "GPT-6"} writes the OpenSCAD, compiles it, measures the mesh against every dimension above and fixes what fails — then a second model reviews the drawings.`}
@@ -724,7 +724,7 @@ function DimRow({ itf, name, dim, mates, fit }: { itf: string; name: string; dim
             aria-label={`measured ${full} in mm`}
           />
           <button className="btn btn-xs btn-primary" onClick={confirm} disabled={busy || !v.trim()}>
-            {busy ? <Spinner size={10} /> : "Confirm"}
+            {busy ? <Spinner size={13} /> : "Confirm"}
           </button>
         </div>
       )}
@@ -761,7 +761,7 @@ function DesignStage() {
       <div className="stack">
         <div className="gcard stack">
           <div className="row-wrap">
-            <Spinner size={13} />
+            <Spinner size={17} />
             <b>{phase}</b>
             <span className="grow" />
             <span className="num small">{fmtElapsed(p.elapsed)}</span>
@@ -787,7 +787,7 @@ function DesignStage() {
           </div>
           {p.tool && (
             <div className="card-tool">
-              <Gear size={11} />
+              <Gear size={14} />
               <span className="tool-name">{p.tool.name}</span>
               {p.tool.arg && <span className="tool-arg">{p.tool.arg}</span>}
             </div>
@@ -836,7 +836,7 @@ function DesignStage() {
                 />
               ))}
               <button className="btn btn-primary" onClick={() => reply(allTaken ? "Photos added and measured; the spec has the new values." : "Continue with the current spec.")} disabled={sending}>
-                {sending ? <Spinner size={11} /> : <ReqCameraIcon />} {allTaken ? "Resume with these photos" : "Resume without photos"}
+                {sending ? <Spinner size={14} /> : <ReqCameraIcon />} {allTaken ? "Resume with these photos" : "Resume without photos"}
               </button>
             </div>
           )}
@@ -860,7 +860,7 @@ function DesignStage() {
               }}
             />
             <button className="btn btn-sm btn-primary" onClick={() => reply(answer)} disabled={sending || !answer.trim()}>
-              {sending ? <Spinner size={10} /> : "Reply"}
+              {sending ? <Spinner size={13} /> : "Reply"}
             </button>
           </div>
         </div>
@@ -949,7 +949,7 @@ function RunAgain({ label }: { label: string }) {
       {!llm.ready && <NotReady what="run the designer" />}
       <textarea className="textarea" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Optional note for the designer, e.g. make the loop wider for gloved fingers…" />
       <button className="btn btn-primary" onClick={go} disabled={busy || s.running}>
-        {busy ? <Spinner size={12} /> : <PlayIcon />} {label}
+        {busy ? <Spinner size={16} /> : <PlayIcon />} {label}
       </button>
     </div>
   );
@@ -1014,7 +1014,7 @@ function ReviewStage() {
           <ul className="review-list">
             {hard.slice(0, 8).map((i) => (
               <li key={i.id} className={i.passed === false ? "bad" : ""}>
-                <span className="review-mark" aria-label={i.passed === false ? "fails" : "passes"}>{i.passed === false ? <Cross size={11} /> : <Check size={11} />}</span>
+                <span className="review-mark" aria-label={i.passed === false ? "fails" : "passes"}>{i.passed === false ? <Cross size={14} /> : <Check size={14} />}</span>
                 <span className="review-lab">{i.label}</span>
                 <span className="review-val num">
                   {typeof i.measured === "number" ? fmtNum(i.measured) : ""}
@@ -1040,17 +1040,17 @@ function ReviewStage() {
         <textarea className="textarea" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="e.g. add a second finger loop, thicken the ring to 4 mm, round the outer edge…" />
         <div className="row-wrap">
           <button className="btn" onClick={change} disabled={busy !== "" || s.running || !msg.trim()}>
-            {busy === "change" ? <Spinner size={11} /> : null} Ask the designer
+            {busy === "change" ? <Spinner size={14} /> : null} Ask the designer
           </button>
           <span className="grow" />
           <button className="btn btn-primary" onClick={doExport} disabled={busy !== "" || s.running || !d.iterations.some((i) => i.compile_ok)}>
-            {busy === "export" ? <Spinner size={11} /> : <DownloadIcon />} Looks right — export
+            {busy === "export" ? <Spinner size={14} /> : <DownloadIcon />} Looks right — export
           </button>
         </div>
       </div>
       <div className="gcard cz-guide-card">
         <div className="row-wrap" style={{ alignItems: "center" }}>
-          <div className="stack-tight" style={{ flex: "1 1 200px" }}>
+          <div className="stack-tight" style={{ flex: "1 1 260px" }}>
             <b>Or adjust it yourself</b>
             <span className="small dim">
               Every parameter is a slider or a switch; fit dimensions show where their number came from; the 3D view previews each change as a draft;
@@ -1068,7 +1068,7 @@ function ReviewStage() {
 
 function SlidersSmallIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <path d="M4 7h16M4 12h16M4 17h16" />
       <circle cx="9" cy="7" r="2" fill="currentColor" />
       <circle cx="15" cy="12" r="2" fill="currentColor" />
@@ -1147,7 +1147,7 @@ function ExportStage() {
 
 function CameraIcon(): ReactNode {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
       <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
       <circle cx="12" cy="13" r="3.2" />
     </svg>
@@ -1155,14 +1155,14 @@ function CameraIcon(): ReactNode {
 }
 function PlayIcon() {
   return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <path d="M6 4l14 8-14 8z" />
     </svg>
   );
 }
 function DownloadIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3" />
     </svg>
   );

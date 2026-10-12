@@ -204,10 +204,10 @@ export default function Home() {
         <span className="header-spacer" />
         <ProviderPill />
         <a className="btn btn-sm btn-icon-sm" href={sheetPdfUrl} target="_blank" rel="noreferrer" aria-label="Calibration sheet (PDF)">
-          <Download size={13} /> <span className="btn-text">Calibration sheet</span>
+          <Download size={17} /> <span className="btn-text">Calibration sheet</span>
         </a>
         <button className="btn btn-sm btn-icon-sm" onClick={llm.openSettings} aria-label="Settings">
-          <Gear size={13} /> <span className="btn-text">Settings</span>
+          <Gear size={17} /> <span className="btn-text">Settings</span>
         </button>
         <UserChip />
       </header>
@@ -317,7 +317,7 @@ export default function Home() {
                           <span key={`${f.name}-${i}`} className="pill pill-neutral" title={f.name}>
                             <span>{f.name}</span>
                             <button className="toast-x" style={{ padding: 0 }} aria-label={`Remove ${f.name}`} onClick={() => setFiles((fs) => fs.filter((_, j) => j !== i))}>
-                              <Close size={11} />
+                              <Close size={14} />
                             </button>
                           </span>
                         ))}
@@ -352,7 +352,7 @@ export default function Home() {
                   </label>
                   <div className="row">
                     <button className="btn btn-primary" onClick={onAnalyze} disabled={intakeStep > 0 && intakeStep < 4}>
-                      {intakeStep > 0 && intakeStep < 4 ? <Spinner size={12} /> : <Camera size={13} />}
+                      {intakeStep > 0 && intakeStep < 4 ? <Spinner size={16} /> : <Camera size={17} />}
                       Analyze photos
                     </button>
                     {intakeStep > 0 && (
@@ -419,7 +419,7 @@ export default function Home() {
               {mode === "spec" && (
                 <>
                   <button className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setShowScad((v) => !v)}>
-                    {showScad ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Optional starting part.scad
+                    {showScad ? <ChevronDown size={16} /> : <ChevronRight size={16} />} Optional starting part.scad
                   </button>
                   {showScad && (
                     <textarea
@@ -433,7 +433,7 @@ export default function Home() {
                   )}
                   <div className="row">
                     <button className="btn btn-primary" onClick={onCreate} disabled={creating}>
-                      {creating ? <Spinner size={12} /> : <Plus size={13} />}
+                      {creating ? <Spinner size={16} /> : <Plus size={17} />}
                       Create session
                     </button>
                     <span className="field-hint">You can run the designer, edit params or code from the workspace.</span>
@@ -460,7 +460,7 @@ export default function Home() {
                 onClick={() => archiveInput.current?.click()}
                 disabled={importing}
               >
-                {importing ? <Spinner size={11} /> : <Upload size={12} />} Import archive
+                {importing ? <Spinner size={14} /> : <Upload size={16} />} Import archive
               </button>
               <input
                 ref={archiveInput}
@@ -483,7 +483,7 @@ export default function Home() {
               </div>
             ) : sorted.length === 0 ? (
               <div className="panel-body">
-                <Empty title="No parts yet" icon={<Camera size={30} stroke={1.4} />}>
+                <Empty title="No parts yet" icon={<Camera size={39} stroke={1.4} />}>
                   Print the{" "}
                   <a href={sheetPdfUrl} target="_blank" rel="noreferrer">
                     calibration sheet
@@ -553,7 +553,7 @@ function Step({ n, cur, label }: { n: number; cur: number; label: string }) {
   const cls = cur > n ? "done" : cur === n ? "active" : "";
   return (
     <div className={`step ${cls}`}>
-      {cur > n ? <Check size={11} /> : cur === n ? <Spinner size={11} /> : <Dot size={11} />}
+      {cur > n ? <Check size={14} /> : cur === n ? <Spinner size={14} /> : <Dot size={14} />}
       <span>{label}</span>
     </div>
   );

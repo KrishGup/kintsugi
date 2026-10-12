@@ -31,7 +31,7 @@ export default function StageBar() {
 
 function CheckMark() {
   return (
-    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m4 12.5 5 5L20 6.5" />
     </svg>
   );

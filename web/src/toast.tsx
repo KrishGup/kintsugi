@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div key={t.id} className={`toast toast-${t.kind}`}>
             <span className="toast-text">{t.text}</span>
             <button className="toast-x" onClick={() => dismiss(t.id)} aria-label="Dismiss">
-              <Close size={13} />
+              <Close size={17} />
             </button>
           </div>
         ))}

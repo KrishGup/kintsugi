@@ -98,7 +98,7 @@ export default function SpecTab() {
             Revert
           </button>
           <button className="btn btn-primary btn-sm" onClick={save} disabled={saving || !dirty}>
-            {saving ? <Spinner size={11} /> : null} Save
+            {saving ? <Spinner size={14} /> : null} Save
           </button>
         </div>
         {stale && (
@@ -198,7 +198,7 @@ export default function SpecTab() {
         {d.spec.open_questions && d.spec.open_questions.length > 0 && (
           <>
             <div className="section-title">Open questions</div>
-            <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+            <ul className="small" style={{ margin: 0, paddingLeft: 23 }}>
               {d.spec.open_questions.map((q, i) => (
                 <li key={i}>{q}</li>
               ))}
@@ -253,13 +253,13 @@ function ConfirmForm({ dim, initial }: { dim: string; initial?: number }) {
         aria-label={`Confirmed value for ${dim}`}
         placeholder="mm"
       />
-      <select className="select" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Measurement source" style={{ width: 92, padding: "3px 20px 3px 6px", fontSize: 11 }}>
+      <select className="select" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Measurement source" style={{ width: 120, padding: "4px 26px 4px 8px", fontSize: 14.5 }}>
         <option value="user_caliper">caliper</option>
         <option value="user_ruler">ruler</option>
         <option value="user_stated">stated</option>
       </select>
       <button className="btn btn-xs" onClick={go} disabled={busy || !value}>
-        {busy ? <Spinner size={10} /> : "Confirm"}
+        {busy ? <Spinner size={13} /> : "Confirm"}
       </button>
     </div>
   );

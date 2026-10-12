@@ -101,10 +101,10 @@ export default function Customizer() {
             </button>
           </div>
           <button className="btn btn-xs btn-ghost" onClick={cz.undo} disabled={!cz.canUndo} aria-label="Undo (Ctrl+Z)">
-            <Undo size={13} />
+            <Undo size={17} />
           </button>
           <button className="btn btn-xs btn-ghost" onClick={cz.redo} disabled={!cz.canRedo} aria-label="Redo (Ctrl+Shift+Z)">
-            <Redo size={13} />
+            <Redo size={17} />
           </button>
           <PresetsMenu />
           <MoreMenu />
@@ -130,7 +130,7 @@ export default function Customizer() {
         <StatusStrip />
       </div>
 
-      {groups.length === 0 && <div className="small dim" style={{ padding: 12 }}>No parameter matches.</div>}
+      {groups.length === 0 && <div className="small dim" style={{ padding: 16 }}>No parameter matches.</div>}
       {groups.map((g) => (
         <section className="cz-group" key={g.section}>
           {(section === "all" || sections.length === 1) && (
@@ -160,7 +160,7 @@ export default function Customizer() {
         )}
         <div className="cz-footer-row">
           <button className="btn btn-primary btn-sm" onClick={() => cz.apply({ updateSpec })} disabled={disabled || !cz.nChanged}>
-            {cz.applying ? <Spinner size={11} /> : <CheckIcon />} Apply &amp; verify{cz.nChanged ? ` (${cz.nChanged})` : ""}
+            {cz.applying ? <Spinner size={14} /> : <CheckIcon />} Apply &amp; verify{cz.nChanged ? ` (${cz.nChanged})` : ""}
           </button>
           <button className="btn btn-ghost btn-sm" onClick={cz.resetAll} disabled={!cz.nChanged || cz.applying}>
             Reset
@@ -208,7 +208,7 @@ function StatusStrip() {
   if (pv.status === "running" || pv.status === "queued")
     return (
       <div className="cz-status">
-        <Spinner size={11} /> <span>compiling the draft preview…</span>
+        <Spinner size={14} /> <span>compiling the draft preview…</span>
       </div>
     );
   if (pv.status === "error")
@@ -317,7 +317,7 @@ function ComputedPanel() {
               {d.expr && <span className="cz-formula mono dim">= {d.expr}</span>}
               {lim.length > 0 && (
                 <span className="cz-derived-lim num">
-                  {bad && <Cross size={10} />} {lim.join(" ")}
+                  {bad && <Cross size={13} />} {lim.join(" ")}
                 </span>
               )}
               <span className="num cz-derived-val">{shown}</span>
@@ -375,7 +375,7 @@ function PresetsMenu() {
                     ))}
                   </span>
                   <button className="btn btn-xs btn-quiet-danger" onClick={() => cz.deletePreset(n)} aria-label={`Delete preset ${n}`}>
-                    <Close size={12} />
+                    <Close size={16} />
                   </button>
                 </div>
               );
@@ -423,7 +423,7 @@ function MoreMenu() {
   return (
     <div className="cz-menu" ref={box}>
       <button className={`btn btn-xs btn-ghost${open ? " active" : ""}`} onClick={() => setOpen((v) => !v)} aria-label="More: preview options, changes, export" aria-expanded={open}>
-        <More size={14} />
+        <More size={18} />
       </button>
       {open && (
         <div className="popover cz-more">
@@ -492,7 +492,7 @@ function MoreMenu() {
 
 function SlidersIcon() {
   return (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+    <svg width="47" height="47" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
       <path d="M4 7h16M4 12h16M4 17h16" />
       <circle cx="9" cy="7" r="1.8" fill="currentColor" />
       <circle cx="15" cy="12" r="1.8" fill="currentColor" />
@@ -502,7 +502,7 @@ function SlidersIcon() {
 }
 function SearchIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
     </svg>
@@ -510,21 +510,21 @@ function SearchIcon() {
 }
 function StarIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
       <path d="m12 3 2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.4 6.3 20.5l1.2-6.4L2.8 9.7l6.4-.8L12 3z" />
     </svg>
   );
 }
 function CheckIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="m4 12.5 5 5L20 6.5" />
     </svg>
   );
 }
 function DownloadIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 4v11m0 0 4-4m-4 4-4-4M4 19h16" />
     </svg>
   );

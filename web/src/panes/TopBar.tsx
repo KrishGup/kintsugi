@@ -100,7 +100,7 @@ export default function TopBar() {
         {!s.connected && (
           <Pill tone="warn">reconnecting…</Pill>
         )}
-        {s.busy && <Spinner size={12} label={s.busy} />}
+        {s.busy && <Spinner size={16} label={s.busy} />}
       </div>
 
       <div className="topbar-provider">
@@ -116,7 +116,7 @@ export default function TopBar() {
             disabled={s.running}
             aria-expanded={pop === "run"}
           >
-            <Play size={11} /> Run designer
+            <Play size={14} /> Run designer
           </button>
           {pop === "run" && (
             <div className="popover" role="dialog" aria-label="Run designer">
@@ -163,7 +163,7 @@ export default function TopBar() {
           )}
         </div>
         <button className="btn btn-sm" onClick={s.stopRun} disabled={!s.running}>
-          <Stop size={11} /> Stop
+          <Stop size={14} /> Stop
         </button>
         <span className="topbar-sep" />
         <div className="popover-anchor">
@@ -235,13 +235,13 @@ function CouponPopover({ onClose }: { onClose: () => void }) {
   return (
     <div className="popover" role="dialog" aria-label="Fit coupon">
       <h3>Fit coupon</h3>
-      <p className="small dim" style={{ margin: "0 0 8px" }}>
+      <p className="small dim" style={{ margin: "0 0 10px" }}>
         The coupon holds only the mating feature in three clearances (−0.2 / 0 / +0.2 mm). Print it flat, try each on the object, then tell
         Kintsugi which one slid on without force.
       </p>
       <div className="row mb">
         <button className="btn btn-sm" onClick={compile} disabled={compiling}>
-          {compiling ? <Spinner size={11} /> : null} {file ? "Recompile" : "Compile coupon"}
+          {compiling ? <Spinner size={14} /> : null} {file ? "Recompile" : "Compile coupon"}
         </button>
         {file && (
           <a className="btn btn-sm btn-primary" href={fileUrl(s.sid, file, Date.now())} download>
@@ -256,7 +256,7 @@ function CouponPopover({ onClose }: { onClose: () => void }) {
       <div className="coupon-choices">
         {choices.map((c, i) => (
           <button key={c} className={`btn${i === 1 ? " btn-primary" : ""}`} onClick={() => pick(c)} disabled={applying !== null}>
-            {applying === c ? <Spinner size={11} /> : <span className="num">{c.toFixed(2)}</span>}
+            {applying === c ? <Spinner size={14} /> : <span className="num">{c.toFixed(2)}</span>}
             <small>{i === 0 ? "tighter (−0.2)" : i === 1 ? "as designed" : "looser (+0.2)"}</small>
           </button>
         ))}
@@ -301,7 +301,7 @@ function ExportPopover({ onExport }: { onExport: () => Promise<unknown> }) {
       )}
       <div className="row mb">
         <button className="btn btn-primary btn-sm" onClick={go} disabled={working || !canExport}>
-          {working ? <Spinner size={11} /> : <ExportIcon />} {d.export.length ? "Re-export" : "Export"} last passing iteration
+          {working ? <Spinner size={14} /> : <ExportIcon />} {d.export.length ? "Re-export" : "Export"} last passing iteration
         </button>
         {!canExport && <span className="small dim">nothing has compiled yet</span>}
       </div>
@@ -340,7 +340,7 @@ function ExportPopover({ onExport }: { onExport: () => Promise<unknown> }) {
             if (s.running) e.preventDefault();
           }}
         >
-          <Download size={12} /> Download session archive (.zip)
+          <Download size={16} /> Download session archive (.zip)
         </a>
         {s.running && <span className="small dim">available when the run ends</span>}
       </div>
@@ -350,7 +350,7 @@ function ExportPopover({ onExport }: { onExport: () => Promise<unknown> }) {
 
 function CouponIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="7" cy="12" r="3.5" />
       <circle cx="17" cy="12" r="3.5" />
     </svg>
@@ -358,7 +358,7 @@ function CouponIcon() {
 }
 function ExportIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v4h16v-4" />
     </svg>
   );

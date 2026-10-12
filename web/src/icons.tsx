@@ -7,7 +7,7 @@ interface P {
   title?: string;
 }
 
-function Svg({ size = 14, stroke = 2, className, title, children }: P & { children: React.ReactNode }) {
+function Svg({ size = 18, stroke = 2, className, title, children }: P & { children: React.ReactNode }) {
   return (
     <svg
       width={size}

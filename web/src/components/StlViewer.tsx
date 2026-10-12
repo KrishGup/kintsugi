@@ -630,7 +630,7 @@ function fitCamera(st: Scene3, kind: "iso" | "top" | "front") {
 
 function CubeIcon() {
   return (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+    <svg width="47" height="47" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
       <path d="M12 3 3 7.5v9L12 21l9-4.5v-9L12 3z" />
       <path d="M3 7.5 12 12l9-4.5M12 12v9" />
     </svg>

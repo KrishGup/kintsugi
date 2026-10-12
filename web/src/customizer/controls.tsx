@@ -19,7 +19,7 @@ function Head({ p, right, children }: { p: Param; right?: ReactNode; children?: 
         {changed && (
           <span className="hover-anchor">
             <button className="cz-reset" onClick={() => cz.reset(p.name)} aria-label={`Reset ${p.name} to the verified value`}>
-              <Reset size={12} />
+              <Reset size={16} />
             </button>
             <span className="hover-card below" role="tooltip">
               back to <b className="num">{fmtValue(p, cz.verified[p.name], cz.units)}</b> (verified)

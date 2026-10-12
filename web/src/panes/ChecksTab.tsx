@@ -130,7 +130,7 @@ export default function ChecksTab() {
 
 function RulerIcon() {
   return (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+    <svg width="47" height="47" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
       <rect x="2" y="8" width="20" height="8" rx="1" />
       <path d="M6 8v3M10 8v4M14 8v3M18 8v4" />
     </svg>

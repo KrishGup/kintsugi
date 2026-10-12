@@ -181,7 +181,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           <h2>Model settings</h2>
           <span className="grow" />
           <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close">
-            <Close size={14} />
+            <Close size={18} />
           </button>
         </div>
         {!info ? (
@@ -270,7 +270,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 </label>
 
                 <button className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => setAdvanced((v) => !v)}>
-                  {advanced ? <ChevronDown size={12} /> : <ChevronRight size={12} />} Models &amp; reasoning effort
+                  {advanced ? <ChevronDown size={16} /> : <ChevronRight size={16} />} Models &amp; reasoning effort
                 </button>
                 {advanced && (
                   <div className="stack settings-adv">
@@ -322,7 +322,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               ) : (
                 <>
                   <button className="btn btn-primary" onClick={save} disabled={saving || !openaiReady}>
-                    {saving ? <Spinner size={12} /> : null} Save
+                    {saving ? <Spinner size={16} /> : null} Save
                   </button>
                   <button className="btn btn-ghost" onClick={onClose}>
                     Cancel

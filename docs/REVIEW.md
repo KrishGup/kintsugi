@@ -213,3 +213,33 @@ minute" instead of "a moment".
 five" — the report's headline is 2 of the 3 defects the numbers cannot see (the other two also trip a check), now said
 that way; the README's "~1.6–1.7× faster per iteration" had no measurement behind it in the repo and was dropped; "every
 Kintsugi part passed every check" became "passed its checks" (the A/B table records hard checks).
+
+## The interface at 1.3× (2026-10-12)
+
+The owner, on a large screen: "This is so small." Every size was raised by 30 % in the source — not a CSS zoom: the
+stylesheet declaration by declaration (type to the half pixel, everything else to the whole pixel; 1 px hairlines,
+1–2 px borders and the 999 px pill radius kept; shadows, radii, gaps, paddings, widths, heights, letter-spacing,
+`translate()` and the media-query breakpoints scaled), every icon and spinner size in the components (and the
+local icons' fixed `<svg width>`), the inline paddings and widths, the Monaco font (12 → 16 px, line 18 → 23), the
+brand mark, the image-viewer margins and the pane geometry (455 / 468 px panes, limits, handle, fold distance,
+keyboard step). The drafting-sheet grid went 24 / 120 → 31 / 155 px. Body text is now 17 px (was 13), labels 14–16
+(were 11–12). The SVG graphs keep their internal sizes on purpose: they already scale with their pane.
+`DESIGN.md` and `.impeccable/design.json` record the new scale.
+
+Walked at 1280, 1440, 1920 and 2560 px wide and on a 390 px phone, light and dark:
+
+- **Found: the scaling pass skipped real rules.** The guard meant for SVG text matched class names containing
+  "path", "line" or "text" (`.path`, `.ws-handle-line`, `.summary-line`), and the guard for the 999 px pill radius
+  also froze the home column's `max-width: 1200px` — the home page did not widen at all on a big screen. → those
+  rules scaled by hand (home column 1560 px).
+- **Found: the bigger panes squeezed the 3D view on a laptop.** At 1440 px the 455 + 468 px panes left the centre
+  ~470 px; its header (tabs, part/coupon/assembly, iteration, view picker) needs ~950 px and was scrolling the picker
+  out of sight, and the right pane's six tabs scrolled "Graph" away. → default pane widths now follow the window (a
+  quarter each, between the minimum and the full width; saved widths use a new key so old, smaller ones don't
+  apply), and pane heads wrap instead of scroll: on a laptop the view picker and the last tab sit on a second row,
+  on a wide screen everything is one row. No head overflows at any of the four widths.
+- **Found: on a phone the session name truncated to "bott…".** The title group's flex basis was its full content
+  width, so it dropped under the mark and clipped the name. → it now shares the mark's row and wraps inside itself:
+  the name on top, iteration and status under it.
+- `walk.py` holds every expectation (desktop and phone, no horizontal scroll, no page errors); its page screenshots
+  now retry once, because a freshly launched Chromium sometimes refuses its first capture.

@@ -520,19 +520,19 @@
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "The home hero line only (28px; 24px under 720px)."
+        "purpose": "The home hero line only (36px; 31px under 936px)."
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Base h1 (22px); session title 18px, brand name 18px uppercase at 0.04em."
+        "purpose": "Base h1 (29px); session title 23px, brand name 23px uppercase at 0.04em."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "h2 17px and h3 14px in content; guide-step and empty-state titles at 600/14px; modal head 600/16px."
+        "purpose": "h2 22px and h3 18px in content; guide-step and empty-state titles at 600/18px; modal head 600/21px."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "The 13px/1.5 base; tables and timeline cards 12.5px; hints 11-12px."
+        "purpose": "The 17px/1.5 base; tables and timeline cards 16px; hints 11-16px."
       },
       "label": {
         "displayName": "Label — title block",
@@ -540,51 +540,51 @@
       },
       "label-small": {
         "displayName": "Label — column",
-        "purpose": "Uppercase, Ink 3: table heads and card heads; .label at 0.08em, dt at 0.04em. Field labels are 12px 600 0.04em, not uppercase."
+        "purpose": "Uppercase, Ink 3: table heads and card heads; .label at 0.08em, dt at 0.04em. Field labels are 16px 600 0.04em, not uppercase."
       },
       "button": {
         "displayName": "Button",
-        "purpose": "The .btn family, mixed case; 12px small, 11px extra-small, 14px large. Tabs and segmented switches go uppercase at 12px."
+        "purpose": "The .btn family, mixed case; 16px small, 14px extra-small, 18px large. Tabs and segmented switches go uppercase at 16px."
       },
       "mono": {
         "displayName": "Mono — measured value",
-        "purpose": "Tabular figures for measured, computed and target values, parameter names, chips and readouts; 11.5px summary lines, 11px HUD and dim labels, 10px counts."
+        "purpose": "Tabular figures for measured, computed and target values, parameter names, chips and readouts; 15px summary lines, 14px HUD and dim labels, 13px counts."
       }
     },
     "shadows": [
       {
         "name": "rest",
-        "value": "0 1px 2px rgba(5, 20, 46, 0.06), 0 2px 6px rgba(5, 20, 46, 0.04)",
-        "purpose": "Panels, panes, the top bar and the mobile pane switch; reads flat. Dark: 0 1px 2px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25)."
+        "value": "0 1px 3px rgba(5, 20, 46, 0.06), 0 3px 8px rgba(5, 20, 46, 0.04)",
+        "purpose": "Panels, panes, the top bar and the mobile pane switch; reads flat. Dark: 0 1px 3px rgba(0,0,0,.35), 0 3px 10px rgba(0,0,0,.25)."
       },
       {
         "name": "pop",
-        "value": "0 10px 28px rgba(5, 20, 46, 0.18), 0 2px 6px rgba(5, 20, 46, 0.08)",
-        "purpose": "Toasts, popovers and the settings modal — the only visible lift. Dark: 0 12px 32px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3)."
+        "value": "0 13px 36px rgba(5, 20, 46, 0.18), 0 3px 8px rgba(5, 20, 46, 0.08)",
+        "purpose": "Toasts, popovers and the settings modal — the only visible lift. Dark: 0 16px 42px rgba(0,0,0,.5), 0 3px 8px rgba(0,0,0,.3)."
       },
       {
         "name": "focus-halo",
-        "value": "0 0 0 3px rgba(21, 93, 211, 0.22)",
-        "purpose": "Buttons, inputs, thumb and switch on :focus-visible, with the border turned Action Blue; tabs and segments take it inset at 2px. Dark: rgba(108,158,240,.3)."
+        "value": "0 0 0 4px rgba(21, 93, 211, 0.22)",
+        "purpose": "Buttons, inputs, thumb and switch on :focus-visible, with the border turned Action Blue; tabs and segments take it inset at 3px. Dark: rgba(108,158,240,.3)."
       },
       {
         "name": "focus-outline",
-        "value": "2px solid #155dd3, offset 2px",
+        "value": "3px solid #155dd3, offset 3px",
         "purpose": "The global :focus-visible outline for everything without its own halo."
       },
       {
         "name": "current-ring",
-        "value": "0 0 0 2px #e2ecfc",
+        "value": "0 0 0 3px #e2ecfc",
         "purpose": "The guide's current step and a focused number box, on a blue border."
       },
       {
         "name": "thumb",
-        "value": "0 1px 3px rgba(0, 0, 0, 0.25)",
-        "purpose": "The slider thumb; the switch knob uses 0 1px 2px at the same alpha."
+        "value": "0 1px 4px rgba(0, 0, 0, 0.25)",
+        "purpose": "The slider thumb; the switch knob uses 0 1px 3px at the same alpha."
       },
       {
         "name": "scrim",
-        "value": "rgba(5, 20, 46, 0.5) + backdrop-filter: blur(2px)",
+        "value": "rgba(5, 20, 46, 0.5) + backdrop-filter: blur(3px)",
         "purpose": "Behind the settings modal."
       }
     ],
@@ -602,7 +602,7 @@
       {
         "name": "duration-pop",
         "value": "160ms / 180ms",
-        "purpose": "Popover pop-in (fade, translateY(-4px)); toast and modal rise-in (fade, translateY(6px))."
+        "purpose": "Popover pop-in (fade, translateY(-5px)); toast and modal rise-in (fade, translateY(8px))."
       },
       {
         "name": "duration-settle",
@@ -627,7 +627,7 @@
       {
         "name": "spin",
         "value": "0.8s linear infinite",
-        "purpose": "The 14px spinner (2px rule, Action Blue cap)."
+        "purpose": "The 18px spinner (3px rule, Action Blue cap)."
       },
       {
         "name": "reduced-motion",
@@ -638,28 +638,28 @@
     "breakpoints": [
       {
         "name": "phone",
-        "value": "720px",
-        "purpose": "Header compacts, brand tag and path hide, icon buttons drop their text, hero drops to 24px."
+        "value": "936px",
+        "purpose": "Header compacts, brand tag and path hide, icon buttons drop their text, hero drops to 31px."
       },
       {
         "name": "tablet",
-        "value": "980px",
+        "value": "1274px",
         "purpose": "Workspace collapses to one pane with a bottom switch; home goes single-column; top bar and centre head wrap."
       }
     ],
     "layout": {
       "homeMaxWidth": "1200px",
-      "homePadding": "28px 20px 56px",
-      "homeGrid": "minmax(0, 7fr) minmax(0, 5fr) / gap 20px",
-      "headerHeight": "52px",
-      "topbarHeight": "50px",
-      "paneHeadHeight": "38px",
-      "paneBodyPadding": "12px",
-      "workspaceColumns": "350px minmax(0, 1fr) 360px",
-      "workspaceGap": "10px",
-      "workspacePadding": "10px",
-      "gridMinor": "24px",
-      "gridMajor": "120px",
+      "homePadding": "36px 26px 73px",
+      "homeGrid": "minmax(0, 7fr) minmax(0, 5fr) / gap 26px",
+      "headerHeight": "68px",
+      "topbarHeight": "65px",
+      "paneHeadHeight": "49px",
+      "paneBodyPadding": "16px",
+      "workspaceColumns": "455px minmax(0, 1fr) 468px",
+      "workspaceGap": "13px",
+      "workspacePadding": "13px",
+      "gridMinor": "31px",
+      "gridMajor": "156px",
       "gridOffset": "-1px -1px"
     },
     "icons": {
@@ -669,9 +669,9 @@
       "strokeWidth": 2,
       "caps": "round",
       "joins": "round",
-      "defaultSize": "14px",
-      "controlSizes": "11-14px",
-      "emptyStateSizes": "30-36px at stroke 1.3-1.4",
+      "defaultSize": "18px",
+      "controlSizes": "11-18px",
+      "emptyStateSizes": "30-47px at stroke 1.3-1.4",
       "weightExceptions": {
         "Check": 2.6,
         "Cross": 2.4,
@@ -687,7 +687,7 @@
       "refersTo": "button-primary",
       "description": "The one action a view asks for (Analyze photos, Create session, Run designer): Action Blue fill, white text, pressed blue on hover and active.",
       "html": "<button class=\"ds-btn-primary\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8h3l2-3h6l2 3h3v11H4z\"/><circle cx=\"12\" cy=\"13\" r=\"3.2\"/></svg>Analyze photos</button>",
-      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:13px;letter-spacing:.02em;line-height:1;min-height:30px;padding:6px 11px;border-radius:var(--radius,4px);border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s cubic-bezier(.2,.7,.2,1),border-color .15s cubic-bezier(.2,.7,.2,1),color .15s cubic-bezier(.2,.7,.2,1),box-shadow .15s cubic-bezier(.2,.7,.2,1);background:var(--blue,#155dd3);border-color:var(--blue,#155dd3);color:var(--on-accent,#fff)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 3px var(--focus-halo,rgba(21,93,211,.22));border-color:var(--focus,#155dd3)}.ds-btn-primary:disabled{opacity:.45;cursor:not-allowed}.ds-btn-primary:hover:not(:disabled),.ds-btn-primary:active:not(:disabled){background:var(--blue-hover,#124fb4);border-color:var(--blue-hover,#124fb4);color:var(--on-accent,#fff)}"
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:17px;letter-spacing:.02em;line-height:1;min-height:39px;padding:8px 14px;border-radius:var(--radius,5px);border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s cubic-bezier(.2,.7,.2,1),border-color .15s cubic-bezier(.2,.7,.2,1),color .15s cubic-bezier(.2,.7,.2,1),box-shadow .15s cubic-bezier(.2,.7,.2,1);background:var(--blue,#155dd3);border-color:var(--blue,#155dd3);color:var(--on-accent,#fff)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 4px var(--focus-halo,rgba(21,93,211,.22));border-color:var(--focus,#155dd3)}.ds-btn-primary:disabled{opacity:.45;cursor:not-allowed}.ds-btn-primary:hover:not(:disabled),.ds-btn-primary:active:not(:disabled){background:var(--blue-hover,#124fb4);border-color:var(--blue-hover,#124fb4);color:var(--on-accent,#fff)}"
     },
     {
       "name": "Secondary Button",
@@ -695,7 +695,7 @@
       "refersTo": "button-secondary",
       "description": "The default bench button: white with a 1 px rule; hover turns the border Dimension Blue and the fill soft blue; active mixes in Tolerance Tint.",
       "html": "<button class=\"ds-btn-secondary\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3\"/></svg>Calibration sheet</button>",
-      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:13px;letter-spacing:.02em;line-height:1;min-height:30px;padding:6px 11px;border-radius:var(--radius,4px);border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s cubic-bezier(.2,.7,.2,1),border-color .15s cubic-bezier(.2,.7,.2,1),color .15s cubic-bezier(.2,.7,.2,1),box-shadow .15s cubic-bezier(.2,.7,.2,1);}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 3px var(--focus-halo,rgba(21,93,211,.22));border-color:var(--focus,#155dd3)}.ds-btn-secondary:disabled{opacity:.45;cursor:not-allowed}.ds-btn-secondary:hover:not(:disabled){border-color:var(--mid,#6c9ef0);background:var(--blue-soft,#e2ecfc);color:var(--ink,#05142e)}.ds-btn-secondary:active:not(:disabled){background:color-mix(in srgb,var(--blue-soft,#e2ecfc) 70%,var(--pale,#bed4f9))}"
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:17px;letter-spacing:.02em;line-height:1;min-height:39px;padding:8px 14px;border-radius:var(--radius,5px);border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s cubic-bezier(.2,.7,.2,1),border-color .15s cubic-bezier(.2,.7,.2,1),color .15s cubic-bezier(.2,.7,.2,1),box-shadow .15s cubic-bezier(.2,.7,.2,1);}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 4px var(--focus-halo,rgba(21,93,211,.22));border-color:var(--focus,#155dd3)}.ds-btn-secondary:disabled{opacity:.45;cursor:not-allowed}.ds-btn-secondary:hover:not(:disabled){border-color:var(--mid,#6c9ef0);background:var(--blue-soft,#e2ecfc);color:var(--ink,#05142e)}.ds-btn-secondary:active:not(:disabled){background:color-mix(in srgb,var(--blue-soft,#e2ecfc) 70%,var(--pale,#bed4f9))}"
     },
     {
       "name": "Ghost Button",
@@ -703,39 +703,39 @@
       "refersTo": "button-ghost",
       "description": "Quiet actions beside a title (Refresh, disclosure toggles): transparent with Ink 2 text; hover fills soft blue and turns the text Action Blue.",
       "html": "<button class=\"ds-btn-ghost\">Refresh</button>",
-      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:13px;letter-spacing:.02em;line-height:1;min-height:30px;padding:6px 11px;border-radius:var(--radius,4px);border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s cubic-bezier(.2,.7,.2,1),border-color .15s cubic-bezier(.2,.7,.2,1),color .15s cubic-bezier(.2,.7,.2,1),box-shadow .15s cubic-bezier(.2,.7,.2,1);background:transparent;border-color:transparent;color:var(--ink-2,#3c485c)}.ds-btn-ghost:focus-visible{outline:none;box-shadow:0 0 0 3px var(--focus-halo,rgba(21,93,211,.22));border-color:var(--focus,#155dd3)}.ds-btn-ghost:disabled{opacity:.45;cursor:not-allowed}.ds-btn-ghost:hover:not(:disabled){background:var(--blue-soft,#e2ecfc);border-color:transparent;color:var(--blue,#155dd3)}"
+      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:17px;letter-spacing:.02em;line-height:1;min-height:39px;padding:8px 14px;border-radius:var(--radius,5px);border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);cursor:pointer;white-space:nowrap;user-select:none;transition:background .15s cubic-bezier(.2,.7,.2,1),border-color .15s cubic-bezier(.2,.7,.2,1),color .15s cubic-bezier(.2,.7,.2,1),box-shadow .15s cubic-bezier(.2,.7,.2,1);background:transparent;border-color:transparent;color:var(--ink-2,#3c485c)}.ds-btn-ghost:focus-visible{outline:none;box-shadow:0 0 0 4px var(--focus-halo,rgba(21,93,211,.22));border-color:var(--focus,#155dd3)}.ds-btn-ghost:disabled{opacity:.45;cursor:not-allowed}.ds-btn-ghost:hover:not(:disabled){background:var(--blue-soft,#e2ecfc);border-color:transparent;color:var(--blue,#155dd3)}"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "A labelled field: Barlow 600 label, white input on a 1 px rule with a Dimension Blue hover border and a blue focus halo, 11 px hint beneath.",
+      "description": "A labelled field: Barlow 600 label, white input on a 1 px rule with a Dimension Blue hover border and a blue focus halo, 14 px hint beneath.",
       "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">What broke?</span><input class=\"ds-input\" placeholder=\"One sentence: the carry handle of this 1 L water bottle snapped at the ring…\"><span class=\"ds-field-hint\">Put the object on the printed calibration sheet and shoot straight down.</span></label>",
-      "css": ".ds-field{display:flex;flex-direction:column;gap:4px;font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:13px;line-height:1.5;color:var(--ink,#05142e);max-width:420px}.ds-field-label{font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:12px;letter-spacing:.04em;color:var(--ink-2,#3c485c)}.ds-input{width:100%;box-sizing:border-box;border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);border-radius:var(--radius,4px);padding:6px 8px;font:inherit;font-size:13px;line-height:1.4;caret-color:var(--blue,#155dd3)}.ds-input::placeholder{color:var(--ink-3,#5b6982);opacity:1}.ds-input:hover:not(:disabled){border-color:var(--mid,#6c9ef0)}.ds-input:focus{outline:none;border-color:var(--focus,#155dd3);box-shadow:0 0 0 3px var(--focus-halo,rgba(21,93,211,.22))}.ds-input:disabled{opacity:.55;background:var(--sheet-2,#f7fafe)}.ds-input[aria-invalid=\"true\"]{border-color:var(--fail,#b8322a)}.ds-field-hint{font-size:11px;color:var(--ink-3,#5b6982)}"
+      "css": ".ds-field{display:flex;flex-direction:column;gap:5px;font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:17px;line-height:1.5;color:var(--ink,#05142e);max-width:546px}.ds-field-label{font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:16px;letter-spacing:.04em;color:var(--ink-2,#3c485c)}.ds-input{width:100%;box-sizing:border-box;border:1px solid var(--rule,#c9d6ec);background:var(--sheet,#fff);color:var(--ink,#05142e);border-radius:var(--radius,5px);padding:8px 10px;font:inherit;font-size:17px;line-height:1.4;caret-color:var(--blue,#155dd3)}.ds-input::placeholder{color:var(--ink-3,#5b6982);opacity:1}.ds-input:hover:not(:disabled){border-color:var(--mid,#6c9ef0)}.ds-input:focus{outline:none;border-color:var(--focus,#155dd3);box-shadow:0 0 0 4px var(--focus-halo,rgba(21,93,211,.22))}.ds-input:disabled{opacity:.55;background:var(--sheet-2,#f7fafe)}.ds-input[aria-invalid=\"true\"]{border-color:var(--fail,#b8322a)}.ds-field-hint{font-size:14px;color:var(--ink-3,#5b6982)}"
     },
     {
       "name": "Status Pills",
       "kind": "chip",
       "refersTo": "pill-neutral",
-      "description": "Status labels: 999 px pills at 11 px with a 1 px border; neutral on Sheet 2, or pass / fail / warn / blue on their soft fills. A running state adds a pulsing dot; colour always travels with a word.",
+      "description": "Status labels: 999 px pills at 14 px with a 1 px border; neutral on Sheet 2, or pass / fail / warn / blue on their soft fills. A running state adds a pulsing dot; colour always travels with a word.",
       "html": "<div class=\"ds-pills\"><span class=\"ds-pill ds-pill-neutral\">draft</span><span class=\"ds-pill ds-pill-pass\"><svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m4 12.5 5 5L20 6.5\"/></svg>verified</span><span class=\"ds-pill ds-pill-fail\">2 failed</span><span class=\"ds-pill ds-pill-warn\">estimated</span><span class=\"ds-pill ds-pill-blue\"><span class=\"ds-pill-dot\"></span>running</span></div>",
-      "css": ".ds-pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ds-pill{display:inline-flex;align-items:center;gap:5px;font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-weight:500;font-size:11px;line-height:1;padding:3px 7px;border-radius:999px;border:1px solid transparent;white-space:nowrap;font-variant-numeric:tabular-nums}.ds-pill-neutral{color:var(--ink-2,#3c485c);background:var(--sheet-2,#f7fafe);border-color:var(--rule,#c9d6ec)}.ds-pill-pass{color:var(--pass,#1f7a46);background:var(--pass-soft,#e3f3ea);border-color:color-mix(in srgb,var(--pass,#1f7a46) 35%,transparent)}.ds-pill-fail{color:var(--fail,#b8322a);background:var(--fail-soft,#fbe7e5);border-color:color-mix(in srgb,var(--fail,#b8322a) 35%,transparent)}.ds-pill-warn{color:var(--warn,#8f6008);background:var(--warn-soft,#fbf0d9);border-color:color-mix(in srgb,var(--warn,#8f6008) 35%,transparent)}.ds-pill-blue{color:var(--blue,#155dd3);background:var(--blue-soft,#e2ecfc);border-color:color-mix(in srgb,var(--blue,#155dd3) 35%,transparent)}.ds-pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:ds-pulse 1.2s ease-in-out infinite}@keyframes ds-pulse{0%,100%{opacity:1}50%{opacity:.25}}"
+      "css": ".ds-pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.ds-pill{display:inline-flex;align-items:center;gap:6px;font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-weight:500;font-size:14px;line-height:1;padding:4px 9px;border-radius:999px;border:1px solid transparent;white-space:nowrap;font-variant-numeric:tabular-nums}.ds-pill-neutral{color:var(--ink-2,#3c485c);background:var(--sheet-2,#f7fafe);border-color:var(--rule,#c9d6ec)}.ds-pill-pass{color:var(--pass,#1f7a46);background:var(--pass-soft,#e3f3ea);border-color:color-mix(in srgb,var(--pass,#1f7a46) 35%,transparent)}.ds-pill-fail{color:var(--fail,#b8322a);background:var(--fail-soft,#fbe7e5);border-color:color-mix(in srgb,var(--fail,#b8322a) 35%,transparent)}.ds-pill-warn{color:var(--warn,#8f6008);background:var(--warn-soft,#fbf0d9);border-color:color-mix(in srgb,var(--warn,#8f6008) 35%,transparent)}.ds-pill-blue{color:var(--blue,#155dd3);background:var(--blue-soft,#e2ecfc);border-color:color-mix(in srgb,var(--blue,#155dd3) 35%,transparent)}.ds-pill-dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:ds-pulse 1.2s ease-in-out infinite}@keyframes ds-pulse{0%,100%{opacity:1}50%{opacity:.25}}"
     },
     {
       "name": "Tabs",
       "kind": "nav",
       "refersTo": "tab",
-      "description": "The engineer's tabs: tracked condensed capitals in Ink 3 on a ruled strip; the active tab takes Action Blue text and a 2 px underline; a mono count badge sits beside the label.",
+      "description": "The engineer's tabs: tracked condensed capitals in Ink 3 on a ruled strip; the active tab takes Action Blue text and a 3 px underline; a mono count badge sits beside the label.",
       "html": "<nav class=\"ds-tabs\" aria-label=\"Engineer's tabs\"><button class=\"ds-tab ds-tab-active\">Checks <span class=\"ds-tab-count\">12</span></button><button class=\"ds-tab\">Params</button><button class=\"ds-tab\">Code</button><button class=\"ds-tab\">Spec</button><button class=\"ds-tab\">Photos <span class=\"ds-tab-count\">3</span></button></nav>",
-      "css": ".ds-tabs{display:flex;align-items:stretch;gap:2px;height:38px;border-bottom:1px solid var(--rule-2,#e1e9f5)}.ds-tab{font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3,#5b6982);background:transparent;border:none;border-bottom:2px solid transparent;padding:0 7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.ds-tab:hover{color:var(--ink,#05142e)}.ds-tab-active,.ds-tab-active:hover{color:var(--blue,#155dd3);border-bottom-color:var(--blue,#155dd3)}.ds-tab:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--focus-halo,rgba(21,93,211,.22));border-radius:var(--radius-sm,3px)}.ds-tab-count{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10px;padding:1px 3px;line-height:1.2;border-radius:var(--radius-sm,3px);background:var(--rule-2,#e1e9f5);color:var(--ink-2,#3c485c)}.ds-tab-active .ds-tab-count{background:var(--blue-soft,#e2ecfc);color:var(--blue,#155dd3)}"
+      "css": ".ds-tabs{display:flex;align-items:stretch;gap:3px;height:49px;border-bottom:1px solid var(--rule-2,#e1e9f5)}.ds-tab{font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3,#5b6982);background:transparent;border:none;border-bottom:3px solid transparent;padding:0 9px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}.ds-tab:hover{color:var(--ink,#05142e)}.ds-tab-active,.ds-tab-active:hover{color:var(--blue,#155dd3);border-bottom-color:var(--blue,#155dd3)}.ds-tab:focus-visible{outline:none;box-shadow:inset 0 0 0 3px var(--focus-halo,rgba(21,93,211,.22));border-radius:var(--radius-sm,4px)}.ds-tab-count{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;padding:1px 4px;line-height:1.2;border-radius:var(--radius-sm,4px);background:var(--rule-2,#e1e9f5);color:var(--ink-2,#3c485c)}.ds-tab-active .ds-tab-count{background:var(--blue-soft,#e2ecfc);color:var(--blue,#155dd3)}"
     },
     {
       "name": "Panel",
       "kind": "card",
       "refersTo": "panel",
-      "description": "A block of the sheet: white on a 1 px rule with the rest shadow, a 38 px head carrying the title-block label, and a 12 px body — here a key-value readout with measured values in tabular mono.",
+      "description": "A block of the sheet: white on a 1 px rule with the rest shadow, a 49 px head carrying the title-block label, and a 16 px body — here a key-value readout with measured values in tabular mono.",
       "html": "<section class=\"ds-panel\"><div class=\"ds-panel-head\"><h2>Overall dimensions</h2><span class=\"ds-panel-grow\"></span><span class=\"ds-panel-meta\">iteration 3</span></div><div class=\"ds-panel-body\"><dl class=\"ds-kv\"><dt>Width</dt><dd>43.2 mm</dd><dt>Bore</dt><dd>8.0 mm <span class=\"ds-kv-target\">→ 8.0</span></dd><dt>Height</dt><dd>21.5 mm</dd><dt>Tris</dt><dd>12,480</dd></dl></div></section>",
-      "css": ".ds-panel{font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:13px;line-height:1.5;color:var(--ink,#05142e);background:var(--sheet,#fff);border:1px solid var(--rule,#c9d6ec);border-radius:var(--radius,4px);box-shadow:var(--shadow,0 1px 2px rgba(5,20,46,.06),0 2px 6px rgba(5,20,46,.04));max-width:360px}.ds-panel-head{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--rule-2,#e1e9f5);min-height:38px;box-sizing:border-box}.ds-panel-head h2{margin:0;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2,#3c485c);line-height:1.15}.ds-panel-grow{flex:1 1 auto}.ds-panel-meta{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-3,#5b6982);font-variant-numeric:tabular-nums}.ds-panel-body{padding:12px}.ds-kv{display:grid;grid-template-columns:max-content 1fr;gap:3px 12px;font-size:12px;margin:0}.ds-kv dt{color:var(--ink-3,#5b6982);font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:11px;padding-top:1px}.ds-kv dd{margin:0;font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;color:var(--ink,#05142e)}.ds-kv-target{font-size:11px;color:var(--ink-3,#5b6982)}"
+      "css": ".ds-panel{font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:17px;line-height:1.5;color:var(--ink,#05142e);background:var(--sheet,#fff);border:1px solid var(--rule,#c9d6ec);border-radius:var(--radius,5px);box-shadow:var(--shadow,0 1px 3px rgba(5,20,46,.06),0 3px 8px rgba(5,20,46,.04));max-width:468px}.ds-panel-head{display:flex;align-items:center;gap:13px;padding:10px 16px;border-bottom:1px solid var(--rule-2,#e1e9f5);min-height:49px;box-sizing:border-box}.ds-panel-head h2{margin:0;font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:700;font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2,#3c485c);line-height:1.15}.ds-panel-grow{flex:1 1 auto}.ds-panel-meta{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:16px;color:var(--ink-3,#5b6982);font-variant-numeric:tabular-nums}.ds-panel-body{padding:16px}.ds-kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;font-size:16px;margin:0}.ds-kv dt{color:var(--ink-3,#5b6982);font-family:\"Barlow Semi Condensed\",\"Arial Narrow\",\"Helvetica Neue\",Arial,sans-serif;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:14px;padding-top:1px}.ds-kv dd{margin:0;font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;color:var(--ink,#05142e)}.ds-kv-target{font-size:14px;color:var(--ink-3,#5b6982)}"
     },
     {
       "name": "Toast",
@@ -743,35 +743,35 @@
       "refersTo": "toast",
       "description": "A bottom-right notice on the Overlay surface with a rule, the pop shadow, a tone dot before the text and a 180 ms rise-in.",
       "html": "<div class=\"ds-toast ds-toast-pass\"><span class=\"ds-toast-text\">Iteration 3 passed 12 of 12 checks</span><button class=\"ds-toast-x\" aria-label=\"Dismiss\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 6l12 12M18 6 6 18\"/></svg></button></div>",
-      "css": ".ds-toast{display:flex;align-items:flex-start;gap:10px;padding:9px 10px 9px 12px;border-radius:var(--radius,4px);background:var(--overlay,#fff);border:1px solid var(--rule,#c9d6ec);box-shadow:var(--shadow-pop,0 10px 28px rgba(5,20,46,.18),0 2px 6px rgba(5,20,46,.08));font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:12.5px;line-height:1.5;color:var(--ink,#05142e);max-width:420px;animation:ds-toast-in .18s cubic-bezier(.2,.7,.2,1)}.ds-toast::before{content:\"\";width:8px;height:8px;border-radius:50%;margin-top:5px;flex:0 0 auto;background:var(--ink-3,#5b6982)}.ds-toast-pass::before{background:var(--pass,#1f7a46)}.ds-toast-fail::before{background:var(--fail,#b8322a)}.ds-toast-warn::before{background:var(--warn,#8f6008)}.ds-toast-info::before{background:var(--blue,#155dd3)}.ds-toast-text{flex:1;word-break:break-word}.ds-toast-x{border:none;background:transparent;color:var(--ink-3,#5b6982);cursor:pointer;line-height:1;padding:0 2px;display:inline-flex}.ds-toast-x:hover{color:var(--ink,#05142e)}.ds-toast-x:focus-visible{outline:2px solid var(--focus,#155dd3);outline-offset:2px;border-radius:var(--radius-sm,3px)}@keyframes ds-toast-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}"
+      "css": ".ds-toast{display:flex;align-items:flex-start;gap:13px;padding:12px 13px 12px 16px;border-radius:var(--radius,5px);background:var(--overlay,#fff);border:1px solid var(--rule,#c9d6ec);box-shadow:var(--shadow-pop,0 13px 36px rgba(5,20,46,.18),0 3px 8px rgba(5,20,46,.08));font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:16px;line-height:1.5;color:var(--ink,#05142e);max-width:546px;animation:ds-toast-in .18s cubic-bezier(.2,.7,.2,1)}.ds-toast::before{content:\"\";width:10px;height:10px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--ink-3,#5b6982)}.ds-toast-pass::before{background:var(--pass,#1f7a46)}.ds-toast-fail::before{background:var(--fail,#b8322a)}.ds-toast-warn::before{background:var(--warn,#8f6008)}.ds-toast-info::before{background:var(--blue,#155dd3)}.ds-toast-text{flex:1;word-break:break-word}.ds-toast-x{border:none;background:transparent;color:var(--ink-3,#5b6982);cursor:pointer;line-height:1;padding:0 3px;display:inline-flex}.ds-toast-x:hover{color:var(--ink,#05142e)}.ds-toast-x:focus-visible{outline:3px solid var(--focus,#155dd3);outline-offset:3px;border-radius:var(--radius-sm,4px)}@keyframes ds-toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}"
     },
     {
       "name": "Drafting Slider",
       "kind": "custom",
       "refersTo": "slider-thumb",
-      "description": "A parameter drawn as a dimension: a 2 px rule track, a Tolerance Tint bracket above it (dashed for an estimate), tick marks for measured and verified values, a 16 px thumb ringed in Action Blue, mono range labels and a binding line that says where the number came from.",
+      "description": "A parameter drawn as a dimension: a 3 px rule track, a Tolerance Tint bracket above it (dashed for an estimate), tick marks for measured and verified values, a 21 px thumb ringed in Action Blue, mono range labels and a binding line that says where the number came from.",
       "html": "<div class=\"ds-slider\"><div class=\"ds-slider-rail\"><div class=\"ds-slider-track\"></div><div class=\"ds-slider-band\" style=\"left:42%;width:16%\" title=\"±0.4 mm\"></div><div class=\"ds-slider-fill\" style=\"width:50%\"></div><div class=\"ds-slider-mark ds-mark-pass\" style=\"left:46%\" title=\"measured 42.8\"></div><div class=\"ds-slider-mark ds-mark-blue\" style=\"left:58%\" title=\"verified 46.1\"></div><div class=\"ds-slider-thumb\" style=\"left:50%\" role=\"slider\" tabindex=\"0\" aria-label=\"Width\" aria-valuemin=\"20\" aria-valuemax=\"80\" aria-valuenow=\"43.2\" aria-valuetext=\"43.2 mm\"></div></div><div class=\"ds-slider-ends\"><span>20 mm</span><span>80 mm</span></div><div class=\"ds-slider-bind ds-tone-pass\"><span class=\"ds-bind-dot\"></span><b>Measured</b> photo 2 · ruler · <span class=\"ds-bind-mono\">±0.4 mm</span></div></div>",
-      "css": ".ds-slider{font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:13px;color:var(--ink,#05142e);user-select:none;touch-action:none;max-width:360px}.ds-slider-rail{position:relative;height:30px;cursor:pointer}.ds-slider-track{position:absolute;left:0;right:0;top:17px;height:2px;background:var(--rule,#c9d6ec);border-radius:1px}.ds-slider-fill{position:absolute;left:0;top:17px;height:2px;background:var(--blue,#155dd3);opacity:.55;border-radius:1px;pointer-events:none}.ds-slider-band{position:absolute;top:0;height:8px;min-width:16px;margin-left:-8px;border:1px solid var(--mid,#6c9ef0);border-bottom:0;border-radius:2px 2px 0 0;background:color-mix(in srgb,var(--pale,#bed4f9) 70%,transparent);pointer-events:none;box-sizing:border-box}.ds-slider-band.ds-band-warn{border-style:dashed}.ds-slider-band.ds-band-blue{background:color-mix(in srgb,var(--pale,#bed4f9) 45%,transparent)}.ds-slider-mark{position:absolute;top:9px;width:2px;height:16px;margin-left:-1px;background:var(--ink-3,#5b6982);pointer-events:none;border-radius:1px}.ds-mark-pass{background:var(--pass,#1f7a46)}.ds-mark-warn{background:var(--warn,#8f6008)}.ds-mark-blue{background:var(--blue,#155dd3)}.ds-slider-thumb{position:absolute;top:10px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--sheet,#fff);border:2px solid var(--blue,#155dd3);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:grab;outline:none;transition:transform .08s;box-sizing:border-box}.ds-slider-thumb:hover{transform:scale(1.15)}.ds-slider-thumb:focus-visible{box-shadow:0 0 0 3px var(--blue-soft,#e2ecfc),0 1px 3px rgba(0,0,0,.25)}.ds-slider-ends{display:flex;justify-content:space-between;font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10px;color:var(--ink-3,#5b6982);margin-top:-3px;font-variant-numeric:tabular-nums}.ds-slider-bind{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-2,#3c485c);margin-top:4px;flex-wrap:wrap;line-height:1.3}.ds-slider-bind b{font-weight:600}.ds-bind-mono{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;color:var(--ink-3,#5b6982)}.ds-bind-dot{width:7px;height:7px;border-radius:50%;background:var(--ink-3,#5b6982);flex:0 0 auto}.ds-tone-pass .ds-bind-dot{background:var(--pass,#1f7a46)}.ds-tone-pass b{color:var(--pass,#1f7a46)}"
+      "css": ".ds-slider{font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif;font-size:17px;color:var(--ink,#05142e);user-select:none;touch-action:none;max-width:468px}.ds-slider-rail{position:relative;height:39px;cursor:pointer}.ds-slider-track{position:absolute;left:0;right:0;top:22px;height:3px;background:var(--rule,#c9d6ec);border-radius:1px}.ds-slider-fill{position:absolute;left:0;top:22px;height:3px;background:var(--blue,#155dd3);opacity:.55;border-radius:1px;pointer-events:none}.ds-slider-band{position:absolute;top:0;height:10px;min-width:21px;margin-left:-10px;border:1px solid var(--mid,#6c9ef0);border-bottom:0;border-radius:3px 3px 0 0;background:color-mix(in srgb,var(--pale,#bed4f9) 70%,transparent);pointer-events:none;box-sizing:border-box}.ds-slider-band.ds-band-warn{border-style:dashed}.ds-slider-band.ds-band-blue{background:color-mix(in srgb,var(--pale,#bed4f9) 45%,transparent)}.ds-slider-mark{position:absolute;top:12px;width:3px;height:21px;margin-left:-1px;background:var(--ink-3,#5b6982);pointer-events:none;border-radius:1px}.ds-mark-pass{background:var(--pass,#1f7a46)}.ds-mark-warn{background:var(--warn,#8f6008)}.ds-mark-blue{background:var(--blue,#155dd3)}.ds-slider-thumb{position:absolute;top:13px;width:21px;height:21px;margin-left:-10px;border-radius:50%;background:var(--sheet,#fff);border:3px solid var(--blue,#155dd3);box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:grab;outline:none;transition:transform .08s;box-sizing:border-box}.ds-slider-thumb:hover{transform:scale(1.15)}.ds-slider-thumb:focus-visible{box-shadow:0 0 0 4px var(--blue-soft,#e2ecfc),0 1px 4px rgba(0,0,0,.25)}.ds-slider-ends{display:flex;justify-content:space-between;font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;color:var(--ink-3,#5b6982);margin-top:-4px;font-variant-numeric:tabular-nums}.ds-slider-bind{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--ink-2,#3c485c);margin-top:5px;flex-wrap:wrap;line-height:1.3}.ds-slider-bind b{font-weight:600}.ds-bind-mono{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;color:var(--ink-3,#5b6982)}.ds-bind-dot{width:9px;height:9px;border-radius:50%;background:var(--ink-3,#5b6982);flex:0 0 auto}.ds-tone-pass .ds-bind-dot{background:var(--pass,#1f7a46)}.ds-tone-pass b{color:var(--pass,#1f7a46)}"
     },
     {
       "name": "Dimension Line",
       "kind": "custom",
       "refersTo": "dim-label",
-      "description": "The brand motif: one 1 px Dimension Blue rule with 1 x 11 px ticks and numbered stations in mono blue — how the home page says how it works, in place of a card grid.",
+      "description": "The brand motif: one 1 px Dimension Blue rule with 1 x 14 px ticks and numbered stations in mono blue — how the home page says how it works, in place of a card grid.",
       "html": "<ol class=\"ds-path\" aria-label=\"How it works\"><li class=\"ds-path-step\"><span class=\"ds-path-tick\"></span><span class=\"ds-path-n\">1</span><span class=\"ds-path-text\"><b>Photograph</b> the broken part on the printed calibration sheet</span></li><li class=\"ds-path-step\"><span class=\"ds-path-tick\"></span><span class=\"ds-path-n\">2</span><span class=\"ds-path-text\"><b>Answer</b> the one or two photos it still needs</span></li><li class=\"ds-path-step\"><span class=\"ds-path-tick\"></span><span class=\"ds-path-n\">3</span><span class=\"ds-path-text\"><b>Verify</b> every dimension measured on the designed mesh</span></li><li class=\"ds-path-step\"><span class=\"ds-path-tick\"></span><span class=\"ds-path-n\">4</span><span class=\"ds-path-text\"><b>Print</b> the fit coupon, then the part</span></li></ol>",
-      "css": ".ds-path{list-style:none;margin:0;padding:14px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 14px;position:relative;font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif}.ds-path::before{content:\"\";position:absolute;left:0;right:0;top:14px;height:1px;background:var(--mid,#6c9ef0)}.ds-path-step{position:relative;padding-top:12px;display:flex;gap:8px;align-items:baseline;min-width:0}.ds-path-tick{position:absolute;left:0;top:-5px;width:1px;height:11px;background:var(--mid,#6c9ef0)}.ds-path-step:last-child::after{content:\"\";position:absolute;right:0;top:-5px;width:1px;height:11px;background:var(--mid,#6c9ef0)}.ds-path-n{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;font-size:11px;color:var(--blue,#155dd3);flex:0 0 auto}.ds-path-text{font-size:12.5px;color:var(--ink-2,#3c485c);line-height:1.4}.ds-path-text b{color:var(--ink,#05142e);font-weight:600}"
+      "css": ".ds-path{list-style:none;margin:0;padding:18px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 18px;position:relative;font-family:\"IBM Plex Sans\",system-ui,-apple-system,\"Segoe UI\",Roboto,sans-serif}.ds-path::before{content:\"\";position:absolute;left:0;right:0;top:18px;height:1px;background:var(--mid,#6c9ef0)}.ds-path-step{position:relative;padding-top:16px;display:flex;gap:10px;align-items:baseline;min-width:0}.ds-path-tick{position:absolute;left:0;top:-6px;width:1px;height:14px;background:var(--mid,#6c9ef0)}.ds-path-step:last-child::after{content:\"\";position:absolute;right:0;top:-6px;width:1px;height:14px;background:var(--mid,#6c9ef0)}.ds-path-n{font-family:\"IBM Plex Mono\",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;font-size:14px;color:var(--blue,#155dd3);flex:0 0 auto}.ds-path-text{font-size:16px;color:var(--ink-2,#3c485c);line-height:1.4}.ds-path-text b{color:var(--ink,#05142e);font-weight:600}"
     }
   ],
   "narrative": {
     "northStar": "The Drafting Sheet",
-    "overview": "Kintsugi's interface is an engineering drawing's sheet: fine grid paper under everything, white panels ruled with 1 px navy-tinted lines, title-block labels in tracked condensed capitals, dimension lines with ticks, and measured values set in tabular mono. One blue does every job that asks for a decision — the primary button, the link, the active tab, the caret, the focus ring — and two lighter blues serve it as tints: Dimension Blue for lines and ghosts, Tolerance Tint for selection and the band a measurement is allowed to live in. Nothing else in the palette speaks except the three status colours, and those never speak alone.\n\nThe voice is precise, calm and evidential. Density is earned by the task: the home page is spacious (one hero line, one dimension-line strip, two panels); the session workspace is dense (three panes, 13 px body, 12.5 px tables, 11 px column labels) because a maker reviewing checks wants every dimension on screen at once. Decoration is refused; expression lives in details a drafter would recognise — the ticks on the path, the pale bracket above a slider, the arrow before a target value. The system refuses the SaaS-dashboard arrangement of hero-metric cards: a status is a 7 px dot before a heading, a number is a measured value with its evidence, never a big tile.\n\nLight is the default (a bench in daylight); dark is composed from the navy rather than inverted and follows the system setting. Type is self-hosted so the sheet renders with no CDN reachable.",
+    "overview": "Kintsugi's interface is an engineering drawing's sheet: fine grid paper under everything, white panels ruled with 1 px navy-tinted lines, title-block labels in tracked condensed capitals, dimension lines with ticks, and measured values set in tabular mono. One blue does every job that asks for a decision — the primary button, the link, the active tab, the caret, the focus ring — and two lighter blues serve it as tints: Dimension Blue for lines and ghosts, Tolerance Tint for selection and the band a measurement is allowed to live in. Nothing else in the palette speaks except the three status colours, and those never speak alone.\n\nThe voice is precise, calm and evidential. Density is earned by the task: the home page is spacious (one hero line, one dimension-line strip, two panels); the session workspace is dense (three panes, 17 px body, 16 px tables, 14 px column labels) because a maker reviewing checks wants every dimension on screen at once. Decoration is refused; expression lives in details a drafter would recognise — the ticks on the path, the pale bracket above a slider, the arrow before a target value. The system refuses the SaaS-dashboard arrangement of hero-metric cards: a status is a 9 px dot before a heading, a number is a measured value with its evidence, never a big tile.\n\nLight is the default (a bench in daylight); dark is composed from the navy rather than inverted and follows the system setting. Type is self-hosted so the sheet renders with no CDN reachable.",
     "keyCharacteristics": [
-      "Grid paper ground: a 24 px minor / 120 px major blueprint grid on the body, under every pane; panels never redraw it.",
+      "Grid paper ground: a 31 px minor / 156 px major blueprint grid on the body, under every pane; panels never redraw it.",
       "Navy-tinted everything: inks, rules, shadows and the scrim all descend from #05142E — no neutral gray anywhere.",
       "One action blue (#155DD3), two servant tints (#6C9EF0, #BED4F9), three status colours that always carry a word or an icon.",
-      "Two typefaces plus a mono: Barlow Semi Condensed for headings and tracked title-block labels, IBM Plex Sans body at 13 px, IBM Plex Mono with tabular figures for every measured value.",
+      "Two typefaces plus a mono: Barlow Semi Condensed for headings and tracked title-block labels, IBM Plex Sans body at 17 px, IBM Plex Mono with tabular figures for every measured value.",
       "Flat by default: 1 px rules and a whisper-faint rest shadow on panels; soft offset shadows only lift overlays.",
-      "Crisp and measured forms: 3 / 4 / 6 px radii, pills only for status, one 24-unit stroke icon family."
+      "Crisp and measured forms: 3 / 4 / 8 px radii, pills only for status, one 24-unit stroke icon family."
     ],
     "rules": [
       {
@@ -786,12 +786,12 @@
       },
       {
         "name": "The Word-With-Colour Rule",
-        "body": "Pass, fail and warn always travel with text or an icon — a pill's label, a check mark, a 7 px marker beside a heading. Colour alone never states a measurement's status.",
+        "body": "Pass, fail and warn always travel with text or an icon — a pill's label, a check mark, a 9 px marker beside a heading. Colour alone never states a measurement's status.",
         "section": "colors"
       },
       {
         "name": "The Title-Block Rule",
-        "body": "A block of the sheet is named in tracked condensed capitals (12 px, 700, 0.08em) on a 1 px rule — never in sentence-case bold, never larger than 12 px.",
+        "body": "A block of the sheet is named in tracked condensed capitals (16 px, 700, 0.08em) on a 1 px rule — never in sentence-case bold, never larger than 16 px.",
         "section": "typography"
       },
       {
@@ -806,21 +806,21 @@
       }
     ],
     "dos": [
-      "Do keep the blueprint grid on the body only (24 px minor / 120 px major, Action Blue at 5 % / 7.5 %) and place every pane on it as a white rectangle with a 1 px Rule.",
-      "Do name each block of the sheet with a title-block label — Barlow 700, 12 px, 0.08em, uppercase, Ink 2 — on a Rule 2 line.",
+      "Do keep the blueprint grid on the body only (31 px minor / 156 px major, Action Blue at 5 % / 7.5 %) and place every pane on it as a white rectangle with a 1 px Rule.",
+      "Do name each block of the sheet with a title-block label — Barlow 700, 16 px, 0.08em, uppercase, Ink 2 — on a Rule 2 line.",
       "Do set every measured, computed or target value in IBM Plex Mono with tabular figures, right-aligned in tables, with its unit or `→ target` beside it.",
       "Do use #155DD3 for every action, link, active tab, caret and focus, and soft blue (#E2ECFC) for every hover and active fill; in dark mode let the action colour become #6C9EF0 with navy text.",
-      "Do draw controls from the drafting vocabulary: 1 px rules, ticks, tolerance brackets, 7 px status dots, numbered circles.",
+      "Do draw controls from the drafting vocabulary: 1 px rules, ticks, tolerance brackets, 9 px status dots, numbered circles.",
       "Do pair pass / fail / warn with a word or an icon, and keep tone borders at 35–60 % of the colour.",
-      "Do use the one icon family — 24-unit `viewBox`, `currentColor` stroke, round caps, weight 2 (1.3–1.6 at 30 px and above) — at 11–14 px inside controls.",
-      "Do keep the three radii (3 / 4 / 6 px), reserve 999 px for status pills and stage chips, and 50 % for dots, numbers, thumb and knob.",
+      "Do use the one icon family — 24-unit `viewBox`, `currentColor` stroke, round caps, weight 2 (1.3–1.6 at 39 px and above) — at 11–18 px inside controls.",
+      "Do keep the three radii (3 / 4 / 8 px), reserve 999 px for status pills and stage chips, and 50 % for dots, numbers, thumb and knob.",
       "Do self-host type (`@fontsource`, latin subsets) and honour `prefers-reduced-motion` and `prefers-color-scheme`."
     ],
     "donts": [
       "Don't introduce a neutral gray for text, rules, scrims or shadows; mix from the navy.",
       "Don't let the tints act: no #6C9EF0 or #BED4F9 button fills, links or underlines in light mode.",
       "Don't lift a panel, card or row with the pop shadow or a hover translate; only toasts, popovers and the modal cast a visible shadow.",
-      "Don't mark status with a side stripe, a full-bleed colour fill or a big tinted tile; use the 7 px marker before the head and a pill.",
+      "Don't mark status with a side stripe, a full-bleed colour fill or a big tinted tile; use the 9 px marker before the head and a pill.",
       "Don't arrange the sheet as hero-metric cards or a dashboard of KPIs; density comes from ruled tables and rows.",
       "Don't use glyph icons, icon fonts, emoji or a second icon set; every icon is a 24-unit stroke SVG from `icons.tsx`.",
       "Don't uppercase body copy or the `.btn` family; capitals belong to title-block labels, column labels, tabs and segmented switches.",

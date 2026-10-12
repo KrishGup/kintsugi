@@ -14,27 +14,38 @@ export interface Columns {
   rightOpen: boolean;
 }
 
-export const DEFAULT_COLUMNS: Columns = { left: 350, right: 360, leftOpen: true, rightOpen: true };
-const KEY = "kin.ws.cols";
-const MIN = { left: 260, right: 300 };
-const MAX = { left: 640, right: 760 };
-const CENTER_MIN = 380;    // the 3D view never gets squeezed below this
-const HANDLE = 10;         // px, the visual gap between panes doubles as the grab area
-const FOLD_BELOW = 70;     // dragging this far under the minimum folds the pane away
+const KEY = "kin.ws.cols.v2";   // v2: the 1.3x interface; widths saved at the old size would squeeze it
+const MIN = { left: 338, right: 390 };
+const MAX = { left: 832, right: 988 };
+const FULL = { left: 455, right: 468 };  // the panes' natural width on a wide screen
+
+/** Default widths for this window: the full 455/468 px on a wide screen; on a laptop-width window the panes give way
+    (a quarter of the window each, never under their minimum) so the 3D view keeps room for its toolbar. */
+export function defaultColumns(width: number = typeof window === "undefined" ? 1600 : window.innerWidth): Columns {
+  return {
+    left: clamp(Math.round(width * 0.25), MIN.left, FULL.left),
+    right: clamp(Math.round(width * 0.26), MIN.right, FULL.right),
+    leftOpen: true,
+    rightOpen: true,
+  };
+}
+const CENTER_MIN = 494;    // the 3D view never gets squeezed below this
+const HANDLE = 13;         // px, the visual gap between panes doubles as the grab area
+const FOLD_BELOW = 91;     // dragging this far under the minimum folds the pane away
 
 function load(): Columns {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return DEFAULT_COLUMNS;
+    if (!raw) return defaultColumns();
     const v = JSON.parse(raw) as Partial<Columns>;
     return {
-      left: clamp(Number(v.left) || DEFAULT_COLUMNS.left, MIN.left, MAX.left),
-      right: clamp(Number(v.right) || DEFAULT_COLUMNS.right, MIN.right, MAX.right),
+      left: clamp(Number(v.left) || defaultColumns().left, MIN.left, MAX.left),
+      right: clamp(Number(v.right) || defaultColumns().right, MIN.right, MAX.right),
       leftOpen: v.leftOpen !== false,
       rightOpen: v.rightOpen !== false,
     };
   } catch {
-    return DEFAULT_COLUMNS;
+    return defaultColumns();
   }
 }
 
@@ -61,7 +72,7 @@ export function useColumns(container: React.RefObject<HTMLElement>) {
     (side: Side, c: Columns) => {
       const total = container.current?.clientWidth ?? 1600;
       const other = side === "left" ? (c.rightOpen ? c.right : 0) : c.leftOpen ? c.left : 0;
-      return Math.max(MIN[side], Math.min(MAX[side], total - other - CENTER_MIN - 2 * HANDLE - 20));
+      return Math.max(MIN[side], Math.min(MAX[side], total - other - CENTER_MIN - 2 * HANDLE - 26));
     },
     [container],
   );
@@ -85,7 +96,7 @@ export function useColumns(container: React.RefObject<HTMLElement>) {
   );
   const reset = useCallback(
     (side: Side) =>
-      setCols((c) => ({ ...c, [side]: DEFAULT_COLUMNS[side], [side === "left" ? "leftOpen" : "rightOpen"]: true })),
+      setCols((c) => ({ ...c, [side]: defaultColumns()[side], [side === "left" ? "leftOpen" : "rightOpen"]: true })),
     [setCols],
   );
 
@@ -144,7 +155,7 @@ export function ColumnHandle({ side, width, open, min, max, label, onResize, onR
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const grow = side === "left" ? "ArrowRight" : "ArrowLeft";
     const shrink = side === "left" ? "ArrowLeft" : "ArrowRight";
-    const step = e.shiftKey ? 64 : 16;
+    const step = e.shiftKey ? 83 : 21;
     if (e.key === grow) onResize((open ? width : min) + step);
     else if (e.key === shrink) onResize(width - step);
     else if (e.key === "Home") onResize(min);
@@ -192,7 +203,7 @@ export function ColumnHandle({ side, width, open, min, max, label, onResize, onR
         }}
         onKeyDown={(e) => e.stopPropagation()}
       >
-        <Chevron size={12} stroke={2.4} />
+        <Chevron size={16} stroke={2.4} />
       </button>
       {!open && <span className="ws-handle-label">{label}</span>}
     </div>

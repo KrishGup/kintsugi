@@ -34,6 +34,19 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
+async def shot(pg, path: Path) -> None:
+    """A page screenshot, retried once: a freshly launched Chromium sometimes refuses its very first capture
+    ("Unable to capture screenshot") and then works; a second failure is real and raises."""
+    for attempt in range(2):
+        try:
+            await pg.screenshot(path=str(path))
+            return
+        except Exception:
+            if attempt:
+                raise
+            await pg.wait_for_timeout(1000)
+
+
 def rmtree(path: Path) -> None:
     """rmtree that copes with the read-only files git leaves in session folders on Windows."""
     def on_error(fn, p, exc):
@@ -84,10 +97,10 @@ class Walk:
             await pg.goto(self.base + "/#/", wait_until="load")
             await pg.wait_for_selector(".home", timeout=20000)
             await pg.wait_for_timeout(400)
-            await pg.screenshot(path=str(OUT / "01-home.png"))
+            await shot(pg, OUT / "01-home.png")
             await pg.emulate_media(color_scheme="dark")
             await pg.wait_for_timeout(300)
-            await pg.screenshot(path=str(OUT / "02-home-dark.png"))
+            await shot(pg, OUT / "02-home-dark.png")
             await pg.emulate_media(color_scheme="light")
             self.expect(not await pg.locator("[title]").count(), "no title= tooltips on the home page")
 
@@ -106,7 +119,7 @@ class Walk:
             self.expect(chips == [("it 1", "fail"), ("it 2", "pass")], f"iteration 1 fails, iteration 2 passes (got {chips})")
             bar = await pg.locator(".topbar").inner_text()
             self.expect("spent" not in bar and "astra" not in bar, "demo mode claims no spend and no model in the top bar")
-            await pg.screenshot(path=str(OUT / "03-designed.png"))
+            await shot(pg, OUT / "03-designed.png")
             await pg.get_by_role("tab", name="Timeline").click()
             await pg.wait_for_timeout(400)
             await pg.locator(".ws-left").screenshot(path=str(OUT / "04-timeline.png"))
@@ -123,7 +136,7 @@ class Walk:
                 await rows.nth(1).hover()
                 await pg.wait_for_timeout(500)
                 self.expect(await pg.locator(".dim-focus").count() == 1, "hovering a check draws its section plane on the model")
-                await pg.screenshot(path=str(OUT / "05-check-hover.png"))
+                await shot(pg, OUT / "05-check-hover.png")
                 await rows.nth(1).click()
                 await pg.mouse.move(5, 5)
                 await pg.wait_for_timeout(400)
@@ -160,7 +173,7 @@ class Walk:
                 await pg.wait_for_timeout(700)
             await pg.wait_for_timeout(1500)
             self.expect((await self.stage(pg)).endswith("Design"), "a failing apply after an export drops the stage back to Design")
-            await pg.screenshot(path=str(OUT / "07-after-bad-apply.png"))
+            await shot(pg, OUT / "07-after-bad-apply.png")
             session_url = pg.url
 
             # ---- a reference spec in demo mode -------------------------------------------------------------------------
@@ -181,7 +194,7 @@ class Walk:
             await pg.wait_for_timeout(400)
             guide = await pg.locator(".ws-left").inner_text()
             self.expect(status == "stopped" and "Demo mode ended without a finished part" in guide, "a reference spec stops honestly in demo mode")
-            await pg.screenshot(path=str(OUT / "08-reference-spec.png"))
+            await shot(pg, OUT / "08-reference-spec.png")
             await ctx.close()
 
             # ---- phone -------------------------------------------------------------------------------------------------
@@ -190,13 +203,13 @@ class Walk:
             await pg.goto(self.base + "/#/", wait_until="load")
             await pg.wait_for_selector(".home", timeout=20000)
             await pg.wait_for_timeout(300)
-            await pg.screenshot(path=str(OUT / "09-phone-home.png"))
+            await shot(pg, OUT / "09-phone-home.png")
             wide = await pg.evaluate("document.documentElement.scrollWidth > window.innerWidth + 1")
             self.expect(not wide, "no horizontal scroll on a phone")
             await pg.goto(session_url, wait_until="load")
             await pg.wait_for_selector(".topbar", timeout=20000)
             await pg.wait_for_timeout(500)
-            await pg.screenshot(path=str(OUT / "10-phone-session.png"))
+            await shot(pg, OUT / "10-phone-session.png")
             self.expect(not await pg.evaluate("[...document.querySelectorAll('.ws-handle')].some(e => getComputedStyle(e).display !== 'none')"), "no resize handles on a phone")
             await b.close()
             self.expect(not errors, f"no page errors ({errors[:2]})")

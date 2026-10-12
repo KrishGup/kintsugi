@@ -41,7 +41,7 @@ export default function PhotosTab() {
     <div>
       <div className="row-wrap mb">
         <button className="btn btn-primary btn-sm" onClick={() => input.current?.click()} disabled={uploading}>
-          {uploading ? <Spinner size={11} /> : null} Upload photos
+          {uploading ? <Spinner size={14} /> : null} Upload photos
         </button>
         <input
           ref={input}
@@ -197,7 +197,7 @@ function MeasurePanel({ photo, dims, onClose }: { photo: string; dims: string[];
       <div className="row-wrap mt">
         <label className="field">
           <span className="field-label">Mode</span>
-          <select className="select" value={mode} onChange={(e) => setMode(e.target.value as "sheet" | "reference")} style={{ width: 150 }}>
+          <select className="select" value={mode} onChange={(e) => setMode(e.target.value as "sheet" | "reference")} style={{ width: 195 }}>
             <option value="sheet">calibration sheet</option>
             <option value="reference">reference object</option>
           </select>
@@ -214,7 +214,7 @@ function MeasurePanel({ photo, dims, onClose }: { photo: string; dims: string[];
           </select>
         </label>
         <button className="btn btn-primary btn-sm" onClick={go} disabled={busy} style={{ alignSelf: "flex-end" }}>
-          {busy ? <Spinner size={11} /> : null} Measure
+          {busy ? <Spinner size={14} /> : null} Measure
         </button>
       </div>
       <div className="field-hint mt">
@@ -289,7 +289,7 @@ function MeasurePanel({ photo, dims, onClose }: { photo: string; dims: string[];
 
 function CameraIcon() {
   return (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+    <svg width="47" height="47" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
       <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
       <circle cx="12" cy="13" r="3.2" />
     </svg>

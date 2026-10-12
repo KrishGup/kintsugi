@@ -58,7 +58,7 @@ export default function DocsSearch({ onInsert }: { onInsert?: (text: string) => 
           aria-label="Search the OpenSCAD reference"
         />
         <button className="btn btn-sm" onClick={() => search()} disabled={busy || !q.trim()}>
-          {busy ? <Spinner size={10} /> : "Search"}
+          {busy ? <Spinner size={13} /> : "Search"}
         </button>
       </div>
       <div className="row-wrap small" style={{ marginTop: 4 }}>

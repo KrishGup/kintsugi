@@ -89,7 +89,7 @@ export function RequestCard({ req, value, onChange }: { req: CaptureRequest; val
         <div className="req-body">
           <div className="row-wrap">
             <button className="btn btn-sm btn-primary" onClick={() => input.current?.click()} disabled={busy}>
-              {busy ? <Spinner size={11} /> : <CameraIcon />} {best ? "Retake" : "Take / upload photo"}
+              {busy ? <Spinner size={14} /> : <CameraIcon />} {best ? "Retake" : "Take / upload photo"}
             </button>
             <input
               ref={input}
@@ -152,7 +152,7 @@ function dimStatus(d: { spec: { interfaces?: Array<{ id: string; dims?: Record<s
 
 export function CameraIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
       <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
       <circle cx="12" cy="13" r="3.2" />
     </svg>
@@ -160,7 +160,7 @@ export function CameraIcon() {
 }
 export function RulerIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
       <rect x="3" y="8" width="18" height="8" rx="1" />
       <path d="M7 8v3M11 8v4M15 8v3M19 8v4" />
     </svg>
@@ -168,7 +168,7 @@ export function RulerIcon() {
 }
 function CouponIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="7" cy="12" r="3.5" />
       <circle cx="17" cy="12" r="3.5" />
     </svg>

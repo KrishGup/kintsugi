@@ -31,12 +31,12 @@ export default function ImageZoom({ src, alt, placeholder }: Props) {
       const W = el.clientWidth;
       const H = el.clientHeight;
       let scale = 1;
-      if (mode === "width") scale = (W - 24) / natural.w;
-      else if (mode === "fit") scale = Math.min((W - 24) / natural.w, (H - 24) / natural.h);
+      if (mode === "width") scale = (W - 31) / natural.w;
+      else if (mode === "fit") scale = Math.min((W - 31) / natural.w, (H - 31) / natural.h);
       scale = Math.max(0.02, Math.min(scale, mode === "one" ? 1 : 2));
       const x = (W - natural.w * scale) / 2;
-      const y = mode === "fit" ? (H - natural.h * scale) / 2 : 12;
-      setView({ scale, x, y: Math.max(y, mode === "fit" ? y : 12) });
+      const y = mode === "fit" ? (H - natural.h * scale) / 2 : 16;
+      setView({ scale, x, y: Math.max(y, mode === "fit" ? y : 16) });
     },
     [natural],
   );
@@ -190,7 +190,7 @@ export default function ImageZoom({ src, alt, placeholder }: Props) {
 
 function SheetIcon() {
   return (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+    <svg width="47" height="47" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
       <rect x="3" y="4" width="18" height="16" rx="1" />
       <path d="M3 9h18M8 9v11M14 4v5" />
     </svg>

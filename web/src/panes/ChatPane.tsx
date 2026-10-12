@@ -83,7 +83,7 @@ export default function ChatPane({ header }: { header?: ReactNode }) {
 
   return (
     <div className="pane" style={{ position: "relative" }}>
-      <div className="pane-head" style={header ? { padding: "0 4px" } : undefined}>
+      <div className="pane-head" style={header ? { padding: "0 5px" } : undefined}>
         {header || <h2>Chat &amp; timeline</h2>}
         <span className="grow" />
         {!header && <span className="small muted num">{s.events.length} events</span>}
@@ -91,7 +91,7 @@ export default function ChatPane({ header }: { header?: ReactNode }) {
       <div className="pane-body pane-body-flush" ref={body} onScroll={onScroll}>
         <div className="timeline">
           {s.events.length === 0 && (
-            <div className="empty" style={{ minHeight: 160 }}>
+            <div className="empty" style={{ minHeight: 208 }}>
               <div className="empty-title">Nothing has happened yet</div>
               <div className="empty-body">
                 Press <b>Run designer</b> to let the agent write and verify the part, or ask for a change below. Every step lands here: designer
@@ -104,7 +104,7 @@ export default function ChatPane({ header }: { header?: ReactNode }) {
           ))}
           {s.running && (
             <div className="card-sys">
-              <Spinner size={11} label="designer working…" />
+              <Spinner size={14} label="designer working…" />
             </div>
           )}
           <div ref={endRef} className="timeline-end" />
@@ -135,7 +135,7 @@ export default function ChatPane({ header }: { header?: ReactNode }) {
             aria-label={waiting ? "Answer" : "Ask for a change"}
           />
           <button className="btn btn-primary" onClick={() => send()} disabled={disabled || !text.trim()}>
-            {sending ? <Spinner size={11} /> : waiting ? "Answer" : "Send"}
+            {sending ? <Spinner size={14} /> : waiting ? "Answer" : "Send"}
           </button>
         </div>
         {text.includes("\n") || text.length > 60 ? <div className="chat-hint">Enter sends · Shift+Enter for a new line</div> : null}
@@ -171,7 +171,7 @@ function EventCard({ ev, active, onAnswer }: { ev: KinEvent; active: boolean; on
       const arg = input.label || input.name || input.file_path || input.command || input.question || input.pattern || "";
       return (
         <div className="card-tool hover-anchor">
-          <Gear size={11} />
+          <Gear size={14} />
           <span className="tool-name">{toolName(String(ev.tool || ""))}</span>
           {arg && <span className="tool-arg">{arg}</span>}
           {Object.keys(input).length > 0 && (

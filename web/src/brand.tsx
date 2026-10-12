@@ -4,7 +4,7 @@
 
 const SEAM = "M17 15 L31 29 L26 37 L47 49";
 
-export function Mark({ size = 22, heavy = true }: { size?: number; heavy?: boolean }) {
+export function Mark({ size = 29, heavy = true }: { size?: number; heavy?: boolean }) {
   const [rw, gap, sw, r] = heavy ? [8.0, 9.8, 4.4, 15.2] : [6.6, 8.6, 3.4, 16];
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false">

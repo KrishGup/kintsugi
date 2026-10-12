@@ -140,7 +140,7 @@ function TokenLogin({ onDone }: { onDone: () => Promise<void> }) {
         />
         {err && <div className="banner banner-fail">{err}</div>}
         <button className="btn btn-primary" type="submit" disabled={busy || !token.trim()}>
-          {busy ? <Spinner size={12} /> : null} Open Kintsugi
+          {busy ? <Spinner size={16} /> : null} Open Kintsugi
         </button>
       </form>
     </Gate>

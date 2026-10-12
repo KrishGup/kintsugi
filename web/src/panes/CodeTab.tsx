@@ -86,7 +86,7 @@ export default function CodeTab() {
           Discard edits
         </button>
         <button className="btn btn-primary btn-sm" onClick={run} disabled={disabled}>
-          {running ? <Spinner size={11} /> : <PlayIcon />} Save &amp; verify
+          {running ? <Spinner size={14} /> : <PlayIcon />} Save &amp; verify
         </button>
         <input
           className="input label-input"
@@ -137,7 +137,7 @@ export default function CodeTab() {
 
 function PlayIcon() {
   return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
       <path d="M6 4l14 8-14 8z" />
     </svg>
   );

@@ -34,7 +34,7 @@ export default function RightPane() {
     {
       id: "checks",
       label: "Checks",
-      count: d.checks ? (hardFails ? hardFails : <Check size={10} />) : undefined,
+      count: d.checks ? (hardFails ? hardFails : <Check size={13} />) : undefined,
       tone: d.checks ? (hardFails ? "fail" : "pass") : undefined,
       title: d.checks ? (hardFails ? `${hardFails} hard checks failing` : "all hard checks pass") : "no checks yet",
     },
@@ -47,7 +47,7 @@ export default function RightPane() {
 
   return (
     <div className="pane">
-      <div className="pane-head" style={{ padding: "0 4px" }}>
+      <div className="pane-head" style={{ padding: "0 5px" }}>
         <div className="tabs" role="tablist" aria-label="Details">
           {tabs.map((t) => (
             <button key={t.id} role="tab" aria-selected={tab === t.id} className={`tab${tab === t.id ? " active" : ""}`} onClick={() => setTab(t.id)} aria-label={t.title ? `${t.label}: ${t.title}` : undefined}>

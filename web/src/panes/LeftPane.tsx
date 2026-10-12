@@ -29,7 +29,7 @@ export default function LeftPane() {
     );
   return (
     <div className="pane">
-      <div className="pane-head" style={{ padding: "0 4px" }}>
+      <div className="pane-head" style={{ padding: "0 5px" }}>
         <LeftTabs tab={tab} setTab={setTab} events={s.events.length} />
       </div>
       <div className="pane-body">

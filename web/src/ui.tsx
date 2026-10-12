@@ -18,7 +18,7 @@ export function Pill({
   );
 }
 
-export function Spinner({ size = 14, label }: { size?: number; label?: string }) {
+export function Spinner({ size = 18, label }: { size?: number; label?: string }) {
   return (
     <span className="spinner-wrap" role="status" aria-live="polite">
       <span className="spinner" style={{ width: size, height: size }} />
