@@ -37,7 +37,7 @@ Everything runs as typed dataflow graphs: independent steps in parallel, people 
 
 ## Demo link
 
-https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — hosted on Azure Container Apps, running in **demo mode**: a scripted designer with the real OpenSCAD compiles, mesh checks, blueprints and export, so it needs no key and costs nothing to try. Pick the bottle handle, *Create session*, *Design this part*: iteration 1 fails the footprint check, iteration 2 passes. It scales to zero when idle, so the first visit takes a moment to wake.
+https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — hosted on Azure Container Apps, running in **demo mode**: a scripted designer with the real OpenSCAD compiles, mesh checks, blueprints and export, so it needs no key and costs nothing to try. Pick the bottle handle, *Create session*, *Design this part*: iteration 1 fails the footprint check, iteration 2 passes. It scales to zero when idle, so the first visit after a quiet spell takes about half a minute to wake; after that it answers at once.
 
 Locally with your own key: `docker run -p 8000:8000 -e OPENAI_API_KEY=sk-… <image>` or the README's setup; Settings switches between OpenAI and demo mode.
 

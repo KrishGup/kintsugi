@@ -205,7 +205,9 @@ demo provider, no sign-in, per-run cap and rate limit) — every step of it had 
 
 `scripts/walk.py --base https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io` holds every expectation on
 the deployed app (desktop and phone, the honest stop, no page errors); the two sessions it made were deleted so the
-shared list starts empty. `/api/health` reports OpenSCAD 2021.01, the demo provider and locked settings.
+shared list starts empty. `/api/health` reports OpenSCAD 2021.01, the demo provider and locked settings. A cold start
+after scale-to-zero measured 33.8 s for the first page, 0.2 s after; the Devpost text and the deck say "about half a
+minute" instead of "a moment".
 
 **Claims checked against the files while writing the submission:** the video script said the critic "caught four of
 five" — the report's headline is 2 of the 3 defects the numbers cannot see (the other two also trip a check), now said

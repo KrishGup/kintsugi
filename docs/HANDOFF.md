@@ -8,6 +8,8 @@ one-time hand-off from the cloud session, with the first prompt to paste.
 - **Live:** https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — Azure Container Apps (resource group
   `kintsugi-rg`, eastus2), demo mode, no sign-in, scales to zero (1 vCPU / 2 GiB when awake), `KIN_MAX_COST_USD=1.5`,
   `KIN_RATE_PER_MIN=30`, settings locked. The OpenAI key is in Key Vault, unused while the provider is `fake`.
+  A cold first visit takes about 34 s (then 0.2 s); keeping one replica warm for the judging window costs about
+  $0.78/day (`az containerapp update -g kintsugi-rg -n kintsugi --min-replicas 1`) — the owner's call.
   `scripts/walk.py --base <url>` passes every expectation against it. A $30/month budget alert (`kintsugi-monthly`)
   e-mails the owner at 50/80/100 % and on a 100 % forecast.
 - **Blocked on the owner: OpenAI credits.** The key works but the account has no balance (`insufficient_quota`), so the

@@ -223,7 +223,8 @@ deploy/azure/deploy.sh -g kintsugi-rg --openai-base-url https://myres.openai.azu
 
 The stack above keeps one 2 vCPU replica warm: about $50 a month before any traffic. For a demo link on a capped card,
 scale to zero and shrink the replica — idle costs pennies (the registry, about $5 a month, is the floor), and the first
-request after a quiet spell waits for the container to start:
+request after a quiet spell waits for the container to start (measured: 34 s for the home page on 1 vCPU, then
+0.2 s; `--min-replicas 1` at that size is about $0.78 a day):
 
 ```bash
 deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth none --provider fake   --min-replicas 0 --cpu 1.0 --memory 2Gi --max-cost 1.5 --rate 30 --no-session-git
