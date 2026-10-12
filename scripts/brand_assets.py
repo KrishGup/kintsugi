@@ -49,7 +49,7 @@ def mark_svg(*, bg: str | None, ring: str, seam: str, heavy: bool = False, size:
     rw, gap, sw, r = (8.0, 9.8, 4.4, 15.2) if heavy else (6.6, 8.6, 3.4, 16)
     k = 1 - inset
     t = f'transform="translate({32 * inset:.2f} {32 * inset:.2f}) scale({k:.4f})"' if inset else ""
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"' + (f' width="{size}" height="{size}"' if size else "") + ">"]
+    parts = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"' + (f' width="{size}" height="{size}"' if size else "") + ">"]
     if bg:
         parts.append(f'<rect width="64" height="64" rx="{radius}" fill="{bg}"/>')
     parts.append(f"<g {t}>")

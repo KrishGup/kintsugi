@@ -1,0 +1,15 @@
+{
+  "name": "kintsugi-submission",
+  "private": true,
+  "description": "Builds the OFFGRID pitch deck: npm install && npm run deck (images in img/)",
+  "scripts": {
+    "deck": "node pitch-deck-build.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-icons": "^5.6.0",
+    "sharp": "^0.34.5"
+  }
+}

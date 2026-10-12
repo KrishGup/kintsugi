@@ -1,5 +1,8 @@
 # Hand-off notes — what to try, what to expect, what is rough
 
+Working on this with the coding assistant? `NOTES.md` at the root is the standing brief; `docs/HANDOFF-NOTES.md` is the
+one-time hand-off from the cloud session, with the first prompt to paste.
+
 ## What only you can do before submitting
 
 1. **Close the loop for real, once.** Real phone photos of the snapped handle → intake → capture round → design on
@@ -15,7 +18,11 @@
 
 ## Try this first
 
-0. **Windows setup** (PowerShell, from the repo folder): `py -3.11 -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e ".[dev]"`, install OpenSCAD (`winget install OpenSCAD.OpenSCAD`; the default install folder is found automatically, or set `KIN_OPENSCAD_BIN`), then `cd web; npm install; npm run build; cd ..`.
+0. **Windows setup** (PowerShell, from the repo folder): `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` — creates `.venv` here, installs the
+   package with the `dev` and `tools` extras, builds the web app, checks for OpenSCAD (a portable build under
+   `X:\Tools\OpenSCAD` is picked up; otherwise `winget install OpenSCAD.OpenSCAD` or set `KIN_OPENSCAD_BIN`), and keeps
+   the pip/npm/Playwright caches under `.cache` on this drive. Then `python scripts\walk.py` drives the whole UI in a
+   headless browser in demo mode and leaves screenshots in `scratch\walk\`.
 1. **Run the tests** (no model needed): `pip install -e ".[dev]" && pytest -q`. About four minutes; all green means OpenSCAD, the geometry stack, the measurement core, the agent runtime (scripted provider) and the web API work on your machine.
 2. **Start the app**: `(cd web && npm install && npm run build)` once, then `kin serve` and open http://localhost:8000. The header pill says which model provider is active. Click **Settings**, paste your OpenAI API key, tick "remember on this server" — it is written to `.env`, never leaves the machine except to OpenAI.
 3. **Walk the demo without a key**: Settings → *Demo mode*. The scripted designer builds the bottle handle from the template so every screen (guide, 3D, sheets, checks, sliders, export) can be seen in a minute.

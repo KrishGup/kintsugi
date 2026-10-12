@@ -81,14 +81,27 @@ _WINDOWS_OPENSCAD = (r"C:\Program Files\OpenSCAD\openscad.exe", r"C:\Program Fil
 _MAC_OPENSCAD = ("/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD",)
 
 
+def _portable_windows_candidates() -> tuple[str, ...]:
+    """A portable OpenSCAD unzipped to `<drive>:\\Tools\\OpenSCAD` on the drive this checkout lives on (keeps C: clean).
+    `openscad.com` is the console launcher that forwards stdout/stderr; prefer it over the GUI-subsystem `.exe`."""
+    if os.name != "nt":
+        return ()
+    drive = os.path.splitdrive(os.path.abspath(__file__))[0]
+    if not drive:
+        return ()
+    base = os.path.join(drive + os.sep, "Tools", "OpenSCAD")
+    return (os.path.join(base, "openscad.com"), os.path.join(base, "openscad.exe"))
+
+
 def openscad_binary() -> str:
-    """KIN_OPENSCAD_BIN, else `openscad` on PATH, else the usual install locations on Windows/macOS."""
+    """KIN_OPENSCAD_BIN, else `openscad` on PATH, else a portable build beside the checkout, else the usual install
+    locations on Windows/macOS."""
     if os.environ.get("KIN_OPENSCAD_BIN"):
         return os.environ["KIN_OPENSCAD_BIN"]
     found = shutil.which("openscad")
     if found:
         return found
-    for cand in _WINDOWS_OPENSCAD + _MAC_OPENSCAD:
+    for cand in _portable_windows_candidates() + _WINDOWS_OPENSCAD + _MAC_OPENSCAD:
         if os.path.exists(cand):
             return cand
     return "openscad"

@@ -32,6 +32,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-timeout>=2.3", "ruff>=0.5"]
+# scripts/walk.py (drives the UI), scripts/brand_assets.py (the brand kit), schema checks
+tools = ["playwright>=1.45", "fonttools>=4.50", "pillow>=10", "jsonschema>=4.20"]
 agent = ["agent-agent-sdk>=0.1.20", "vendor>=0.40"]
 
 [project.scripts]

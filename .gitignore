@@ -18,6 +18,7 @@ scratch/
 
 # Web
 web/node_modules/
+docs/submission/node_modules/
 
 
 # OS
@@ -32,7 +33,9 @@ eval/reports/**/views/
 eval/reports/**/*.stl
 web/tsconfig.tsbuildinfo
 
-# Impeccable working files (captures, comps); the tokens (design.json) and config are committed
+# Caches kept on the project drive (scripts/bootstrap.ps1) and Impeccable working files; the tokens (design.json) and config are committed
+.cache/
+.impeccable/cache/
 .impeccable/review/
 .impeccable/mocks/
 .impeccable/build/
