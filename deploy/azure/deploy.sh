@@ -166,8 +166,7 @@ if [[ "$BUILD" == "1" ]]; then
   if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
     # the Windows az streams the build log through a cp1252 console and dies on the first non-ASCII character (Vite's
     # check mark) while the build carries on in Azure: wait for the run instead of streaming it
-    RUN="$(az acr build --registry "$ACR" --image "kintsugi:$TAG" --image "kintsugi:latest" --platform linux/amd64           --file "$ROOT/Dockerfile" "$ROOT" --no-logs --query "[runId, status]" -o tsv 2>/dev/null | tr -s '	
-' ' ')"
+    RUN="$(az acr build --registry "$ACR" --image "kintsugi:$TAG" --image "kintsugi:latest" --platform linux/amd64           --file "$ROOT/Dockerfile" "$ROOT" --no-logs --query "[runId, status]" -o tsv 2>/dev/null | tr -s '\t\r\n' ' ')"
     read -r RUN_ID RUN_STATUS <<< "$RUN"
     if [[ "$RUN_STATUS" != "Succeeded" ]]; then
       echo "image build ${RUN_STATUS:-did not start} (run ${RUN_ID:-?}): az acr task logs -r $ACR --run-id ${RUN_ID:-<id>}" >&2; exit 1
