@@ -153,4 +153,4 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - Templates: `templates/*.scad`, their specs `eval/specs/*.yaml`.
 - A/B evaluation: `eval/ab_eval.py`, report `eval/reports/ab_templates.md`.
 - Web UI: `web/src` (guide: `panes/GuidePane.tsx`, settings: `llm.tsx`, sign-in gate: `auth.tsx`); `npm run build` writes `web/dist`, which the API serves.
-- Deployment: `deploy/azure/` (bicep, scripts), `docs/DEPLOY-AZURE.md`, `.github/workflows/azure.yml`, `Dockerfile`, `.env.example` (every variable).
+- Deployment: `deploy/azure/` (bicep, scripts), `docs/DEPLOY-AZURE.md`, `deploy/azure/github-actions.yml` (CI template, not enabled), `Dockerfile`, `.env.example` (every variable).

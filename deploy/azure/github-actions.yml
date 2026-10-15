@@ -1,0 +1,83 @@
+# OPTIONAL CI TEMPLATE, NOT ENABLED IN THIS REPO. It has never run.
+# To use it: copy to .github/workflows/azure.yml and create the federated credential and the AZURE_CLIENT_ID /
+# AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID secrets described in docs/DEPLOY-AZURE.md section 2.6. Until then deploys are
+# deploy/azure/deploy.sh from a laptop.
+# Build the image in Azure Container Registry and roll the Container App to it.
+#
+# One-time setup (docs/DEPLOY-AZURE.md → "Continuous deployment"):
+#   secrets   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID   (a federated credential; no password stored)
+#   variables AZURE_RESOURCE_GROUP, AZURE_ACR_NAME, AZURE_APP_NAME       (from deploy.sh's outputs)
+# The infrastructure itself is deployed by deploy/azure/deploy.sh (bicep); this workflow only ships code.
+
+name: azure
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".impeccable/**"
+      - ".agent/**"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "image tag (default: the commit sha)"
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+jobs:
+  ship:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+      ACR: ${{ vars.AZURE_ACR_NAME }}
+      APP: ${{ vars.AZURE_APP_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sign in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Pick the tag
+        id: tag
+        run: echo "tag=${{ github.event.inputs.tag || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build in ACR
+        run: |
+          az acr build --registry "$ACR" \
+            --image "kintsugi:${{ steps.tag.outputs.tag }}" --image "kintsugi:latest" \
+            --platform linux/amd64 --file Dockerfile .
+
+      - name: Roll the Container App
+        run: |
+          LOGIN="$(az acr show -n "$ACR" --query loginServer -o tsv)"
+          az containerapp update -g "$RG" -n "$APP" --image "$LOGIN/kintsugi:${{ steps.tag.outputs.tag }}" -o none
+          FQDN="$(az containerapp show -g "$RG" -n "$APP" --query properties.configuration.ingress.fqdn -o tsv)"
+          echo "url=https://$FQDN" >> "$GITHUB_OUTPUT"
+          echo "### Deployed \`kintsugi:${{ steps.tag.outputs.tag }}\` → https://$FQDN" >> "$GITHUB_STEP_SUMMARY"
+        id: roll
+
+      - name: Wait for the new revision to answer
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS "${{ steps.roll.outputs.url }}/api/health" >/dev/null; then
+              curl -sS "${{ steps.roll.outputs.url }}/api/health" | python3 -m json.tool
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "the app did not come up in time; check: az containerapp logs show -g $RG -n $APP --tail 200" >&2
+          exit 1

@@ -83,7 +83,7 @@ docker compose -f deploy/docker-compose.yml up -d --build      # any Docker host
 deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth easyauth --admin you@example.com   # Azure, end to end
 ```
 
-**Azure** — `docs/DEPLOY-AZURE.md` is the full stack (Container Apps, Azure Files, Container Registry, Key Vault, Log Analytics, Easy Auth) with every environment variable per piece, the Bicep in `deploy/azure/`, a GitHub Actions workflow that ships each push, an App Service budget variant, costs and troubleshooting.
+**Azure** — `docs/DEPLOY-AZURE.md` is the full stack (Container Apps, Azure Files, Container Registry, Key Vault, Log Analytics, Easy Auth) with every environment variable per piece, the Bicep in `deploy/azure/`, an optional GitHub Actions template (not enabled), an App Service budget variant, costs and troubleshooting.
 
 **Sign-in** — `KIN_AUTH=none` (a personal box), `token` (one shared access code, asked once, signed cookie), or `easyauth` (Microsoft / GitHub / Google through the platform; sessions belong to the person who made them, `KIN_ADMIN_USERS` see all). `KIN_SETTINGS_LOCK=1` makes the Settings dialog read-only so a deployment's key never lands in a file.
 

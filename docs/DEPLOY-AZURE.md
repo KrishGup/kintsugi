@@ -2,7 +2,7 @@
 
 One container, one always-on replica, everything it writes on an Azure Files share, the OpenAI key in Key Vault, sign-in
 handled by the platform. `deploy/azure/deploy.sh` stands the whole thing up from a laptop with the `az` CLI; the same
-Bicep is re-runnable, and a GitHub Actions workflow ships every push to `main`.
+Bicep is re-runnable. A GitHub Actions template (`deploy/azure/github-actions.yml`) can ship every push to `main` once you enable it; it is not enabled in this repo and has never run.
 
 What you get at the end:
 
@@ -32,7 +32,7 @@ What you get at the end:
                      │             ├─ /data  ◀── Azure Files share  kintsugi-data       │
                      │             ├─ OPENAI_API_KEY ◀── Key Vault (managed identity)   │
                      │             └─ stdout/stderr ──▶ Log Analytics                   │
-                     │   Container Registry ──▶ image  (az acr build · GitHub Actions)  │
+                     │   Container Registry ──▶ image  (az acr build from a laptop)    │
                      └──────────────────────────────────────────────────────────────────┘
                                                       │
                                                       ▼  api.openai.com  (or OPENAI_BASE_URL)
@@ -48,7 +48,7 @@ What you get at the end:
 | 6 | **Log Analytics** workspace | PerGB2018, 30-day retention | `kin serve` logs (uvicorn access log, run narration, OpenSCAD errors). Required by the Container Apps environment. | ≈ $0–3 |
 | 7 | **Easy Auth** (Container Apps authentication) + **Entra app registration** | — | The platform signs people in *before* the request reaches the container and forwards the identity. GitHub or Google can be added the same way. | free |
 | 8 | *(optional)* **Azure OpenAI** | your deployment | If your OpenAI usage has to stay inside Azure, point `OPENAI_BASE_URL` at the resource's OpenAI-compatible endpoint. Not needed: the default is api.openai.com with your key. | your usage |
-| 9 | *(optional)* **GitHub Actions** | — | `.github/workflows/azure.yml`: build in ACR + roll the app on every push to `main`, via a federated (OIDC) credential. | free |
+| 9 | *(optional)* **GitHub Actions** | — | `deploy/azure/github-actions.yml` (a template — copy it to `.github/workflows/` to enable; never run here): build in ACR + roll the app on every push to `main`, via a federated (OIDC) credential. | free |
 
 Budget alternative: **App Service B2** (Linux container) instead of Container Apps — same image, same share, same auth
 headers, ≈ $55/month always-on. See [App Service instead](#9-app-service-instead-budget).
@@ -148,7 +148,7 @@ callback `https://<fqdn>/.auth/login/github/callback`, then pass `githubClientId
 `easyauthProvider=github`, `KIN_ADMIN_USERS` = GitHub logins). **Google**: an OAuth client in Google Cloud Console with
 redirect `https://<fqdn>/.auth/login/google/callback`, parameters `googleClientId` / `googleClientSecret`.
 
-### 2.6 GitHub Actions (`.github/workflows/azure.yml`)
+### 2.6 GitHub Actions (optional template: `deploy/azure/github-actions.yml`, not enabled)
 
 | Kind | Name | Value |
 |------|------|-------|
@@ -359,7 +359,7 @@ tool calls, OpenSCAD errors and uvicorn access lines all go to stdout.
 **Health**: `GET /api/health` → `{ok, version, openscad, llm: {provider, ready, reason, models}, auth, settings_locked}`.
 The startup, liveness and readiness probes hit it.
 
-**Update the code**: push to `main` (workflow) or `deploy/azure/deploy.sh -g kintsugi-rg --no-infra`. A roll takes
+**Update the code**: `deploy/azure/deploy.sh -g kintsugi-rg --no-infra` (or push to `main`, once the CI template is enabled). A roll takes
 about a minute: the new revision must pass its startup probe before traffic moves and the old one is stopped, so a run
 that is in progress at that moment ends with `stopped` — roll when nobody is designing.
 
