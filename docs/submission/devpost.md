@@ -49,7 +49,7 @@ https://github.com/KrishGup/kintsugi (public)
 
 ## Demo video
 
-https://github.com/KrishGup/kintsugi/blob/main/docs/submission/kintsugi-demo.mp4 — 5:37, narrated by Krish over the first real GPT-6 run; what is in it and how it was cut: `docs/submission/video-script.md`. The Devpost video field takes YouTube/Vimeo only, so the story links the repository copy.
+https://github.com/KrishGup/kintsugi/blob/main/docs/submission/kintsugi-demo.mp4 — 5:38, narrated by Krish over the first real GPT-6 run; what is in it and how it was cut: `docs/submission/video-script.md`. The Devpost video field takes YouTube/Vimeo only, so the story links the repository copy.
 
 ## Tech stack ("Built with")
 
@@ -128,7 +128,7 @@ OpenAI GPT-6 models through the official `openai` Python SDK (Responses API). Op
 
 - [ ] Cover image (1280×720): the hero shot — phone photo of the snapped handle on the calibration sheet next to the printed replacement on the bottle.
 - [ ] Gallery: (1) the guide at capture round 1 with a measured photo, (2) the blueprint views sheet with dimension lines, (3) the sections & assembly sheet, (4) the Evidence tab, (5) the Graph tab with the live pipeline, (6) the A/B side-by-side sheets (human vs Kintsugi), (7) the printed part on the object.
-- [x] Demo video: `kintsugi-demo.mp4` (5:37, Krish's voice-over; `video-script.md`).
+- [x] Demo video: `kintsugi-demo.mp4` (5:38, Krish's voice-over; `video-script.md`).
 - [x] Repo public, README screenshots, `docs/design.html` linked.
 - [ ] Re-run `eval/ab_eval.py` and `eval/critic_probe.py` on GPT-6; replace every † number and delete the marker.
 - [ ] Hosted demo (or the Docker one-liner in the README) tested from a phone.

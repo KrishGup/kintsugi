@@ -2,6 +2,8 @@
 
 ## State on 2026-10-14 (submission night)
 
+- **Submitted:** the Devpost entry (Hack47 OFFGRID, submission 1198910) was submitted by Krish on 14 Oct 2026 at about
+  22:30 EDT; it could be edited until the 00:00 EDT deadline and not after.
 - **Repo public:** https://github.com/KrishGup/kintsugi. The CI workflow never ran, so it now lives as an opt-in template
   (`deploy/azure/github-actions.yml`), not in `.github/workflows/`.
 - **Public demo:** https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — Azure Container Apps (`kintsugi-rg`,
@@ -11,23 +13,20 @@
   access code is in the gitignored `scratch/tmp/live-access-code.txt`), sessions under `/data/live`, `KIN_MAX_COST_USD=3`.
 - **First real GPT-6 run:** the bottle handle from the typed spec, 2 iterations, all hard checks pass, critic *pass*, 21 model
   calls, $1.01 — `eval/reports/gpt6-first-run/` (with the importable session archive).
-- **Video:** `docs/submission/kintsugi-demo.mp4` (5:37), Krish's voice-over (one take, cut by `scripts/record_demo.py voice
+- **Video:** `docs/submission/kintsugi-demo.mp4` (5:38), Krish's voice-over (one take, cut by `scripts/record_demo.py voice
   --take`: last take of every line, headings dropped, pauses shortened, cleaned to −16 LUFS) over clips recorded from that real
   session; captions are his words. The raw take stays local (`scratch/voice-krish/`, gitignored).
 - **Still not done:** a real phone photo through intake; a printed coupon and part; the A/B study and critic probe on GPT-6
   (their numbers keep the †).
-- **Eligibility:** the Devpost sidebar says "Students only"; the rules text says anyone. Confirm before submitting.
 
-## What only you can do before submitting
+## What is still open (after the hackathon)
 
 1. **Close the loop for real, once.** Real phone photos of the snapped handle → intake → capture round → design on
    `gpt-6-astra` → coupon → printed part on the bottle. Keep that session folder as the demo session (`kin archive`
    it) and film the fit. Nothing else moves the score as much.
 2. **Re-run the evals on GPT-6**: `eval/ab_eval.py` (5 parts) and `eval/critic_probe.py`; replace every † number in
    `docs/submission/devpost.md`, the deck and `eval/reports/`; drop any number a run cannot reproduce.
-3. **Fill the form**: push the public repo, deploy (`deploy/azure/deploy.sh …` or the Docker one-liner on any VM) and
-   test the link from a phone, record the ≤ 3-minute video from `docs/submission/video-script.md`, swap the slide-2
-   placeholder for the real photo.
+3. **The deck's slide-2 photo** is still a placeholder for the real snapped handle on the sheet.
 4. **A real photo of a shiny ring on the sheet** is the first thing to try in intake; the measurement code has only
    seen synthetic renders.
 

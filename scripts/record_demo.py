@@ -212,9 +212,14 @@ def voice_len(b: dict) -> float:
 
 # ---- a human voice-over: one take, cut into sections ----------------------------------------------------------------
 
-# one chain for the whole take so every section sits at the same loudness: rumble and hiss off, a gentle FFT denoise at
-# the measured room floor (about -60 dB), de-essing, light compression; loudness is then normalised in two passes
-CLEAN = ("highpass=f=80,lowpass=f=15000,afftdn=nr=12:nf=-60:tn=1,deesser=i=0.35,"
+# one chain for the whole take so every section sits at the same loudness: rumble off, a light FFT denoise at the
+# measured room floor (about -60 dB; stronger settings made the voice gritty), then an EQ read off the take's own
+# third-octave spectrum: the 315-500 Hz bump (+3 dB over the speech trend, the boxy/nasal honk) cut, the 5-6.3 kHz grit
+# peak (+4 dB) notched, presence at 3 kHz and air above 9 kHz lifted for crispness; de-essing after the boosts, light
+# compression; loudness is then normalised in two passes
+CLEAN = ("highpass=f=80,afftdn=nr=8:nf=-60:tn=1,"
+         "equalizer=f=420:t=q:w=1.1:g=-3.5,equalizer=f=6200:t=q:w=2:g=-3.5,"
+         "equalizer=f=3000:t=q:w=0.8:g=2,highshelf=f=9000:g=3,deesser=i=0.4,"
          "acompressor=threshold=-24dB:ratio=2.5:attack=6:release=120:makeup=2")
 LOUD = "loudnorm=I=-16:TP=-1.5:LRA=9"
 GATE = "agate=threshold=0.005:ratio=2:range=0.2:attack=10:release=250:knee=2.8"  # room noise between words down ~14 dB
@@ -743,15 +748,21 @@ def assemble(bs: list[dict]) -> None:
     lst.write_text("".join(f"file '{p.as_posix()}'\n" for p in parts))
     master = OUT / "kintsugi-demo.mp4"
     run_ff("-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", "-movflags", "+faststart", str(master))
+    upload_copy(master)
+
+
+def upload_copy(master: Path) -> None:
+    """A copy under 10 MB for the repository and the browser upload tool: 720p at 24 fps (more bits per frame for the
+    captions and the UI text), two-pass at the bitrate that fits. Mono AAC at 64k behind a limiter: at 48k the encoder's
+    own ringing pushed the voice's true peak above 0 dBFS."""
+    seg = OUT / "segments"
     total = duration(master)
-    # a copy under 10 MB for the repository and the browser upload tool: 720p at 24 fps (more bits per frame for the
-    # captions and the UI text), two-pass at the bitrate that fits
-    kbps = int((9.5 * 8 * 1024) / total - 56)
+    kbps = int((9.5 * 8 * 1024) / total - 72)
     small = OUT / "kintsugi-demo-upload.mp4"
     common = ["-vf", "scale=1280:720:flags=lanczos", "-c:v", "libx264", "-preset", "slow", "-tune", "animation", "-b:v", f"{kbps}k", "-r", "24"]
     run_ff("-i", str(master), *common, "-pass", "1", "-passlogfile", str(seg / "x264"), "-an", "-f", "mp4", os.devnull)
-    run_ff("-i", str(master), *common, "-pass", "2", "-passlogfile", str(seg / "x264"), "-c:a", "aac", "-b:a", "48k", "-ac", "1",
-           "-movflags", "+faststart", str(small))
+    run_ff("-i", str(master), *common, "-pass", "2", "-passlogfile", str(seg / "x264"), "-af", "alimiter=limit=0.7:level=false",
+           "-c:a", "aac", "-b:a", "64k", "-ac", "1", "-movflags", "+faststart", str(small))
     print(f"master {master} {total:.1f}s {master.stat().st_size / 1e6:.1f} MB; upload copy {small.stat().st_size / 1e6:.2f} MB at {kbps} kbps")
 
 
