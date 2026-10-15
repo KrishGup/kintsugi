@@ -142,7 +142,7 @@ def voice(bs: list[dict]) -> None:
         h = hashlib.sha1((VOICE + VOICE_STYLE + b["say"]).encode()).hexdigest()[:10]
         path = d / f"{b['id']}.mp3"
         stamp = d / f"{b['id']}.hash"
-        if path.exists() and stamp.exists() and stamp.read_text() == h:
+        if path.exists() and stamp.exists() and stamp.read_text() in (h, "human"):
             continue
         r = httpx.post("https://api.openai.com/v1/audio/speech", headers={"Authorization": f"Bearer {key}"}, timeout=120,
                        json={"model": VOICE_MODEL, "voice": VOICE, "input": b["say"], "instructions": VOICE_STYLE, "response_format": "mp3"})
@@ -154,6 +154,97 @@ def voice(bs: list[dict]) -> None:
 
 def voice_len(b: dict) -> float:
     return duration(OUT / "voice" / f"{b['id']}.mp3")
+
+
+# ---- a human voice-over instead of text-to-speech ------------------------------------------------------------------
+
+AUDIO_EXT = (".wav", ".m4a", ".mp3", ".aac", ".ogg", ".opus", ".webm", ".flac", ".mp4", ".mov")
+CLEAN = ("highpass=f=80,afftdn=nf=-25,"
+         "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.08,areverse,"
+         "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.15,areverse,"
+         "loudnorm=I=-16:TP=-1.5:LRA=11")
+
+
+def transcribe(path: Path) -> str:
+    import httpx
+    with open(path, "rb") as fh:
+        r = httpx.post("https://api.openai.com/v1/audio/transcriptions", headers={"Authorization": f"Bearer {openai_key()}"}, timeout=180,
+                       data={"model": "gpt-4o-transcribe"}, files={"file": (path.name, fh, "audio/wav")})
+    r.raise_for_status()
+    return r.json().get("text", "").strip()
+
+
+def similarity(a: str, b: str) -> float:
+    import difflib
+    words = lambda s: re.findall(r"[a-z0-9]+", s.lower())  # noqa: E731
+    return difflib.SequenceMatcher(None, words(a), words(b)).ratio()
+
+
+def human_voice(bs: list[dict], src: Path) -> None:
+    """Krish's takes -> scratch/demo/voice/<id>.mp3 and <id>.txt (the caption, from a transcript of what was said).
+
+    Accepts one file per beat (names starting 01..10) or any number of files holding all the beats in order with a pause
+    between them; those are split on silences, each piece is transcribed and matched to the beat whose script it is
+    closest to, and the LAST take of each beat wins (a fluffed line said again replaces the first)."""
+    ff = ffmpeg()
+    d = OUT / "voice"
+    work = OUT / "voice-work"
+    d.mkdir(parents=True, exist_ok=True)
+    work.mkdir(parents=True, exist_ok=True)
+    files = sorted(f for f in src.iterdir() if f.suffix.lower() in AUDIO_EXT)
+    if not files:
+        raise SystemExit(f"no audio files in {src}")
+    chosen: dict[str, Path] = {}
+    by_number = {b["id"][:2]: b for b in bs}
+    numbered = {f.name[:2]: f for f in files if f.name[:2] in by_number}
+    if len(numbered) == len(files):
+        for num, f in numbered.items():
+            chosen[by_number[num]["id"]] = f
+    else:
+        joined = work / "all.wav"
+        lst = work / "inputs.txt"
+        lst.write_text("".join(f"file '{f.resolve().as_posix()}'\n" for f in files))
+        subprocess.run([ff, "-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lst),
+                        "-ac", "1", "-ar", "48000", str(joined)], check=True)
+        err = subprocess.run([ff, "-hide_banner", "-i", str(joined), "-af", "silencedetect=noise=-35dB:d=1.2", "-f", "null", "-"],
+                             capture_output=True, text=True).stderr
+        starts = [float(x) for x in re.findall(r"silence_start: ([\d.]+)", err)]
+        ends = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", err)]
+        total = duration(joined)
+        cuts, pos = [], 0.0
+        for s, e in zip(starts, ends + [total]):
+            if s - pos > 0.6:
+                cuts.append((pos, s))
+            pos = e
+        if total - pos > 0.6:
+            cuts.append((pos, total))
+        pieces = []
+        for i, (a, b) in enumerate(cuts):
+            piece = work / f"piece_{i:03d}.wav"
+            subprocess.run([ff, "-y", "-hide_banner", "-loglevel", "error", "-ss", f"{max(a - 0.15, 0):.2f}", "-to", f"{b + 0.2:.2f}",
+                            "-i", str(joined), str(piece)], check=True)
+            text = transcribe(piece)
+            best = max(bs, key=lambda bt: similarity(text, bt["say"]))
+            score = similarity(text, best["say"])
+            print(f"piece {i:02d} {a:6.1f}-{b:6.1f}s -> {best['id']} ({score:.2f}): {text[:70]}")
+            pieces.append((piece, best["id"], score, text))
+        # merge a beat said in two breaths (consecutive pieces matched to the same beat, both weak) and keep the last take
+        for piece, bid, score, text in pieces:
+            if score >= 0.25:
+                chosen[bid] = piece
+    for b in bs:
+        f = chosen.get(b["id"])
+        if not f:
+            print(f"MISSING take for {b['id']}: keeping the text-to-speech line")
+            continue
+        out = d / f"{b['id']}.mp3"
+        subprocess.run([ff, "-y", "-hide_banner", "-loglevel", "error", "-i", str(f), "-af", CLEAN, "-ac", "1", "-ar", "48000",
+                        "-c:a", "libmp3lame", "-q:a", "2", str(out)], check=True)
+        (d / f"{b['id']}.hash").write_text("human")
+        said = transcribe(out)
+        # the caption keeps the script's exact wording (numbers, names) unless the take really departs from it
+        (d / f"{b['id']}.txt").write_text(b["say"] if similarity(said, b["say"]) >= 0.85 else said, encoding="utf-8")
+        print(f"voice {b['id']}: {duration(out):.1f}s (human)")
 
 
 # ---- picture ---------------------------------------------------------------------------------------------------------
@@ -322,7 +413,8 @@ async def record(base: str, sid: str, code: str, bs: list[dict], only: set[str] 
             if beat["page"] not in ("home", "spec"):
                 await pg.get_by_role("tab", name=re.compile("^guide", re.I)).first.click()
             await pg.wait_for_timeout(1500)
-            await pg.evaluate(OVERLAY_JS, beat["say"])
+            said = OUT / "voice" / f"{beat['id']}.txt"
+            await pg.evaluate(OVERLAY_JS, said.read_text(encoding="utf-8") if said.exists() else beat["say"])
             t_ready = time.time()
             need = voice_len(beat) + 0.8
             await act(pg, beat["page"], base, sid)
@@ -385,6 +477,7 @@ def main() -> int:
     ap.add_argument("--session", default="")
     ap.add_argument("--code-file", default=str(ROOT / "scratch" / "tmp" / "live-access-code.txt"))
     ap.add_argument("--only", default="", help="comma-separated beat id prefixes to re-record, e.g. 01,02,05")
+    ap.add_argument("--from-dir", default="", help="voice step: use a human voice-over from this folder instead of text-to-speech")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     fpath = OUT / "facts.json"
@@ -400,7 +493,10 @@ def main() -> int:
             print(f"[{b['id']}] {b['say']}\n")
         return 0
     if a.step in ("voice", "all"):
-        voice(bs)
+        if a.from_dir:
+            human_voice(bs, Path(a.from_dir))
+        else:
+            voice(bs)
     if a.step in ("record", "all"):
         import asyncio
         code = Path(a.code_file).read_text().strip() if Path(a.code_file).exists() else ""
