@@ -3,25 +3,21 @@
 Working on this with the coding assistant? `NOTES.md` at the root is the standing brief; `docs/HANDOFF-NOTES.md` is the
 one-time hand-off from the cloud session, with the first prompt to paste.
 
-## State on 2026-10-12 (night before the owner's review)
+## State on 2026-10-14 (submission night)
 
-- **Live:** https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — Azure Container Apps (resource group
-  `kintsugi-rg`, eastus2), demo mode, no sign-in, scales to zero (1 vCPU / 2 GiB when awake), `KIN_MAX_COST_USD=1.5`,
-  `KIN_RATE_PER_MIN=30`, settings locked. The OpenAI key is in Key Vault, unused while the provider is `fake`.
-  A cold first visit takes about 34 s (then 0.2 s); keeping one replica warm for the judging window costs about
-  $0.78/day (`az containerapp update -g kintsugi-rg -n kintsugi --min-replicas 1`) — the owner's call.
-  `scripts/walk.py --base <url>` passes every expectation against it. A $30/month budget alert (`kintsugi-monthly`)
-  e-mails the owner at 50/80/100 % and on a 100 % forecast.
-- **Blocked on the owner: OpenAI credits.** The key works but the account has no balance (`insufficient_quota`), so the
-  real GPT-6 run (hand-off step 2) and the eval re-runs (step 4) have not happened. Add credits, then
-  `kin design <session> --budget 8 --critic-rounds 2` on `eval/specs/bottle_handle.yaml`; `.env` has
-  `KIN_MAX_COST_USD=3` while the account limit is $10.
-- **Devpost:** the draft is filled (overview, story, built-with, links, eight captioned gallery images, the prize
-  opted in) and saved at step 4/5. Not submitted. Missing: the video link, the repo (the link points at
-  `github.com/KrishGup/kintsugi`, which does not exist yet), the terms checkbox and *Submit*. Devpost allows edits after
-  submitting until the deadline (Oct 15 00:00 EDT, i.e. the night of Oct 14).
-- **Deck:** a 13-slide presentation with speaker notes (a Agent artifact, private until shared); slide 2 has a
-  placeholder for the photo of the snapped handle; the † numbers carry their footnote.
+- **Repo public:** https://github.com/KrishGup/kintsugi. The CI workflow never ran, so it now lives as an opt-in template
+  (`deploy/azure/github-actions.yml`), not in `.github/workflows/`.
+- **Public demo:** https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — Azure Container Apps (`kintsugi-rg`,
+  eastus2), scripted provider, no sign-in, scales to zero (a cold first visit takes ~34 s), settings locked. A $30/month budget
+  alert (`kintsugi-monthly`) e-mails the owner.
+- **Private real instance:** `kintsugi-live` in the same environment, same image, `KIN_PROVIDER=openai`, `KIN_AUTH=token` (the
+  access code is in the gitignored `scratch/tmp/live-access-code.txt`), sessions under `/data/live`, `KIN_MAX_COST_USD=3`.
+- **First real GPT-6 run:** the bottle handle from the typed spec, 2 iterations, all hard checks pass, critic *pass*, 21 model
+  calls, $1.01 — `eval/reports/gpt6-first-run/` (with the importable session archive).
+- **Video:** `docs/submission/kintsugi-demo.mp4`, recorded from that real session by `scripts/record_demo.py` (narration by
+  OpenAI text-to-speech; a captions-only cut for a human voice-over is kept locally in `scratch/demo/`, not committed).
+- **Still not done:** a real phone photo through intake; a printed coupon and part; the A/B study and critic probe on GPT-6
+  (their numbers keep the †).
 - **Eligibility:** the Devpost sidebar says "Students only"; the rules text says anyone. Confirm before submitting.
 
 ## What only you can do before submitting
@@ -83,7 +79,7 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - `DESIGN.md` (root) is the recorded visual system — the palette (navy #05142E ink, #155DD3 the one action colour, #6C9EF0 dimension blue, #BED4F9 tolerance tint), both themes, the type ramp, spacing, components, do's and don'ts — with the machine-readable tokens in its frontmatter and `.impeccable/design.json`. `PRODUCT.md` holds the product truth the design serves. Tokens live in `web/src/styles.css` (`:root` and the dark block); every component reads them, including the 3D viewer.
 - Fonts are bundled (`@fontsource/*`, latin subsets) so the app renders the same with no internet. Icons are one SVG family in `web/src/icons.tsx`.
 - On a phone the session shows one pane at a time, switched from the bar at the bottom (Guide · 3D & sheets · Details); the stage bar scrolls.
-- [Impeccable](https://github.com/pbakaus/impeccable) is vendored as a project skill (`.agent/skills/impeccable`, agents in `.agent/agents`, the design-detector hook in `.agent/settings.json`). In the coding assistant: `/impeccable audit web`, `/impeccable polish the settings modal`, `/impeccable critique home`. The launcher downloads its engine binary once on first run (Windows: `scripts/impeccable.cmd`). The mechanical detector is clean on `web/src` except one advisory for the blueprint grid, which is the drafting-sheet ground and deliberate.
+- [Impeccable](https://github.com/pbakaus/impeccable) is vendored as a project skill (`.agent/skills/impeccable`, agents in `.agent/agents`, the design-detector hook in `.agent/settings.json`). In the coding assistant: `/impeccable audit web`, `/impeccable polish the settings modal`, `/impeccable critique home`. The launcher downloads its engine binary once on first run (Windows: `.agent/skills/impeccable/scripts/impeccable.cmd`). The mechanical detector is clean on `web/src` except one advisory for the blueprint grid, which is the drafting-sheet ground and deliberate.
 
 ## The customizer (Customize tab)
 
@@ -123,7 +119,7 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 
 ## Deploying (Azure, Docker)
 
-- `docs/DEPLOY-AZURE.md` is the whole story: the service stack (Container Apps · Azure Files · Container Registry · Key Vault · Log Analytics · Easy Auth), every environment variable per piece, costs, operations, troubleshooting. `deploy/azure/deploy.sh -g <rg> --auth easyauth --admin <you>` does it end to end from a laptop with `az`; `deploy/azure/main.bicep` + `app.bicep` are the declarative form; `.github/workflows/azure.yml` ships every push to `main`; `deploy/azure/appservice.sh` is the ≈ $55/month App Service variant; `deploy/docker-compose.yml` runs the same image anywhere.
+- `docs/DEPLOY-AZURE.md` is the whole story: the service stack (Container Apps · Azure Files · Container Registry · Key Vault · Log Analytics · Easy Auth), every environment variable per piece, costs, operations, troubleshooting. `deploy/azure/deploy.sh -g <rg> --auth easyauth --admin <you>` does it end to end from a laptop with `az`; `deploy/azure/main.bicep` + `app.bicep` are the declarative form; `deploy/azure/github-actions.yml` is an opt-in CI template (never run); `deploy/azure/appservice.sh` is the ≈ $55/month App Service variant; `deploy/docker-compose.yml` runs the same image anywhere.
 - Auth (`kintsugi/server/auth.py`): `KIN_AUTH=none|token|easyauth`. Token mode = `KIN_ACCESS_TOKEN` + an HMAC cookie; easyauth reads the `X-MS-CLIENT-PRINCIPAL-*` headers Azure sets and scopes sessions to their `owner` (`KIN_ADMIN_USERS` see all). `KIN_SETTINGS_LOCK=1` makes `/api/settings` read-only. The UI gate lives in `web/src/auth.tsx`.
 - Data: `KIN_DATA_DIR` (container: `/data`) holds `sessions/` and the settings `.env`; `KIN_SESSION_GIT=0` drops the per-session git history for slow shares.
 - Archives (`kintsugi/session/archive.py`): `GET /api/sessions/{id}/archive` ↔ `POST /api/sessions/import`, `kin archive` / `kin import`, manifest + file hashes, zip-slip and size checks; schemas in `docs/schemas/` (regenerate with `kin schema … -o`), served at `/api/schemas/…`. This is also the backup/migration path.

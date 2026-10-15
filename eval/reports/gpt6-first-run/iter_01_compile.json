@@ -1,0 +1,23 @@
+{
+  "ok": false,
+  "out_path": null,
+  "format": "stl",
+  "duration_s": 0.51,
+  "errors": [
+    "Assertion '!approx(segment[0], segment[1])' failed: \""
+  ],
+  "warnings": [],
+  "echo_values": {
+    "neck_ring_inner_diameter": 43.45,
+    "neck_ring_ring_height": 6,
+    "neck_ring_ring_outer_diameter": 54,
+    "load_loop_inner_width": 42,
+    "load_loop_inner_height": 26,
+    "footprint_overall_length": 109,
+    "ring_radial_wall": 5.275,
+    "central_finger_gap": 23
+  },
+  "top_level_kind": null,
+  "returncode": 1,
+  "cancelled": false
+}

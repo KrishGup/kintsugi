@@ -10,6 +10,10 @@ The same machinery is a general OpenSCAD design agent with a real verification l
 
 Built for OFFGRID (Hack47), September–October 2026.
 
+**Try it:** the hosted demo at https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io runs the scripted provider (real OpenSCAD compiles and mesh checks, no key, no cost; the first visit after a quiet spell takes about half a minute to wake). **Watch it:** [`docs/submission/kintsugi-demo.mp4`](docs/submission/kintsugi-demo.mp4).
+
+**Status at submission (14 Oct 2026):** the GPT-6 path has completed one real run — the bottle handle from a typed spec, 2 iterations, every hard check passing, critic *pass*, $1.01 ([`eval/reports/gpt6-first-run/`](eval/reports/gpt6-first-run/)). No real phone photo has been through intake yet (measurement accuracy is on synthetic photos) and nothing has been printed. Numbers marked † elsewhere were measured on the Agent provider during development.
+
 ## Why it works
 
 - **A replacement part is defined by its interfaces.** Measure the few dimensions that mate with the object; design the body freely. That turns "3D‑scan the thing" into "measure a ring and a height".
@@ -80,7 +84,7 @@ One container holds the API, the built UI and the OpenSCAD toolchain; everything
 
 ```bash
 docker compose -f deploy/docker-compose.yml up -d --build      # any Docker host; /data on a volume
-deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth easyauth --admin you@example.com   # Azure, end to end
+deploy/azure/deploy.sh -g kintsugi-rg -l eastus2 --auth none --provider fake --min-replicas 0   # Azure, as the live demo runs (Easy Auth mode: reviewed in code, not deployed)
 ```
 
 **Azure** — `docs/DEPLOY-AZURE.md` is the full stack (Container Apps, Azure Files, Container Registry, Key Vault, Log Analytics, Easy Auth) with every environment variable per piece, the Bicep in `deploy/azure/`, an optional GitHub Actions template (not enabled), an App Service budget variant, costs and troubleshooting.

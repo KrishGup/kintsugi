@@ -433,7 +433,7 @@ same environment variables as **App settings**, Easy Auth via `az webapp auth`. 
   is shared; OpenSCAD on a complex part takes 1.5–2× longer than on 2 dedicated vCPU.
 - Idle request timeout is 230 s — same SSE reconnect story.
 - `WEBSITES_PORT=8000`, `WEBSITES_ENABLE_APP_SERVICE_STORAGE=false` (we mount our own share), `always-on` true.
-- Easy Auth headers are the same, so `KIN_AUTH=easyauth` works unchanged.
+- Easy Auth headers are the same, so `KIN_AUTH=easyauth` should work unchanged (reviewed in code; neither this variant nor Easy Auth has been deployed).
 - Secrets: App settings are encrypted at rest; use `@Microsoft.KeyVault(SecretUri=…)` references with the web app's
   system identity if you want the key in Key Vault there too.
 

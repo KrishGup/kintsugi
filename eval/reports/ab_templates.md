@@ -1,5 +1,7 @@
 # A/B report — Kintsugi designer vs human-designed OpenSCAD parts (templates mode)
 
+**Run on the Agent provider (opus), 2026-09-25; not yet re-run on GPT-6 (†).** "pass" in the Kintsugi column means every hard check; soft-check failures are listed where they occurred.
+
 Each reference is a human-designed replacement part from a public OpenSCAD repository. A Part Spec was written from the reference's own mating dimensions (its interfaces), the designer built a part from the spec alone (it never saw the reference), and both were measured by the same checker and judged blind by the critic (A/B order randomized).
 
 | part | kin checks | human checks | iterations | cost | silhouette IoU | Chamfer (mm) | volume kin/human | blind judge |
@@ -8,7 +10,7 @@ Each reference is a human-designed replacement part from a public OpenSCAD repos
 | cabinet_plug | pass | fail: walls.p05, walls.min | 1 | $0.35 | 0.92 | 1.22 | 7.78 | kintsugi (kin 9 / human 6) |
 | ikea_dombas_handle | pass | pass | 1 | $0.89 | 0.96 | 0.54 | 1.33 | kintsugi (kin 9 / human 5) |
 | trailer_jack_cap | pass | pass | 2 | $1.26 | 0.99 | 0.17 | 0.95 | kintsugi (kin 9 / human 7) |
-| wine_glass_rack_hinge | pass | fail: mesh.watertight, walls.min, print.overhang | 4 | $n/a (run interrupted) | 0.89 | 0.18 | — | kintsugi (kin 8 / human 6) |
+| wine_glass_rack_hinge | pass (hard); soft: walls.min, print.overhang; run interrupted after iteration 4 | fail: mesh.watertight, walls.min, print.overhang | 4 | $n/a (run interrupted) | 0.89 | 0.18 | — | kintsugi (kin 8 / human 6) |
 
 ## Interface dimensions (measured on the meshes)
 

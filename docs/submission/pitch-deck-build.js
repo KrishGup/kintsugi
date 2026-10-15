@@ -96,7 +96,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     s.addText("Photograph what broke. Print what fits.", { x: 0.6, y: 2.0, w: 5.6, h: 0.6, fontFace: FONT_B, fontSize: 24, color: C.sky, isTextBox: true, margin: 0 });
     s.addText("An agent that turns phone photos of a broken part into a verified, printable replacement — and checks its own work like an engineer.",
       { x: 0.6, y: 2.7, w: 5.3, h: 1.0, fontFace: FONT_B, fontSize: 14, color: C.ice2, isTextBox: true, margin: 0 });
-    dimLine(s, 0.6, 3.9, 3.6, "3 photos → 1 STL", "", { color: C.sky, paper: C.navy, size: 14 });
+    dimLine(s, 0.6, 3.9, 3.6, "photos → spec → STL", "", { color: C.sky, paper: C.navy, size: 14 });
     s.addText("HACK47: OFFGRID · September–October 2026\nBuilt on the OpenAI Responses API · GPT-6", { x: 0.6, y: 4.6, w: 5.6, h: 0.55, fontFace: FONT_M, fontSize: 10, color: C.ice2, isTextBox: true, margin: 0 });
     s.addText("Krish Gupta", { x: 7.4, y: 4.75, w: 2.0, h: 0.35, fontFace: FONT_B, fontSize: 12, color: C.ice2, align: "right", isTextBox: true, margin: 0 });
     frame(s, 6.45, 1.05, 3.0, 3.35, IMG("assembly_iso.png"), { fill: C.navy2, line: "2C4260" });
@@ -197,7 +197,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     ], { size: 10.5, para: 4 });
     dimLine(s, 5.95, 1.45, 3.5, "≤ 0.5 mm", "diameter error on synthetic ground truth, up to 35° of camera tilt", { size: 15 });
     dimLine(s, 5.95, 2.55, 3.5, "≤ 0.3 mm", "circle-centre error", { size: 15 });
-    dimLine(s, 5.95, 3.65, 3.5, "1 round", "for the bottle handle: one sheet photo, one ruler reading, ready", { size: 15 });
+    dimLine(s, 5.95, 3.65, 3.5, "one round", "the plan for the bottle handle: one sheet photo, one ruler reading (scripted demo)", { size: 15 });
     footer(s, "kintsugi/spec/evidence.py · kintsugi/agent/capture.py · kintsugi/measure/");
     s.addNotes("The follow-up loop is driven by a graph, not a prompt. missing() ranks what still needs evidence; plan_round() batches it into the fewest user actions; readiness() decides when designing is safe. The model's job is to write the instructions for this object — the arithmetic is ours.");
   }
@@ -216,7 +216,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
       { text: "People are nodes: a human node suspends the run with a request and resumes when the answer lands in the state.", options: { bullet: true, breakLine: true } },
       { text: "Every run leaves a trace — per-node timing, the critical path, serial vs wall — drawn live in the Graph tab.", options: { bullet: true } },
     ], { size: 11, color: C.ice, para: 5 });
-    dimLine(s, 0.5, 4.55, 2.6, "1.6–1.7×", "faster per iteration, two cores", { color: C.sky, paper: C.navy, labelColor: C.ice2, size: 14 });
+    dimLine(s, 0.5, 4.55, 2.6, "checks ∥ sheets", "rendered in parallel, every run traced", { color: C.sky, paper: C.navy, labelColor: C.ice2, size: 14 });
     dimLine(s, 3.6, 4.55, 2.6, "4 graphs", "iteration · intake/capture · export · session flow", { color: C.sky, paper: C.navy, labelColor: C.ice2, size: 14 });
     dimLine(s, 6.7, 4.55, 2.8, "~300 lines", "the runtime, no framework", { color: C.sky, paper: C.navy, labelColor: C.ice2, size: 14 });
     s.addNotes("Graph engineering, in the sense of state-based graphs with defined inputs and outputs where agents or algorithms operate in the nodes. Declaring what depends on what gave us parallelism, traces, resumable human steps and the critical path for free — and the session flow itself is a guarded state graph.");
@@ -287,7 +287,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     frame(s, 3.45, 4.05, 2.75, 0.9, IMG("ab_kin_top.png"), { sizing: "cover" });
     mono(s, 0.5, 5.0, 2.75, 0.2, "human — trailer jack cap", { size: 8 });
     mono(s, 3.45, 5.0, 2.75, 0.2, "kintsugi — same spec, 2 iterations", { size: 8 });
-    dimLine(s, 6.5, 1.35, 3.0, "5/5 pass · 4/5 preferred†", "A/B vs human-designed repair parts", { size: 11.5 });
+    dimLine(s, 6.5, 1.35, 3.0, "5/5 pass hard checks · 4/5 preferred†", "A/B vs human-designed repair parts", { size: 11.5 });
     dimLine(s, 6.5, 2.35, 3.0, "2 / 3 caught †", "critic probe: defects the numeric checks cannot see; control passes", { size: 13 });
     dimLine(s, 6.5, 3.45, 3.0, "≤ 0.05 mm", "the toolchain on known geometry: circle fits, interference ≤3 %, measurement ≤0.5 mm — before any model", { size: 13 });
     dimLine(s, 6.5, 4.55, 3.0, "1·1·1·7", "iterations to converge, four bottle-handle runs †", { size: 13 });
@@ -353,12 +353,12 @@ function frame(slide, x, y, w, h, img, opts = {}) {
       s.addText(h, { x: x - 0.1, y: 1.8, w: 1.5, h: 0.3, fontFace: FONT_B, fontSize: 11, bold: true, color: C.ink, isTextBox: true, margin: 0 });
       s.addText(sub, { x: x - 0.1, y: 2.1, w: 1.5, h: 0.6, fontFace: FONT_B, fontSize: 9, color: C.ink2, isTextBox: true, margin: 0 });
     });
-    dimLine(s, 0.5, 3.05, 2.1, "36 commits", "a log, not a launch", { size: 13 });
-    dimLine(s, 2.8, 3.05, 2.1, "18k lines", "Python · TypeScript · SCAD", { size: 13 });
+    dimLine(s, 0.5, 3.05, 2.1, "1 real GPT-6 run", "2 iterations · $1.01", { size: 13 });
+    dimLine(s, 2.8, 3.05, 2.1, "15 / 15", "checks pass on its mesh", { size: 13 });
     dimLine(s, 5.1, 3.05, 2.1, "5 A/B parts", "judged blind against humans", { size: 13 });
     dimLine(s, 7.4, 3.05, 2.1, "3 docs", "design rev B · hand-off · eval reports", { size: 13 });
     body(s, 0.5, 4.0, 5.6, 1.1, [
-      { text: "Every stage was walked by hand — real photos, real prints, the UI driven end to end in a browser after each change. Rough edges are listed in the hand-off doc, not hidden.", options: { breakLine: true } },
+      { text: "The UI was driven end to end in a headless browser at desktop and phone widths after each change; one real GPT-6 run is in eval/reports/gpt6-first-run. No real photo or print yet; rough edges are listed in docs/HANDOFF.md.", options: { breakLine: true } },
       { text: "Solo build; AI coding assistants used throughout, as the rules allow. OpenSCAD, BOSL2, OpenCV, trimesh and the OpenAI SDK are the third-party pillars — all disclosed.", options: {} },
     ], { size: 10.5, para: 4 });
     s.addText("Thanks to HACK47 and the sponsors — OpenAI, whose Responses API runs every model call here, and Red Bull, who keep the house shipping.",
@@ -374,7 +374,7 @@ function frame(slide, x, y, w, h, img, opts = {}) {
     s.addImage({ path: IMG("logo-mark.png"), x: 0.6, y: 0.55, w: 0.7, h: 0.7 });
     s.addText("Photograph what broke.\nPrint what fits.", { x: 0.6, y: 1.4, w: 8.8, h: 1.7, fontFace: FONT_H, fontSize: 40, bold: true, color: C.ice, isTextBox: true, margin: 0, valign: "middle" });
     s.addText("Off-grid, the repair is the supply chain.", { x: 0.6, y: 3.15, w: 8.8, h: 0.5, fontFace: FONT_B, fontSize: 18, color: C.sky, isTextBox: true, margin: 0, italic: true });
-    s.addText("github.com/KrishGup/kintsugi   ·   demo: [link]   ·   video: [link]", { x: 0.6, y: 4.1, w: 8.8, h: 0.4, fontFace: FONT_M, fontSize: 11, color: C.ice2, isTextBox: true, margin: 0 });
+    s.addText("github.com/KrishGup/kintsugi   ·   demo: kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io   ·   video: docs/submission/kintsugi-demo.mp4", { x: 0.6, y: 4.1, w: 8.8, h: 0.4, fontFace: FONT_M, fontSize: 11, color: C.ice2, isTextBox: true, margin: 0 });
     s.addText("KINTSUGI · HACK47: OFFGRID · Krish Gupta", { x: 0.6, y: 4.75, w: 8.8, h: 0.35, fontFace: FONT_M, fontSize: 9, color: C.ice2, isTextBox: true, margin: 0, charSpacing: 2 });
     s.addNotes("Close on the object: the printed handle on the bottle. Kintsugi — photograph what broke, print what fits.");
   }

@@ -44,7 +44,7 @@ The model never grades its own homework: dimensions are measured on the exported
 
 ## Evidence on Hand
 
-- Real: the templates and their specs (`templates/`, `eval/specs/`), the A/B study against human-designed repair parts (`eval/reports/ab_templates.md`), the critic probe, 96 tests, the blueprint sheets and screenshots in `docs/submission/img/`, the pitch deck and Devpost draft in `docs/submission/`.
+- Real: the templates and their specs (`templates/`, `eval/specs/`), the A/B study against human-designed repair parts (`eval/reports/ab_templates.md`), the critic probe, the first real GPT-6 run (`eval/reports/gpt6-first-run/`), the blueprint sheets and screenshots in `docs/submission/img/`, the pitch deck and Devpost draft in `docs/submission/`.
 - Absent, never to be fabricated: customer quotes, install counts, the GPT-6 re-run numbers (marked †), a recorded demo video, the photo of the real snapped handle (placeholder in the deck).
 
 ## Product Principles

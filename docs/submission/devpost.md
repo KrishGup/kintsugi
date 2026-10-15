@@ -33,13 +33,15 @@ Kintsugi is an agent that behaves like a careful mechanical designer:
 5. **Customize** — every parameter of the finished part is a slider or a switch with a live 3D draft, like MakerWorld's parametric model maker — except that each fit dimension shows *where its number came from* (the photo, the ruler, the caliper, a recognised standard), draws its tolerance band on the slider, and the computed dimensions turn red against the spec's limits before anything is applied. *Apply & verify* re-runs the real checks.
 6. **Fit coupon + export** — the mating feature alone at three clearances to print first; then an oriented STL/3MF, a customizer-ready `.scad` with presets in OpenSCAD's own format, a blueprint PDF and a print card that says *why* the settings are what they are.
 
+**Status at submission (14 Oct 2026), stated plainly.** The GPT-6 path has completed one real run: the bottle handle from a typed spec, 2 iterations (the first did not compile, the second passes every hard check on the exported mesh), critic verdict *pass*, 21 model calls, $1.01 — the files are in `eval/reports/gpt6-first-run/`. The designer adapted the vetted ring-and-loop template for that part. No real phone photo has been through intake yet (the measurement numbers are on synthetic photos), and nothing has been printed yet. The hosted demo runs the scripted provider.
+
 Everything runs as typed dataflow graphs: independent steps in parallel, people as first-class nodes, every run traced with its critical path.
 
 ## Demo link
 
 https://kintsugi.orangecliff-df186167.eastus2.azurecontainerapps.io — hosted on Azure Container Apps, running in **demo mode**: a scripted designer with the real OpenSCAD compiles, mesh checks, blueprints and export, so it needs no key and costs nothing to try. Pick the bottle handle, *Create session*, *Design this part*: iteration 1 fails the footprint check, iteration 2 passes. It scales to zero when idle, so the first visit after a quiet spell takes about half a minute to wake; after that it answers at once.
 
-Locally with your own key: `docker run -p 8000:8000 -e OPENAI_API_KEY=sk-… <image>` or the README's setup; Settings switches between OpenAI and demo mode.
+Locally with your own key: `docker compose -f deploy/docker-compose.yml up -d --build` (builds the image locally) or the README's setup; Settings switches between OpenAI and demo mode.
 
 ## Source code
 
@@ -51,11 +53,11 @@ Locally with your own key: `docker run -p 8000:8000 -e OPENAI_API_KEY=sk-… <im
 
 ## Tech stack ("Built with")
 
-OpenAI GPT-6 (gpt-6-astra for design, critic and vision; gpt-6-sol optional) via the **OpenAI Responses API** (function tools with image outputs, `previous_response_id` chaining, reasoning effort, JSON mode) · Python 3.11+ · OpenSCAD 2021 + BOSL2 · trimesh + manifold3d + shapely (mesh measurement) · OpenCV (ArUco calibration sheet, homography rectification, sub-pixel circle fitting) · NumPy software z-buffer renderer (hidden-line views, hatched sections, mesh-derived dimension lines) · FastAPI + SSE · React + Vite + three.js + Monaco · pydantic Part Spec · a home-grown dataflow-graph runtime · a use-case review record (`docs/REVIEW.md`) and a regression net that needs no model · Docker · Azure Container Apps (Bicep, Easy Auth, one command)
+OpenAI GPT-6 (gpt-6-astra for design, critic and vision; gpt-6-sol optional) via the **OpenAI Responses API** (function tools with image outputs, `previous_response_id` chaining, reasoning effort, JSON mode) · Python 3.11+ · OpenSCAD 2021 + BOSL2 · trimesh + manifold3d + shapely (mesh measurement) · OpenCV (ArUco calibration sheet, homography rectification, sub-pixel circle fitting) · NumPy software z-buffer renderer (hidden-line views, hatched sections, mesh-derived dimension lines) · FastAPI + SSE · React + Vite + three.js + Monaco · pydantic Part Spec · a home-grown dataflow-graph runtime · a use-case review record (`docs/REVIEW.md`) and a regression net that needs no model · Docker · Azure Container Apps (Bicep; the live demo deploys with one command; Easy Auth reviewed in code, not deployed)
 
 ## Build process (short version for the form)
 
-Built solo over the OFFGRID window, in the open (the commit history starts on 25 September 2026). Order of work: (1) the verification toolchain first — headless OpenSCAD compile, mesh checks, the blueprint renderer, the Part Spec with measurement recipes — all tested on known geometry before any model was involved; (2) the design loop with the code-blind critic and an iteration policy, validated on the bottle-handle benchmark and an A/B study against five human-designed OpenSCAD repair parts; (3) the measurement core (calibration sheet, rectification, circle/outline fitting) validated on synthetic photos with known ground truth; (4) the web workspace; (5) the port to the OpenAI Responses API with a scripted provider so the whole loop is testable without a key; (6) graph engineering: the dataflow runtime, the evidence graph and the capture loop. Every stage has a headless test; the UI was walked end to end in a headless browser after each change.
+Built solo during the OFFGRID window (local history from 25 September 2026; the repository was published at submission). Order of work: (1) the verification toolchain first — headless OpenSCAD compile, mesh checks, the blueprint renderer, the Part Spec with measurement recipes — all tested on known geometry before any model was involved; (2) the design loop with the code-blind critic and an iteration policy, validated on the bottle-handle benchmark and an A/B study against five human-designed OpenSCAD repair parts; (3) the measurement core (calibration sheet, rectification, circle/outline fitting) validated on synthetic photos with known ground truth; (4) the web workspace; (5) the port to the OpenAI Responses API with a scripted provider so the whole loop is testable without a key; (6) graph engineering: the dataflow runtime, the evidence graph and the capture loop. Every stage has a headless test; the UI was walked end to end in a headless browser after each change.
 
 ---
 
@@ -87,17 +89,17 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 - Section recipes that read "no hole found" because the plane was at the wrong height. The intake prompt now writes recipes at heights where the feature exists — and the checker says exactly what it did not find.
 - Wall-thickness minima that are convex-corner artifacts of sampling. `p05` is the hard check; the minimum is advisory.
 - Oscillation: the designer nudging a dimension across its target four iterations running. Detected from history; the policy freezes the parameter and says so.
-- Photos of shiny and transparent objects. The neck-on-sheet trick (press the mating feature onto the sheet so its outline lies in the sheet plane) beats any amount of vision-model guessing.
+- Photos of shiny and transparent objects. The design answer is the neck-on-sheet trick: press the mating feature onto the sheet so its outline lies in the sheet plane. It has not been tried on a real photo yet.
 - Streaming a long-running agent to a browser that may be a phone on the same Wi-Fi.
 
 ### Accomplishments that we're proud of
 
-- The loop converges: the bottle handle in 1, 1, 1 and 7 iterations across the four kept runs (`eval/runs/handle_repeats/`)†.
-- The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written by us from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed its checks, two human parts failed wall or topology checks (thresholds their designers never targeted), and a blind judge — the same model family as the designer, reading the sheets and the check tables — preferred Kintsugi's part in 4 of 5. One run per part; the caveats are in `eval/reports/ab_templates.md`.
+- The first real GPT-6 run converged in 2 iterations for $1.01 (`eval/reports/gpt6-first-run/`). Earlier, on the Agent provider, four kept runs on the same part (which has a vetted template the designer used) converged in 1, 1, 1 and 7 iterations; those raw sessions are not in the repository.†
+- The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written by us from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed its hard checks (the hinge run was interrupted after iteration 4 and fails two soft checks), two human parts failed wall or topology checks (thresholds their designers never targeted), and a blind judge — the same model family as the designer, reading the sheets and the check tables — preferred Kintsugi's part in 4 of 5. One run per part; the caveats are in `eval/reports/ab_templates.md`.
 - The critic probe†: five defects injected into a passing part. Three are invisible to the numeric checks and the code-blind critic caught 2 of those 3 (it missed the missing fillets); the other two also tripped a footprint check. Control: pass.
-- Verified on known geometry before any model was involved: circle fits within 0.05 mm, interference volumes within 3 %, measurement within 0.5 mm on synthetic photos, every template against its spec, every OpenSCAD guide example compiled. The UI was driven end to end in a browser after every change, on a phone and a desktop, light and dark; `docs/REVIEW.md` walks the deployment journeys through the code.
+- Verified on known geometry before any model was involved: circle fits within 0.05 mm, interference volumes within 3 %, measurement within 0.5 mm on synthetic photos, every template against its spec, every OpenSCAD guide example compiled. The UI was driven end to end in a browser after every change, at desktop and phone widths, light and dark; `docs/REVIEW.md` walks the deployment journeys through the code.
 - The follow-up loop: the system asks for the *photo* it needs, measures it automatically, and stops asking when it knows enough.
-- The customizer: the finished part is not a file, it is a parametric designer with the evidence attached — the bottle handle previews in 0.1 s per slider move, and "overall length 118.8 mm ✗ ≤ 110" shows up before the person applies anything.
+- The customizer: the finished part is not a file, it is a parametric designer with the evidence attached — and "overall length 118.8 mm ✗ ≤ 110" shows up before the person applies anything.
 
 † Measured during development with the Agent provider; the GPT-6 re-run is pending.
 
