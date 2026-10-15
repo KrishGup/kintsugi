@@ -24,7 +24,7 @@ What this does and does not show:
 - The designer read the vetted `ring_loop_handle` template (`read_template`) and adapted it to the spec (a 54 mm ring,
   reinforced scalloped loop, chamfered edges); it did not design the handle from nothing.
 - One run, one part. The A/B study and the critic probe (`eval/reports/ab_templates.md`, `eval/reports/critic_probe/`)
-  are still the Agent-provider runs and have not been repeated on GPT-6.
+  are still the earlier-provider runs and have not been repeated on GPT-6.
 - An earlier start of the same session was cut off after 8 s by a container restart (a settings change rolled the
   replica); the event log records it as `stopped: the server restarted during the run`. It made no model call that
   produced an iteration.

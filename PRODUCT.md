@@ -30,7 +30,7 @@ The model never grades its own homework: dimensions are measured on the exported
 ## Capabilities and Constraints
 
 - Six stages: intake → capture rounds → confirm the fit → design & verify → review → print/export; a three-pane workspace (guide/timeline · 3D and blueprint sheets · checks/customizer/code/spec/photos/graphs).
-- Model provider: OpenAI GPT-6 via the Responses API is the default and the sponsor's platform; a Agent provider exists but is opt-in and never the pitch.
+- Model provider: OpenAI GPT-6 via the Responses API is the default and the sponsor's platform; the only other provider is the scripted demo mode.
 - Iterations are budgeted (8 by default), with oscillation detection and a strategy switch; a run can pause on a question to the person (text, a choice, or a photo request).
 - Terminology: *spec* (the Part Spec contract), *interface* (a mating feature), *dimension* with *estimates* and *status* (unknown / estimated / confirmed), *check* (hard or soft), *iteration*, *critic*, *coupon*, *blueprint sheets* (views, sections, assembly), *customizer* / *draft* / *verified*.
 - Undecided: whether the demo video is recorded on the phone-first or the laptop-first path; the numbers marked † in the submission drafts must be re-run on GPT-6.

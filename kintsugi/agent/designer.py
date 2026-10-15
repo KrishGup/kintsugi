@@ -1,13 +1,11 @@
 """The designer agent: an agentic loop in the session workspace with the Kintsugi tools, followed by the critic.
 
-Two runtimes share the tools and the policy:
-  openai  — the Responses API tool loop in kintsugi.agent.llm with our own file/shell tools (default)
-  agent  — the agent SDK session (kept for environments with a Agent login)
+The loop is the Responses API tool loop in kintsugi.agent.llm with our own file/shell tools; the scripted `fake`
+provider replays through the same loop.
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import time
@@ -15,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-from kintsugi import PACKAGE_DIR, TEMPLATES_DIR, VENDOR_DIR
+from kintsugi import PACKAGE_DIR
 from kintsugi.agent.critic import CriticVerdict, critique
 from kintsugi.agent.llm import LLM, get_llm, text_part
 from kintsugi.agent.pipeline import ITERATION_BUDGET, IterationResult
@@ -32,16 +30,12 @@ FILE_TOOLS_OPENAI = (
     "trimesh/opencv, no network; runs in bash when the host has it, otherwise the host's own shell — prefer the file tools "
     "and `iterate` over shell commands). Everything is confined to the session directory."
 )
-FILE_TOOLS_AGENT = (
-    "- Standard file tools (Read, Write, Edit, Glob, Grep, Bash). Use Read on the PNG paths returned by `iterate` to look "
-    "closer at any view."
-)
 
 
 def designer_prompt(provider: str) -> str:
     from kintsugi.agent.knowledge import summary_for_prompt
 
-    return (_PROMPT_TEMPLATE.replace("{FILE_TOOLS}", FILE_TOOLS_OPENAI if provider != "agent" else FILE_TOOLS_AGENT)
+    return (_PROMPT_TEMPLATE.replace("{FILE_TOOLS}", FILE_TOOLS_OPENAI)
             .replace("{KNOWLEDGE_TOOLS}", summary_for_prompt()))
 
 
@@ -118,12 +112,8 @@ async def run_designer(session: Session, *, spec: PartSpec | None = None, model:
     if hide_templates and not strategy:
         strategy = "Do NOT use the template catalog for this run; design from primitives and BOSL2."
     try:
-        if llm.provider == "agent":
-            status = await _run_agent(session, spec, state, model, budget, critic_rounds, user_message, strategy, resume_message,
-                                       max_turns, critic_model, run_critic, photos, emit, llm, hide_templates)
-        else:
-            status = await _run_openai(session, spec, state, model, budget, critic_rounds, user_message, strategy, resume_message,
-                                       max_turns, critic_model, run_critic, photos, emit, llm, hide_templates)
+        status = await _run_openai(session, spec, state, model, budget, critic_rounds, user_message, strategy, resume_message,
+                                   max_turns, critic_model, run_critic, photos, emit, llm, hide_templates)
     except Exception as e:  # pragma: no cover
         state.error = f"{type(e).__name__}: {e}"
         status = "error"
@@ -243,133 +233,6 @@ async def _run_openai(session, spec, state, model, budget, critic_rounds, user_m
     state.cost_usd += llm.usage.cost_usd - cost0
     emit("usage", calls=llm.usage.calls - calls0, cost_usd=round(llm.usage.cost_usd - cost0, 4), model=model)
     return _status(state)
-
-
-# ---- Agent runtime (Agent SDK) -------------------------------------------------------------------------
-
-STALL_TIMEOUT_S = float(os.environ.get("KIN_STALL_TIMEOUT_S", "900"))
-
-
-class StalledError(RuntimeError):
-    pass
-
-
-def make_sandbox_hook(session_dir: Path):
-    """PreToolUse hook for the SDK path: the designer may only write inside its session directory."""
-    sb = Sandbox(session_dir)
-
-    async def hook(input_data: dict, tool_use_id: str | None, context: Any) -> dict:
-        tool = input_data.get("tool_name", "")
-        ti = input_data.get("tool_input") or {}
-        deny = None
-        if tool in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
-            fp = str(ti.get("file_path") or ti.get("notebook_path") or "")
-            if not sb.inside(fp):
-                deny = f"writes are limited to the session directory {sb.root}; write to part.scad there"
-        elif tool == "Read":
-            fp = str(ti.get("file_path") or "")
-            if fp and not sb.readable(fp):
-                deny = "reading is limited to the session directory, templates and the BOSL2 library"
-        elif tool == "Bash":
-            deny = sb.command_ok(str(ti.get("command") or ""))
-        if deny:
-            return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": deny}}
-        return {}
-
-    return hook
-
-
-def _sdk_tools(session: Session, state: RunState, spec: PartSpec, budget: int, emit, hide_templates: bool):
-    """Wrap the shared kin tools as SDK MCP tools."""
-    from agent_sdk import tool
-
-    kin = make_kin_tools(session, state, spec, budget, emit, hide_templates=hide_templates)
-    wrapped = []
-    for td in kin:
-        def make(td):
-            @tool(td.name, td.description, td.parameters)
-            async def fn(args: dict[str, Any]) -> dict[str, Any]:
-                r = await td.handler(args)
-                content: list[dict[str, Any]] = [{"type": "text", "text": r.text}]
-                for data, mime in r.images:
-                    import base64 as _b64
-                    content.append({"type": "image", "data": _b64.b64encode(data).decode(), "mimeType": mime})
-                out: dict[str, Any] = {"content": content}
-                if r.is_error:
-                    out["is_error"] = True
-                return out
-            return fn
-        wrapped.append(make(td))
-    return wrapped
-
-
-async def _run_agent(session, spec, state, model, budget, critic_rounds, user_message, strategy, resume_message, max_turns,
-                      critic_model, run_critic, photos, emit, llm: LLM, hide_templates: bool) -> str:
-    from agent_sdk import AgentOptions, SDKClient, HookMatcher, create_sdk_mcp_server
-
-    server = create_sdk_mcp_server("kin", tools=_sdk_tools(session, state, spec, budget, emit, hide_templates))
-    options = AgentOptions(
-        cwd=str(session.dir), model=model, system_prompt=designer_prompt("agent"), permission_mode="bypassPermissions",
-        allowed_tools=["Read", "Write", "Edit", "Glob", "Grep", "Bash", "mcp__kin__iterate", "mcp__kin__list_templates",
-                       "mcp__kin__read_template", "mcp__kin__ask_user", "mcp__kin__finish"],
-        disallowed_tools=["WebSearch", "WebFetch", "Task", "TodoWrite", "NotebookEdit", "ToolSearch"],
-        mcp_servers={"kin": server}, max_turns=max_turns, setting_sources=[], env={"OPENSCADPATH": str(VENDOR_DIR)},
-        add_dirs=[str(TEMPLATES_DIR)], max_buffer_size=64 * 1024 * 1024,
-        max_thinking_tokens=int(os.environ.get("KIN_THINKING_TOKENS", "12000")),
-        hooks={"PreToolUse": [HookMatcher(matcher="Write|Edit|MultiEdit|NotebookEdit|Bash|Read", hooks=[make_sandbox_hook(session.dir)])]},
-    )
-    async with SDKClient(options) as client:
-        first = resume_message or initial_prompt(spec, user_message, strategy)
-        if not resume_message and session.scad_path.exists():
-            first += existing_part_note(session)
-        await client.query(first)
-        await _drain(client, state, emit)
-        rounds = 0
-        while not state.question and state.finished and run_critic and rounds < critic_rounds:
-            rounds += 1
-            verdict = await _run_critic(session, spec, state, critic_model, photos, emit, llm)
-            state.critic_verdicts.append(verdict)
-            if verdict.verdict in ("pass", "error"):
-                break
-            if verdict.verdict == "ask_user":
-                state.question = {"question": verdict.question_for_user or verdict.summary, "options": []}
-                session.update_meta(status="waiting_user", question=state.question)
-                emit("question", **state.question)
-                break
-            state.finished = False
-            emit("critic_followup", round=rounds)
-            await client.query(CRITIC_FOLLOWUP.format(verdict=verdict.summary_for_model()))
-            await _drain(client, state, emit)
-    return _status(state)
-
-
-async def _drain(client, state: RunState, emit) -> None:
-    from agent_sdk import AssistantMessage, ResultMessage, TextBlock, ToolUseBlock
-
-    it = client.receive_response().__aiter__()
-    while True:
-        try:
-            msg = await asyncio.wait_for(it.__anext__(), timeout=STALL_TIMEOUT_S)
-        except StopAsyncIteration:
-            break
-        except asyncio.TimeoutError:
-            emit("error", message=f"no message from the model for {STALL_TIMEOUT_S:.0f}s; run aborted as stalled")
-            raise StalledError("designer stalled")
-        if type(msg).__name__ in ("SystemMessage", "RateLimitEvent"):
-            emit("sdk", type=type(msg).__name__, subtype=str(getattr(msg, "subtype", ""))[:60])
-        if isinstance(msg, AssistantMessage):
-            for b in msg.content:
-                if isinstance(b, TextBlock) and b.text.strip():
-                    emit("assistant", text=b.text.strip()[:4000])
-                elif isinstance(b, ToolUseBlock):
-                    brief = {k: (str(v)[:160]) for k, v in (b.input or {}).items() if k in ("label", "name", "file_path", "command", "question", "pattern")}
-                    emit("tool_use", tool=b.name.replace("mcp__kin__", ""), input=brief)
-        elif isinstance(msg, ResultMessage):
-            state.cost_usd += float(msg.total_cost_usd or 0.0)
-            state.turns += int(msg.num_turns or 0)
-            if msg.is_error or (msg.subtype and msg.subtype != "success"):
-                state.error = f"{msg.subtype}: {(msg.result or '')[:400]} {' | '.join(msg.errors or [])}".strip()
-                emit("error", message=state.error, stop_reason=msg.stop_reason)
 
 
 # ---- critic step (shared) --------------------------------------------------------------------------------

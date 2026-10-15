@@ -1,6 +1,6 @@
 # Devpost submission — draft 2
 
-Everything below maps to the HACK47: OFFGRID submission form (Project Name, Short Description, Problem Statement, Solution, Demo Link, Source Code, Demo Video, Tech Stack, Build Process) plus the standard Devpost story sections. Text in `[brackets]` is a placeholder to fill in before submitting. Numbers marked † were measured on the Agent-provider runs before the switch to OpenAI and must be re-run on GPT-6 (`eval/ab_eval.py`, `eval/critic_probe.py`) before submission; until then the form carries them with the † and the footnote below, or they are dropped.
+Everything below maps to the HACK47: OFFGRID submission form (Project Name, Short Description, Problem Statement, Solution, Demo Link, Source Code, Demo Video, Tech Stack, Build Process) plus the standard Devpost story sections. Text in `[brackets]` is a placeholder to fill in before submitting. Numbers marked † were measured on an earlier model provider before the switch to OpenAI and must be re-run on GPT-6 (`eval/ab_eval.py`, `eval/critic_probe.py`) before submission; until then the form carries them with the † and the footnote below, or they are dropped.
 
 ---
 
@@ -45,11 +45,11 @@ Locally with your own key: `docker compose -f deploy/docker-compose.yml up -d --
 
 ## Source code
 
-`https://github.com/KrishGup/kintsugi` `[create the repo and push before submitting]`
+https://github.com/KrishGup/kintsugi (public)
 
 ## Demo video
 
-`[YouTube link, ≤ 3 minutes — see docs/submission/video-script.md]`
+https://github.com/KrishGup/kintsugi/blob/main/docs/submission/kintsugi-demo.mp4 — 5:37, narrated by Krish over the first real GPT-6 run; what is in it and how it was cut: `docs/submission/video-script.md`. The Devpost video field takes YouTube/Vimeo only, so the story links the repository copy.
 
 ## Tech stack ("Built with")
 
@@ -94,14 +94,14 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 
 ### Accomplishments that we're proud of
 
-- The first real GPT-6 run converged in 2 iterations for $1.01 (`eval/reports/gpt6-first-run/`). Earlier, on the Agent provider, four kept runs on the same part (which has a vetted template the designer used) converged in 1, 1, 1 and 7 iterations; those raw sessions are not in the repository.†
+- The first real GPT-6 run converged in 2 iterations for $1.01 (`eval/reports/gpt6-first-run/`). Earlier, on an earlier model provider, four kept runs on the same part (which has a vetted template the designer used) converged in 1, 1, 1 and 7 iterations; those raw sessions are not in the repository.†
 - The A/B study†: five human-designed OpenSCAD repair parts from public repositories, a spec written by us from each one's own mating dimensions, Kintsugi designing from the spec alone; every Kintsugi part passed its hard checks (the hinge run was interrupted after iteration 4 and fails two soft checks), two human parts failed wall or topology checks (thresholds their designers never targeted), and a blind judge — the same model family as the designer, reading the sheets and the check tables — preferred Kintsugi's part in 4 of 5. One run per part; the caveats are in `eval/reports/ab_templates.md`.
 - The critic probe†: five defects injected into a passing part. Three are invisible to the numeric checks and the code-blind critic caught 2 of those 3 (it missed the missing fillets); the other two also tripped a footprint check. Control: pass.
 - Verified on known geometry before any model was involved: circle fits within 0.05 mm, interference volumes within 3 %, measurement within 0.5 mm on synthetic photos, every template against its spec, every OpenSCAD guide example compiled. The UI was driven end to end in a headless browser after every change, at desktop and phone widths, light and dark; `docs/REVIEW.md` walks the deployment journeys through the code.
 - The follow-up loop: the system asks for the *photo* it needs, measures it automatically, and stops asking when it knows enough (exercised on synthetic photos and the scripted provider so far).
 - The customizer: the finished part is not a file, it is a parametric designer with the evidence attached — and "overall length 118.8 mm ✗ ≤ 110" shows up before the person applies anything.
 
-† Measured during development with the Agent provider; the GPT-6 re-run is pending.
+† Measured during development on an earlier model provider (since removed from the code); the GPT-6 re-run is pending.
 
 ### What we learned
 
@@ -122,13 +122,13 @@ Photograph the broken object, say one sentence. Kintsugi identifies the part and
 
 ## Disclosure (paste into the form's "third-party technologies" field)
 
-OpenAI GPT-6 models through the official `openai` Python SDK (Responses API). OpenSCAD (GPL-2.0, invoked as a separate process). BOSL2 (BSD-2, vendored). OpenCV, trimesh, manifold3d, shapely, NumPy, Pillow, reportlab, pydantic, FastAPI, sse-starlette, uvicorn, React, Vite, three.js, Monaco. The A/B references are cloned at evaluation time from their authors' public repositories and are not redistributed. All application code, the renderer, the checker, the measurement core, the graph runtime, the prompts and the templates were written for OFFGRID during the hackathon window; AI coding assistants were used throughout, as the rules allow: Agent (the vendor) wrote and reviewed much of the code with me, first in a cloud session and then in the coding assistant locally. During development the A/B study and the critic probe (the numbers marked †) were run through the project's opt-in Agent provider; the product itself runs on the OpenAI API.
+OpenAI GPT-6 models through the official `openai` Python SDK (Responses API). OpenSCAD (GPL-2.0, invoked as a separate process). BOSL2 (BSD-2, vendored). OpenCV, trimesh, manifold3d, shapely, NumPy, Pillow, reportlab, pydantic, FastAPI, sse-starlette, uvicorn, React, Vite, three.js, Monaco. The A/B references are cloned at evaluation time from their authors' public repositories and are not redistributed. All application code, the renderer, the checker, the measurement core, the graph runtime, the prompts and the templates were written for OFFGRID during the hackathon window; AI coding assistants were used throughout, as the rules allow, and wrote and reviewed much of the code with me. During development the A/B study and the critic probe (the numbers marked †) were run on an earlier model provider (since removed from the code); the product runs on the OpenAI API.
 
 ## Assets checklist
 
 - [ ] Cover image (1280×720): the hero shot — phone photo of the snapped handle on the calibration sheet next to the printed replacement on the bottle.
 - [ ] Gallery: (1) the guide at capture round 1 with a measured photo, (2) the blueprint views sheet with dimension lines, (3) the sections & assembly sheet, (4) the Evidence tab, (5) the Graph tab with the live pipeline, (6) the A/B side-by-side sheets (human vs Kintsugi), (7) the printed part on the object.
-- [ ] Demo video ≤ 3 min (script in `video-script.md`).
-- [ ] Repo public, README screenshots, `docs/design.html` linked.
+- [x] Demo video: `kintsugi-demo.mp4` (5:37, Krish's voice-over; `video-script.md`).
+- [x] Repo public, README screenshots, `docs/design.html` linked.
 - [ ] Re-run `eval/ab_eval.py` and `eval/critic_probe.py` on GPT-6; replace every † number and delete the marker.
 - [ ] Hosted demo (or the Docker one-liner in the README) tested from a phone.

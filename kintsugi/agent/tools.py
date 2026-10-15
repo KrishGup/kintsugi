@@ -1,6 +1,5 @@
 """The designer's tools for the OpenAI runtime: files and a shell confined to the session directory, plus the
-Kintsugi tools (iterate, templates, ask_user, finish). The Agent path gets the same Kintsugi tools through the Agent
-SDK and uses the SDK's own file tools."""
+Kintsugi tools (iterate, templates, ask_user, finish)."""
 
 from __future__ import annotations
 

@@ -1,11 +1,11 @@
-"""Model provider facade: OpenAI (default, Responses API) or Agent (Agent SDK), behind one small interface.
+"""Model provider facade: the OpenAI Responses API (or a scripted stand-in), behind one small interface.
 
 Two operations cover everything Kintsugi needs from a model:
   complete()   one turn, text + images in, text (usually JSON) out            -> intake, critic, judge
   run_tools()  an agentic loop over our own tools (files, shell, iterate ...) -> the designer
 
 The OpenAI path talks to the Responses API directly with function tools; tool results may carry images (the
-blueprint sheets) so the designer looks at its drawings after every iteration. The Agent path keeps the Agent SDK.
+blueprint sheets) so the designer looks at its drawings after every iteration.
 A `fake` provider replays scripted responses so the whole loop can be tested without a key.
 """
 
@@ -16,7 +16,6 @@ import base64
 import io
 import json
 import os
-import shutil
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -33,7 +32,6 @@ PRICES: dict[str, tuple[float, float, float]] = {  # input, cached input, output
 
 DEFAULT_MODELS = {
     "openai": {"designer": "gpt-6-astra", "critic": "gpt-6-astra", "vision": "gpt-6-astra", "fast": "gpt-6-sol"},
-    "agent": {"designer": "opus", "critic": "opus", "vision": "opus", "fast": "sonnet"},
     "fake": {"designer": "fake", "critic": "fake", "vision": "fake", "fast": "fake"},
 }
 
@@ -118,9 +116,9 @@ def text_part(text: str) -> dict[str, Any]:
 def detect_provider() -> str:
     """KIN_PROVIDER if set, else OpenAI (the default; the app asks for a key when none is configured).
 
-    The Agent and fake providers are opt-in only, so a stray Agent login on the machine never changes what runs."""
+    The fake provider is opt-in only."""
     p = os.environ.get("KIN_PROVIDER", "").lower().strip()
-    if p in ("openai", "agent", "fake"):
+    if p in ("openai", "fake"):
         return p
     return "openai"
 
@@ -153,10 +151,6 @@ class LLM:
             if not os.environ.get("OPENAI_API_KEY") and self._client is None:
                 return False, "OPENAI_API_KEY is not set"
             return True, "OpenAI Responses API"
-        if self.provider == "agent":
-            if os.environ.get("AGENT_API_KEY") or shutil.which("agent"):
-                return True, "agent SDK"
-            return False, "no AGENT_API_KEY and no agent CLI"
         return True, "demo mode: a scripted designer, no key needed"
 
     # ---- clients -----------------------------------------------------------------------------------
@@ -179,8 +173,6 @@ class LLM:
         model = model or self.models[role]
         if self.provider == "openai":
             return await self._openai_complete(system, parts, model, json_mode, effort or self.effort, max_output_tokens)
-        if self.provider == "agent":
-            return await self._agent_complete(system, parts, model, json_mode)
         return await self._fake_complete(system, parts)
 
     async def _openai_complete(self, system, parts, model, json_mode, effort, max_output_tokens) -> str:
@@ -207,37 +199,6 @@ class LLM:
             text = _oa_output_text(resp)
         return text
 
-    async def _agent_complete(self, system, parts, model, json_mode) -> str:
-        from agent_sdk import AssistantMessage, AgentOptions, SDKClient, TextBlock
-
-        content = []
-        for p in parts:
-            if p["type"] == "text":
-                content.append({"type": "text", "text": p["text"]})
-            else:
-                content.append({"type": "image", "source": {"type": "base64", "media_type": p["mime"], "data": base64.b64encode(p["data"]).decode()}})
-        if json_mode:
-            content.append({"type": "text", "text": "Respond with the JSON object only."})
-        options = AgentOptions(system_prompt=system, model=model, allowed_tools=[], max_turns=1, setting_sources=[],
-                                     disallowed_tools=["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebSearch", "WebFetch", "Task", "TodoWrite"],
-                                     permission_mode="dontAsk")
-        out: list[str] = []
-
-        async def gen():
-            yield {"type": "user", "message": {"role": "user", "content": content}, "parent_tool_use_id": None, "session_id": "one"}
-
-        async with SDKClient(options) as client:
-            await client.query(gen(), session_id="one")
-            async for msg in client.receive_response():
-                if isinstance(msg, AssistantMessage):
-                    for b in msg.content:
-                        if isinstance(b, TextBlock):
-                            out.append(b.text)
-                elif type(msg).__name__ == "ResultMessage":
-                    self.usage.calls += 1
-                    self.usage.cost_usd += float(getattr(msg, "total_cost_usd", 0.0) or 0.0)
-        return "\n".join(out)
-
     async def _fake_complete(self, system, parts) -> str:
         from kintsugi.agent.fake import fake_complete
         return fake_complete(system, parts)
@@ -255,7 +216,7 @@ class LLM:
             return await self._openai_loop(system, parts, tools, model, effort or self.effort, max_steps, stop_tools, on_text, on_tool, on_step, cost_limit_usd)
         if self.provider == "fake":
             return await self._openai_loop(system, parts, tools, model, "none", max_steps, stop_tools, on_text, on_tool, on_step, cost_limit_usd)
-        raise NotImplementedError("the Agent designer runs through the Agent SDK path in designer.py")
+        raise ValueError(f"unknown provider {self.provider!r}")
 
     async def _openai_loop(self, system, parts, tools, model, effort, max_steps, stop_tools, on_text, on_tool, on_step,
                            cost_limit_usd: float | None = None) -> ToolLoopResult:

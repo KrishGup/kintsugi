@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("design", help="run the designer agent (and critic) on a session")
     p.add_argument("session")
-    p.add_argument("--provider", choices=["openai", "agent", "fake"], help="model provider (default: KIN_PROVIDER or auto)")
+    p.add_argument("--provider", choices=["openai", "fake"], help="model provider (default: KIN_PROVIDER or auto)")
     p.add_argument("--no-templates", action="store_true", help="design from primitives; hide the template catalog")
     p.add_argument("--model")
     p.add_argument("--critic-model")

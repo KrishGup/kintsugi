@@ -173,7 +173,7 @@ footer{margin-top:60px;border-top:1.5px solid var(--ink);padding-top:12px;font-f
 <header class="tb">
   <div class="tb-main">
     <div class="eyebrow">Design document · photo-to-part agent · OFFGRID build</div>
-    <p style="background:#fbf0d9;color:#8f6008;padding:8px 12px;border-radius:5px;font-size:15px;margin:8px 0">Rev B, 25 Sep 2026 — historical. The designer has since moved to the OpenAI Responses API; the statuses below were measured on the Agent provider. Current state: README.md and docs/HANDOFF.md.</p>
+    <p style="background:#fbf0d9;color:#8f6008;padding:8px 12px;border-radius:5px;font-size:15px;margin:8px 0">Rev B, 25 Sep 2026 — historical. The designer has since moved to the OpenAI Responses API; the statuses below were measured on an earlier model provider. Current state: README.md and docs/HANDOFF.md.</p>
     <h1>Kintsugi</h1>
     <div class="tag">Photograph what broke. Print what fits.</div>
   </div>
@@ -280,7 +280,7 @@ footer{margin-top:60px;border-top:1.5px solid var(--ink);padding-top:12px;font-f
 <section id="system">
   <div class="sec-head"><span class="eyebrow">03</span><h2>System design</h2></div>
   <figure>
-    <svg viewBox="0 0 940 430" role="img" aria-label="Architecture: the browser talks to an API server; the API server owns a per-session workspace of files and starts a designer agent built on the agent SDK; the designer calls the OpenSCAD and geometry toolchain, which writes sheets and checks into the workspace; a separate critic call receives only the sheets, checks and reference photos, never the code, and returns a verdict.">
+    <svg viewBox="0 0 940 430" role="img" aria-label="Architecture: the browser talks to an API server; the API server owns a per-session workspace of files and starts a designer agent built on an agent SDK; the designer calls the OpenSCAD and geometry toolchain, which writes sheets and checks into the workspace; a separate critic call receives only the sheets, checks and reference photos, never the code, and returns a verdict.">
       <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
       <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="currentColor">
         <!-- Browser -->
@@ -298,7 +298,7 @@ footer{margin-top:60px;border-top:1.5px solid var(--ink);padding-top:12px;font-f
         <!-- Designer -->
         <rect x="280" y="250" width="180" height="130" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
         <text x="292" y="272" font-family="Barlow Semi Condensed, sans-serif" font-size="15" font-weight="600">Designer agent</text>
-        <text x="292" y="292">agent SDK</text><text x="292" y="310">(same harness as the coding assistant)</text><text x="292" y="328">tools: scad, blueprint, checks,</text><text x="292" y="346">measure, coupon, spec, shell</text><text x="292" y="364">cwd = session workspace</text>
+        <text x="292" y="292">Agent SDK</text><text x="292" y="310">(an agent loop with tools)</text><text x="292" y="328">tools: scad, blueprint, checks,</text><text x="292" y="346">measure, coupon, spec, shell</text><text x="292" y="364">cwd = session workspace</text>
         <!-- Toolchain -->
         <rect x="540" y="250" width="180" height="130" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
         <text x="552" y="272" font-family="Barlow Semi Condensed, sans-serif" font-size="15" font-weight="600">Toolchain (Python)</text>
@@ -337,7 +337,7 @@ footer{margin-top:60px;border-top:1.5px solid var(--ink);padding-top:12px;font-f
     <tbody>
       <tr><td>Web UI</td><td>Chat with rich cards, capture with ghost overlays and instant grading, model workspace, export</td><td>React + Vite, three.js viewer, Monaco for code, SSE client</td></tr>
       <tr><td>API server</td><td>Sessions, uploads, run supervision, event stream, static serving of session files</td><td>FastAPI + uvicorn; one process per deployment, one workspace directory per session</td></tr>
-      <tr><td>Designer agent</td><td>Plans, calls tools, writes OpenSCAD, revises from discrepancies</td><td>agent SDK with in-process tools; cwd is the session workspace; strongest available model</td></tr>
+      <tr><td>Designer agent</td><td>Plans, calls tools, writes OpenSCAD, revises from discrepancies</td><td>An agent SDK with in-process tools; cwd is the session workspace; strongest available model</td></tr>
       <tr><td>Critic</td><td>Code-blind review of the blueprint sheet against the spec and the photos</td><td>Single structured-output model call per iteration, fresh context, images attached</td></tr>
       <tr><td>Toolchain</td><td>Compile, render, measure, check, coupon, export</td><td>Python package with a CLI (<code>kin</code>) so the agent, the tests and a human can all drive it identically</td></tr>
       <tr><td>Workspace</td><td>All state as files; one git commit per iteration; branch from any iteration</td><td>Directory tree below; the UI panels are views of these files</td></tr>
@@ -523,7 +523,7 @@ print: {material: PETG, nozzle: 0.4, min_wall: 1.6, orientation_hint: ring flat 
 
 <section id="agent">
   <div class="sec-head"><span class="eyebrow">07</span><h2>Agent runtime</h2></div>
-  <p>The designer runs on the agent SDK, which is the same agent loop as the coding assistant, given a working directory (the session workspace) and a tool set. The reliable path is the typed tools; a Python shell with OpenCV, trimesh and numpy is the escape hatch for the cases the tools do not cover.</p>
+  <p>The designer runs on an agent SDK: an agent loop given a working directory (the session workspace) and a tool set. The reliable path is the typed tools; a Python shell with OpenCV, trimesh and numpy is the escape hatch for the cases the tools do not cover.</p>
   <div class="scroll"><table class="tbl">
     <thead><tr><th>Group</th><th>Tools</th><th>Notes</th></tr></thead>
     <tbody>
@@ -770,7 +770,7 @@ render_target = "part"; <b>// [part, coupon, assembly]</b></div>
     <dt>Rendering</dt><dd>A numpy z-buffer rasterizer for orthographic views gives exact mm-per-pixel and full control of annotations. OpenSCAD's own renders remain an option for the drawing-style experiment.</dd>
     <dt>Booleans</dt><dd>manifold3d through trimesh for interference volumes and coupon generation.</dd>
     <dt>Vision</dt><dd>OpenCV ArUco for markers, pose and rectification; the model for semantic reads (what is this, is the feature occluded).</dd>
-    <dt>Agent</dt><dd>agent SDK; designer and critic as separate sessions; provider abstraction so the model can be swapped and disclosed.</dd>
+    <dt>Agent</dt><dd>An agent SDK; designer and critic as separate sessions; provider abstraction so the model can be swapped and disclosed.</dd>
     <dt>Licensing</dt><dd>OpenSCAD and BOSL2 are disclosed in the submission; an in-browser WASM preview, if shipped, follows the GPL.</dd>
   </dl>
 </section>

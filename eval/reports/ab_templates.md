@@ -1,6 +1,6 @@
 # A/B report — Kintsugi designer vs human-designed OpenSCAD parts (templates mode)
 
-**Run on the Agent provider (opus), 2026-09-25; not yet re-run on GPT-6 (†).** "pass" in the Kintsugi column means every hard check; soft-check failures are listed where they occurred.
+**Run on an earlier model provider (since removed from the code), 2026-09-25; not yet re-run on GPT-6 (†).** "pass" in the Kintsugi column means every hard check; soft-check failures are listed where they occurred.
 
 Each reference is a human-designed replacement part from a public OpenSCAD repository. A Part Spec was written from the reference's own mating dimensions (its interfaces), the designer built a part from the spec alone (it never saw the reference), and both were measured by the same checker and judged blind by the critic (A/B order randomized).
 
@@ -91,7 +91,7 @@ Sheets: human `eval/reports/templates/wine_glass_rack_hinge/ref/iter_00_sheet.pn
 - The specs were written by the Kintsugi authors from each reference's own parameters; a spec that better captures a designer's unstated intent would change the comparison.
 - The judge is the same model family as the designer, sees the check tables (which the human designs were never written against), and judges from drawings, not from printed parts.
 - Silhouette IoU and Chamfer distance describe how different the shapes are, not which is better; only interfaces are specified, so bodies are free to differ.
-- Costs are Agent API list prices for the design run (designer + critic); the human designs' cost is a person's time.
+- Costs are that provider's API list prices for the design run (designer + critic); the human designs' cost is a person's time.
 - `n = 1` run per part. Runs vary (the bottle-handle benchmark converged in 1, 1, 1 and 7 iterations across the four runs kept in `eval/runs/handle_repeats/`).
 
 ## Reading the numbers

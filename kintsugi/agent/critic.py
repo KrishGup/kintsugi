@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 import json
 import re
 import time
@@ -45,15 +44,6 @@ class CriticVerdict:
         if self.question_for_user:
             lines.append(f"  question for user: {self.question_for_user}")
         return "\n".join(lines)
-
-
-def _image_block(path: Path, max_side: int = 1600) -> dict[str, Any] | None:
-    """Agent-SDK-shaped image block (kept for the Agent runtime)."""
-    from kintsugi.agent.llm import image_part
-    p = image_part(path, max_side=max_side)
-    if not p:
-        return None
-    return {"type": "image", "source": {"type": "base64", "media_type": p["mime"], "data": base64.b64encode(p["data"]).decode()}}
 
 
 def detail_views(sheets: list[Path]) -> list[Path]:

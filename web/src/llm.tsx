@@ -64,8 +64,6 @@ export function providerLabel(p: string | undefined): string {
   switch (p) {
     case "openai":
       return "OpenAI";
-    case "agent":
-      return "Agent";
     case "fake":
       return "Demo mode";
     default:
@@ -219,7 +217,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 {[
                   ["openai", "OpenAI (GPT-6)"],
                   ["fake", "Demo mode"],
-                  ...(info.llm.provider === "agent" || provider === "agent" ? [["agent", "Agent"]] : []),
                 ].map(([v, l]) => (
                   <button
                     key={v}
@@ -236,9 +233,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               <span className="field-hint">
                 {provider === "openai"
                   ? "The designer, critic and intake run on the OpenAI Responses API with your key."
-                  : provider === "fake"
-                    ? "A scripted designer that builds from the templates — no key, no cost. Good for a UI walkthrough."
-                    : "Runs on the agent SDK (needs AGENT_API_KEY on the server)."}
+                  : "A scripted designer that builds from the templates — no key, no cost. Good for a UI walkthrough."}
               </span>
             </div>
 

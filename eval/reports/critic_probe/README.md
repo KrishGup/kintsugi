@@ -11,7 +11,7 @@ Each variant injects one defect into the passing bottle-handle template. Three o
 | thin_bridge | the bridge between ring and loop is a 6 mm wide neck, far narrower than the loop it carries (thin neck in the load path) | FAIL: footprint.overall_length | revise | yes |
 | loop_too_thick_walls_ok | a 14 mm thick loop wall: heavy, over-built, wastes material and makes the grip bulky | FAIL: footprint.overall_length | revise | yes |
 
-**Catch rate: 4/5 overall; 2/3 on the three defects the numbers cannot see** (missed `no_fillets`); control verdict: pass. Runs on the Agent provider (`opus`); to be repeated on GPT-6.
+**Catch rate: 4/5 overall; 2/3 on the three defects the numbers cannot see** (missed `no_fillets`); control verdict: pass. Runs on an earlier model provider (since removed from the code); to be repeated on GPT-6.
 
 ### control
 

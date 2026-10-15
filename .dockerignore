@@ -19,6 +19,5 @@ tests
 scripts
 .github
 .impeccable
-.agent
 web/tsconfig.tsbuildinfo
 *.pptx

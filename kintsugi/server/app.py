@@ -161,7 +161,7 @@ def auth_logout():
 
 class Settings(BaseModel):
     openai_api_key: str | None = None
-    provider: str | None = None  # openai | agent | fake
+    provider: str | None = None  # openai | fake
     designer_model: str | None = None
     critic_model: str | None = None
     vision_model: str | None = None
@@ -174,7 +174,7 @@ def get_settings():
     llm = get_llm()
     key = os.environ.get("OPENAI_API_KEY", "")
     return {"llm": llm.status(), "openai_key_masked": (key[:7] + "…" + key[-4:]) if len(key) > 12 else ("set" if key else ""),
-            "defaults": DEFAULT_MODELS, "providers": ["openai", "agent", "fake"], "locked": _settings_locked(),
+            "defaults": DEFAULT_MODELS, "providers": ["openai", "fake"], "locked": _settings_locked(),
             "env_file": str(ENV_FILE)}
 
 
@@ -216,8 +216,8 @@ async def set_settings(body: Settings):
         os.environ["OPENAI_API_KEY"] = body.openai_api_key.strip()
         changed["OPENAI_API_KEY"] = "set"
     if body.provider:
-        if body.provider not in ("openai", "agent", "fake"):
-            raise HTTPException(400, "provider must be openai, agent or fake")
+        if body.provider not in ("openai", "fake"):
+            raise HTTPException(400, "provider must be openai or fake")
         os.environ["KIN_PROVIDER"] = body.provider
         changed["KIN_PROVIDER"] = body.provider
     for k, v in (("KIN_DESIGNER_MODEL", body.designer_model), ("KIN_CRITIC_MODEL", body.critic_model), ("KIN_VISION_MODEL", body.vision_model),

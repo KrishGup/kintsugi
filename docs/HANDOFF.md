@@ -1,8 +1,5 @@
 # Hand-off notes — what to try, what to expect, what is rough
 
-Working on this with the coding assistant? `NOTES.md` at the root is the standing brief; `docs/HANDOFF-NOTES.md` is the
-one-time hand-off from the cloud session, with the first prompt to paste.
-
 ## State on 2026-10-14 (submission night)
 
 - **Repo public:** https://github.com/KrishGup/kintsugi. The CI workflow never ran, so it now lives as an opt-in template
@@ -14,8 +11,9 @@ one-time hand-off from the cloud session, with the first prompt to paste.
   access code is in the gitignored `scratch/tmp/live-access-code.txt`), sessions under `/data/live`, `KIN_MAX_COST_USD=3`.
 - **First real GPT-6 run:** the bottle handle from the typed spec, 2 iterations, all hard checks pass, critic *pass*, 21 model
   calls, $1.01 — `eval/reports/gpt6-first-run/` (with the importable session archive).
-- **Video:** `docs/submission/kintsugi-demo.mp4`, recorded from that real session by `scripts/record_demo.py` (narration by
-  OpenAI text-to-speech; a captions-only cut for a human voice-over is kept locally in `scratch/demo/`, not committed).
+- **Video:** `docs/submission/kintsugi-demo.mp4` (5:37), Krish's voice-over (one take, cut by `scripts/record_demo.py voice
+  --take`: last take of every line, headings dropped, pauses shortened, cleaned to −16 LUFS) over clips recorded from that real
+  session; captions are his words. The raw take stays local (`scratch/voice-krish/`, gitignored).
 - **Still not done:** a real phone photo through intake; a printed coupon and part; the A/B study and critic probe on GPT-6
   (their numbers keep the †).
 - **Eligibility:** the Devpost sidebar says "Students only"; the rules text says anyone. Confirm before submitting.
@@ -79,7 +77,7 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - `DESIGN.md` (root) is the recorded visual system — the palette (navy #05142E ink, #155DD3 the one action colour, #6C9EF0 dimension blue, #BED4F9 tolerance tint), both themes, the type ramp, spacing, components, do's and don'ts — with the machine-readable tokens in its frontmatter and `.impeccable/design.json`. `PRODUCT.md` holds the product truth the design serves. Tokens live in `web/src/styles.css` (`:root` and the dark block); every component reads them, including the 3D viewer.
 - Fonts are bundled (`@fontsource/*`, latin subsets) so the app renders the same with no internet. Icons are one SVG family in `web/src/icons.tsx`.
 - On a phone the session shows one pane at a time, switched from the bar at the bottom (Guide · 3D & sheets · Details); the stage bar scrolls.
-- [Impeccable](https://github.com/pbakaus/impeccable) is vendored as a project skill (`.agent/skills/impeccable`, agents in `.agent/agents`, the design-detector hook in `.agent/settings.json`). In the coding assistant: `/impeccable audit web`, `/impeccable polish the settings modal`, `/impeccable critique home`. The launcher downloads its engine binary once on first run (Windows: `.agent/skills/impeccable/scripts/impeccable.cmd`). The mechanical detector is clean on `web/src` except one advisory for the blueprint grid, which is the drafting-sheet ground and deliberate.
+- The UI was audited with the [Impeccable](https://github.com/pbakaus/impeccable) design skill (`/impeccable audit web`, `polish`, `critique`). Its mechanical detector is clean on `web/src` except one advisory for the blueprint grid, which is the drafting-sheet ground and deliberate.
 
 ## The customizer (Customize tab)
 
@@ -100,7 +98,7 @@ The Timeline tab (left pane) is the full event log; the right pane keeps the eng
 - Default: OpenAI Responses API, `gpt-6-astra` for the designer, critic and intake, reasoning effort `high`. `gpt-6-sol` for the critic/intake is ~5× cheaper and fine on simple parts; set it in Settings → *Models & reasoning effort*.
 - Each tool step is chained with `previous_response_id` (`store=true`), so a run uploads every blueprint sheet once. `KIN_OPENAI_STATELESS=1` resends the whole transcript with `store=false` and encrypted reasoning (for zero-retention orgs); the loop also falls back to it automatically if the API rejects storing.
 - Cost is accounted per run from the usage numbers (`usage` event, session meta `cost_usd`); prices are in `kintsugi/agent/llm.py:PRICES` — check them against the current price list.
-- The live OpenAI path was verified through the official SDK against a mock transport (request shape, chaining, image tool outputs, JSON mode, truncation nudge) — a real end-to-end run with a key is the first thing to do on your machine. The Agent provider (`pip install ".[agent]"`, `KIN_PROVIDER=agent`) is the path the A/B study in `eval/reports` was run on.
+- The live OpenAI path was verified through the official SDK against a mock transport (request shape, chaining, image tool outputs, JSON mode, truncation nudge) — a real end-to-end run with a key is the first thing to do on your machine. The A/B study and the critic probe in `eval/reports` were run during development on an earlier model provider (since removed from the code).
 
 ## What the numbers mean
 

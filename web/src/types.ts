@@ -3,7 +3,7 @@
 export type Stage = "intake" | "capture" | "spec" | "design" | "review" | "export";
 
 export interface LlmStatus {
-  provider: "openai" | "agent" | "fake" | string;
+  provider: "openai" | "fake" | string;
   models: { designer?: string; critic?: string; vision?: string; fast?: string; [k: string]: string | undefined };
   effort: string;
   ready: boolean;
